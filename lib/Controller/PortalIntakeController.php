@@ -65,6 +65,7 @@ use OCA\Portaliq\Service\Intake\PortalCosignFlow;
 use OCA\Portaliq\Service\Intake\PortalIntakeConfirmation;
 use OCA\Portaliq\Service\Intake\PortalIntakePayments;
 use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
+use OCA\Portaliq\Service\Intake\PublishedFormFee;
 use OCA\Portaliq\Service\Intake\QueuedSubmission;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -181,14 +182,34 @@ class PortalIntakeController extends Controller implements PortalProtected {
 		);
 		$this->payments     = new PortalIntakePayments(
 			lookup: $lookup,
-			fees: $fees,
+			// The pay route charges the published form's own fee when it
+			// serves one, as the form page showed (intake-pay-on-submit T09).
+			fees: $this->feesWithForm(fees: $fees, forms: $bindings),
 			registry: $registry,
 			forwarder: $forwarder,
-			deepLinks: $deepLinks,
-			forms: $bindings
+			deepLinks: $deepLinks
 		);
 		$this->confirmation = new PortalIntakeConfirmation(confirmationMail: $confirmationMail);
 	}//end __construct()
+
+	/**
+	 * The fee reader the pay route uses: one that looks up the binding's
+	 * published form, or null when the portal reads no fees.
+	 *
+	 * @param PortalFeeInterface|null            $fees  The fee reader.
+	 * @param PortalFormBindingResolverInterface $forms Finds the published form of a binding.
+	 *
+	 * @return PortalFeeInterface|null
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t09
+	 */
+	private function feesWithForm(?PortalFeeInterface $fees, PortalFormBindingResolverInterface $forms): ?PortalFeeInterface {
+		if ($fees === null) {
+			return null;
+		}
+
+		return new PublishedFormFee(fees: $fees, forms: $forms);
+	}//end feesWithForm()
 
 	/**
 	 * The entry point: the published catalogue, by topic.

@@ -216,17 +216,26 @@ class PortalFormBindingResolverTest extends TestCase {
 	 * the case type's pay action.
 	 *
 	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t09
+	 *
+	 * @return void
 	 */
 	public function testTheRenderCarriesTheFormsFee(): void {
-		$this->seedForm(audience: 'client', fields: [['name' => 'kenteken', 'order' => 1]], extra: ['fee' => ['amount' => 25, 'currency' => 'EUR', 'description' => 'Leges standplaats']]);
-		$reader = $this->createMock(\OCA\Portaliq\Service\CaseTypeReader::class);
+		$fee = ['amount' => 25, 'currency' => 'EUR', 'description' => 'Leges standplaats'];
+		$this->seedForm(audience: 'client', fields: [['name' => 'kenteken', 'order' => 1]], extra: ['fee' => $fee]);
+		$reader = $this->createMock(originalClassName: \OCA\Portaliq\Service\CaseTypeReader::class);
 		$reader->method('readCaseType')->willReturn(['portalFee' => ['amount' => '38.50', 'currency' => 'EUR', 'payAction' => 'create-payment']]);
-		$resolver = new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser(), null, new VisibleWhenLocal(), null, new \OCA\Portaliq\Service\Intake\PortalFormCalculator(), new \OCA\Portaliq\Service\Intake\PortalFee($reader));
+		$resolver = new PortalFormBindingResolver(
+			reader: $this->fakeReader(),
+			formStepsNormaliser: new FormStepsNormaliser(),
+			fees: new \OCA\Portaliq\Service\Intake\PortalFee(caseTypes: $reader)
+		);
 
-		$render = $resolver->render(binding: $this->binding());
+		$render   = $resolver->render(binding: $this->binding());
+		$expected = ['amount' => '25.00', 'currency' => 'EUR', 'description' => 'Leges standplaats', 'payAction' => 'create-payment'];
 
-		$this->assertSame(['amount' => '25.00', 'currency' => 'EUR', 'description' => 'Leges standplaats', 'payAction' => 'create-payment'], $render['fee']);
-		$this->assertSame('substantial', $resolver->requiredTrust(site: ['slug' => 'gemeente-x'], binding: $this->binding(), render: $render));
+		$this->assertSame(expected: $expected, actual: $render['fee']);
+		$trust = $resolver->requiredTrust(site: ['slug' => 'gemeente-x'], binding: $this->binding(), render: $render);
+		$this->assertSame(expected: 'substantial', actual: $trust);
 	}//end testTheRenderCarriesTheFormsFee()
 
 	public function testTheFormsSignInLevelIsCarriedToTheRender(): void {

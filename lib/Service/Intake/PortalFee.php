@@ -99,7 +99,11 @@ class PortalFee implements PortalFeeInterface {
 			$form = $form();
 		}
 
-		$own = (is_array($form) === true) ? ($form['fee'] ?? null) : null;
+		$own = null;
+		if (is_array($form) === true) {
+			$own = ($form['fee'] ?? null);
+		}
+
 		if (is_array($own) === false || isset($own['amount']) === false) {
 			return $declared;
 		}
@@ -129,7 +133,11 @@ class PortalFee implements PortalFeeInterface {
 			return (string)$amount;
 		}
 
-		return (is_string($amount) === true) ? $amount : '';
+		if (is_string($amount) === true) {
+			return $amount;
+		}
+
+		return '';
 	}//end amountText()
 
 	/**

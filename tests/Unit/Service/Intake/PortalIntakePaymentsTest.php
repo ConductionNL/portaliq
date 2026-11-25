@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\PortalFeeInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
 use OCA\Portaliq\Service\CaseTypeReader;
 use OCA\Portaliq\Service\Intake\DestinationLookup;
 use OCA\Portaliq\Service\Intake\PortalFee;
 use OCA\Portaliq\Service\Intake\PortalIntakePayments;
+use OCA\Portaliq\Service\Intake\PublishedFormFee;
 use OCA\Portaliq\Service\PortalActionForwarder;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCP\Http\Client\IResponse;
@@ -59,11 +61,11 @@ class PortalIntakePaymentsTest extends TestCase {
 	/**
 	 * The service over the doubles.
 	 *
-	 * @param PortalFee|null $fees The fee reader, the default double when null.
+	 * @param PortalFeeInterface|null $fees The fee reader, the default double when null.
 	 *
 	 * @return PortalIntakePayments
 	 */
-	private function payments(?PortalFee $fees = null): PortalIntakePayments {
+	private function payments(?PortalFeeInterface $fees = null): PortalIntakePayments {
 		$deepLinks = $this->createMock(PortalDeepLinkBuilder::class);
 		$deepLinks->method('forSite')->willReturn('https://portal.example/?portal=zuid');
 
@@ -168,32 +170,26 @@ class PortalIntakePaymentsTest extends TestCase {
 	 * type's pay action, so it forwards what the form page showed.
 	 *
 	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t09
+	 *
+	 * @return void
 	 */
 	public function testThePayRouteChargesTheFormsFee(): void {
 		$this->lookup->method('find')->willReturn($this->found());
-		$reader = $this->createMock(CaseTypeReader::class);
+		$reader = $this->createMock(originalClassName: CaseTypeReader::class);
 		$reader->method('readCaseType')->willReturn(['portalFee' => ['amount' => '38.50', 'currency' => 'EUR', 'payAction' => 'pay']]);
-		$forms = $this->createMock(PortalFormBindingResolverInterface::class);
-		$forms->expects($this->once())->method('publishedForm')->with($this->found()['binding'])->willReturn(['fee' => ['amount' => 25, 'currency' => 'EUR', 'description' => 'Leges']]);
-		$this->forwarder->expects($this->once())->method('forward')->with(
-			['id' => 'pay'],
-			self::SUBJECT,
-			$this->callback(static fn (array $body): bool => (string)$body['amount'] === '25.00' && $body['currency'] === 'EUR')
-		)->willReturn($this->okResponse());
+		$forms    = $this->createMock(originalClassName: PortalFormBindingResolverInterface::class);
+		$formFee  = ['fee' => ['amount' => 25, 'currency' => 'EUR', 'description' => 'Leges']];
+		$forms->expects($this->once())->method('publishedForm')->with($this->found()['binding'])->willReturn($formFee);
+		$charged  = static fn (array $body): bool => (string) $body['amount'] === '25.00' && $body['currency'] === 'EUR';
+		$this->forwarder->expects($this->once())->method('forward')
+			->with(['id' => 'pay'], self::SUBJECT, $this->callback(callback: $charged))
+			->willReturn($this->okResponse());
 		$this->forwarder->method('decodeBody')->willReturn(['checkoutUrl' => 'https://pay.example/c']);
 
-		$deepLinks = $this->createMock(PortalDeepLinkBuilder::class);
-		$deepLinks->method('forSite')->willReturn('https://portal.example/?portal=zuid');
-		$payments = new PortalIntakePayments(
-			lookup: $this->lookup,
-			fees: new PortalFee($reader),
-			registry: $this->registry,
-			forwarder: $this->forwarder,
-			deepLinks: $deepLinks,
-			forms: $forms
-		);
+		$fees     = new PublishedFormFee(fees: new PortalFee(caseTypes: $reader), forms: $forms);
+		$response = $this->payments(fees: $fees)->start(subject: self::SUBJECT, site: self::SITE, reference: '2026-0042');
 
-		$this->assertSame(200, $payments->start(self::SUBJECT, self::SITE, '2026-0042')->getStatus());
+		$this->assertSame(expected: 200, actual: $response->getStatus());
 	}//end testThePayRouteChargesTheFormsFee()
 
 	public function testProviderFailures(): void {
