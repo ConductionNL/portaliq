@@ -59,6 +59,60 @@ function publishedItems(data, portal) {
 }
 
 /**
+ * The library's address for one item's files.
+ *
+ * @param {string} id The item id.
+ * @return {string} The path relative to the Nextcloud root.
+ */
+function filesPath(id) {
+	return (
+		'/apps/openregister/api/objects/portaliq/media/'
+		+ encodeURIComponent(id)
+		+ '/files'
+	)
+}
+
+/**
+ * The name of the file an item serves: the newest one, as the public media
+ * route streams the newest (lib/Service/Cms/MediaFile.php).
+ *
+ * @param {object} data The files answer's data.
+ * @return {string} The file name, or '' when the item has no file.
+ * @spec openspec/changes/admin-dialogs-board-look/specs/admin-dialogs-board-look/spec.md#requirement-the-media-picker-draws-the-library-as-cards
+ */
+export function newestFileName(data) {
+	const files = Array.isArray(data?.results) ? data.results : []
+	let newest = null
+	for (const file of files) {
+		if (newest === null || Number(file?.id) > Number(newest?.id)) {
+			newest = file
+		}
+	}
+	return String(newest?.title || newest?.name || '')
+}
+
+/**
+ * The address of an image's thumbnail: the public media route of its portal,
+ * which serves a published item only.
+ *
+ * @param {object} item A listed item.
+ * @param {string} portal The portal slug.
+ * @return {string} The path relative to the Nextcloud root, or '' for a file.
+ * @spec openspec/changes/admin-dialogs-board-look/specs/admin-dialogs-board-look/spec.md#requirement-the-media-picker-draws-the-library-as-cards
+ */
+export function thumbnailPath(item, portal) {
+	if (!item || item.kind !== 'image' || !item.id) {
+		return ''
+	}
+	return (
+		'/apps/portaliq/api/content/media/'
+		+ encodeURIComponent(item.id)
+		+ '?'
+		+ new URLSearchParams({ portal }).toString()
+	)
+}
+
+/**
  * The library reader over an injected transport.
  *
  * @param {object} deps The collaborators.
@@ -85,6 +139,23 @@ export function createMediaLibrary({ get }) {
 				return { state: items.length ? 'ready' : 'empty', items }
 			} catch {
 				return { state: 'error', items: [] }
+			}
+		},
+
+		/**
+		 * The name of the file an item serves; '' when it has none or the
+		 * read fails, so a card still shows its title and alt text.
+		 *
+		 * @param {string} id The item id.
+		 * @return {Promise<string>}
+		 * @spec openspec/changes/admin-dialogs-board-look/specs/admin-dialogs-board-look/spec.md#requirement-the-media-picker-draws-the-library-as-cards
+		 */
+		async fileName(id) {
+			try {
+				const { data } = await get(filesPath(id))
+				return newestFileName(data)
+			} catch {
+				return ''
 			}
 		},
 	}

@@ -3817,7 +3817,8 @@
         "Changed on": "Gewijzigd op",
         "Form submits that failed: %1$s": "Mislukte formulierinzendingen: %1$s",
         "%1$s submits on %2$s did not reach their destination in the past 24 hours. The residents kept their answers and saw the error code.": "%1$s inzendingen op %2$s zijn de afgelopen 24 uur niet aangekomen. De inwoners hielden hun antwoorden en zagen de foutcode.",
-        "Form submits that failed": "Mislukte formulierinzendingen"
+        "Form submits that failed": "Mislukte formulierinzendingen",
+        "Media library": "Mediabibliotheek"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

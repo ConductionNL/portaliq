@@ -85,3 +85,21 @@ test('the invite, issue and media dialogs carry the boards\' context line', () =
 	assert.equal(nl['{title}, choose media'], '{title}, media kiezen')
 	assert.equal(nl['Choose media'], 'Media kiezen')
 })
+
+test('the media picker draws the library as selectable cards with one action bar', () => {
+	const source = read('src/dialogs/MediaPickerDialog.vue')
+	assert.match(source, /class="media__grid"/, 'the library is a grid')
+	assert.match(source, /grid-template-columns: repeat\(auto-fill, minmax\(200px, 1fr\)\)/, 'three cards a row in the 720px dialog')
+	assert.match(source, /:aria-pressed="item\.id === selectedId/, 'a card says whether it is selected')
+	assert.match(source, /class="media__thumb"[\s\S]*?:alt="item\.alt"/, 'the thumbnail carries the alt text')
+	assert.match(source, /data-testid="media-picker-name"/, 'a card names its file')
+	assert.match(source, /data-testid="media-picker-alt"/, 'a card shows its alt text')
+	const bar = source.slice(source.indexOf('data-testid="media-picker-bar"'))
+	assert.ok(source.indexOf('data-testid="media-picker-bar"') > source.indexOf('class="media__grid"'), 'the action bar stands under the grid')
+	for (const id of ['media-picker-hero', 'media-picker-share', 'media-picker-reference']) {
+		assert.ok(bar.includes(`data-testid="${id}"`), `${id} is in the action bar`)
+	}
+	assert.match(bar, /v-if="selected\.kind === 'image'"/, 'only an image offers the page images')
+	assert.match(source, /role="status"[\s\S]*?Copied\. Paste it into a text widget\./, 'copying is announced')
+	assert.match(source, /this\.selectedId = item\.id/, 'pressing a card selects only that card')
+})
