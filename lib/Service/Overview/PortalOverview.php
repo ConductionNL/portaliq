@@ -33,6 +33,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalOverviewInterface;
 use OCA\Portaliq\Service\Availability\AvailabilityReport;
 use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
+use OCA\Portaliq\Service\Traffic\TrafficReportDefinitions;
 use OCA\Portaliq\Service\Traffic\TrafficReportNumbers;
 
 /**
@@ -65,7 +66,9 @@ class PortalOverview implements PortalOverviewInterface {
 	/**
 	 * Traffic of every published portal over the last days, up to and
 	 * including today. Visitors are added per portal, so a person who visited
-	 * two portals counts twice.
+	 * two portals counts twice. A roll-up portal is left out: its daily
+	 * record is already the sum of its members, so adding it would count
+	 * every one of their visits a second time.
 	 *
 	 * @param int $days How many days.
 	 * @param DateTimeImmutable $now The moment asked for.
@@ -82,7 +85,7 @@ class PortalOverview implements PortalOverviewInterface {
 		$to    = $today->format('Y-m-d');
 
 		$folds = [];
-		foreach ($this->published() as $owner) {
+		foreach ($this->measured() as $owner) {
 			$folds[] = [$owner, $this->numbers->fold(records: $this->traffic->dailyBetween(portal: $owner['portal'], from: $from, to: $to))];
 		}
 
@@ -101,16 +104,51 @@ class PortalOverview implements PortalOverviewInterface {
 	 * @return array<int, array{portal: string, title: string}>
 	 */
 	private function published(): array {
-		$owners = [];
-		foreach ($this->portals->allPublishedPortals() as $portal) {
-			$slug = (string)($portal['slug'] ?? '');
-			if ($slug !== '') {
-				$owners[] = ['portal' => $slug, 'title' => (string)($portal['title'] ?? $slug)];
+		return array_column(array: $this->publishedRecords(), column_key: 0);
+	}//end published()
+
+	/**
+	 * The published portals that measure their own visitors: every one but
+	 * a roll-up (a non-empty `traffic.rollupOf`), whose record is the sum of
+	 * its members.
+	 *
+	 * @return array<int, array{portal: string, title: string}>
+	 *
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+	 */
+	private function measured(): array {
+		$reports = new TrafficReportDefinitions();
+		$owners  = [];
+		foreach ($this->publishedRecords() as [$owner, $portal]) {
+			$traffic = $portal['traffic'] ?? null;
+			if (is_array($traffic) === true
+				&& $reports->rollupOf(value: ($traffic['rollupOf'] ?? null), self: $owner['portal']) !== []
+			) {
+				continue;
 			}
+
+			$owners[] = $owner;
 		}
 
 		return $owners;
-	}//end published()
+	}//end measured()
+
+	/**
+	 * Every published portal with a slug, as [owner, record] pairs.
+	 *
+	 * @return array<int, array{0: array{portal: string, title: string}, 1: array<string, mixed>}>
+	 */
+	private function publishedRecords(): array {
+		$records = [];
+		foreach ($this->portals->allPublishedPortals() as $portal) {
+			$slug = (string)($portal['slug'] ?? '');
+			if ($slug !== '') {
+				$records[] = [['portal' => $slug, 'title' => (string)($portal['title'] ?? $slug)], $portal];
+			}
+		}
+
+		return $records;
+	}//end publishedRecords()
 
 	/**
 	 * The page views, sessions, visitors and engaged sessions of every portal, added.

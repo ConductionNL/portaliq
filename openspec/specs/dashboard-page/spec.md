@@ -97,3 +97,7 @@ The dashboard SHALL show the visitors of the last 7 days and last month's availa
 #### Scenario: Not an administrator
 - **WHEN** a user who is not an administrator asks an overview route
 - **THEN** Nextcloud refuses it before any record is read
+
+#### Scenario: A roll-up portal is not counted twice
+- **GIVEN** a published roll-up portal whose traffic is the sum of two member portals
+- **THEN** the overview's figures and most viewed pages count the members once and leave the roll-up out
