@@ -66,6 +66,14 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 	private const DEFAULT_FORM_SCHEMA = 'registrationForm';
 
 	/**
+	 * The property of a published form that names the case type it serves:
+	 * buildiq's `registrationForm` calls it `typeValue` (beside `typeProperty`).
+	 * Asking for `caseType`, a property that schema does not declare, found no
+	 * form at all (found live, 25 Nov 2026).
+	 */
+	private const FORM_TYPE_FIELD = 'typeValue';
+
+	/**
 	 * Reads the fields of a published form.
 	 *
 	 * @var PortalFormFields
@@ -639,13 +647,28 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 		return $this->reader->readCollection(
 			register: (string)($binding['formRegister'] ?? self::DEFAULT_FORM_REGISTER),
 			schema: (string)($binding['formSchema'] ?? self::DEFAULT_FORM_SCHEMA),
-			scopeField: 'caseType',
+			scopeField: self::FORM_TYPE_FIELD,
 			subjectRef: $typeId,
 			organisation: '',
 			limit: 20,
 			filter: ['audience' => $audience]
 		);
 	}//end formRows()
+
+	/**
+	 * The case type a published form row serves: buildiq's `typeValue`, or
+	 * `caseType` on a row written before.
+	 *
+	 * @param array<string, mixed> $row One form row.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md
+	 */
+	private function formTypeOf(array $row): string {
+		return (string)($row[self::FORM_TYPE_FIELD] ?? $row['caseType'] ?? '');
+	}//end formTypeOf()
 
 	/**
 	 * Whether one form row is the published form this binding asked for.
@@ -664,7 +687,7 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 	 * @spec openspec/specs/portal-intake-form/spec.md
 	 */
 	private function formAnswersTheBinding(array $row, array $binding, string $typeId, string $audience): bool {
-		if (($row['caseType'] ?? '') !== $typeId || ($row['audience'] ?? '') !== $audience) {
+		if ($this->formTypeOf(row: $row) !== $typeId || ($row['audience'] ?? '') !== $audience) {
 			return false;
 		}
 

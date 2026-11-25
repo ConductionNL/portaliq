@@ -603,8 +603,11 @@ class PortalFormBindingResolverTest extends TestCase {
 	 * @return string The form's uuid.
 	 */
 	private function seedForm(string $audience, array $fields, array $extra = []): string {
+		// buildiq's registrationForm names the type it serves in typeValue
+		// (beside typeProperty); the resolver asks for that field.
 		return $this->seedRow('registrationForm', array_merge([
-			'caseType' => 'verhuizing',
+			'typeProperty' => 'caseType',
+			'typeValue' => 'verhuizing',
 			'audience' => $audience,
 			'status' => 'published',
 			'name' => 'verhuizing-' . $audience,
