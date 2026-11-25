@@ -91,7 +91,7 @@ function planCalls(args) {
  * @param {{request: Function}} api The portal api.
  * @return {{fetchContacts: Function, contactAction: Function}} The calls.
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
  */
 export function contactsApi(api) {
 	return {

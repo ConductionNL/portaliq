@@ -131,7 +131,7 @@ export default {
 		'This message is in the e-mail, below your name.': 'Dit bericht staat in de e-mail, onder uw naam.',
 		'The person gets an e-mail with a link. The link works for 14 days.': 'De persoon krijgt een e-mail met een link. De link werkt 14 dagen.',
 		'With the link they create an account. The e-mail address is already filled in.': 'Met de link maakt hij of zij een account. Het e-mailadres staat dan al ingevuld.',
-		'Once the account is made you are each other\'s contact. You do not have to approve anything else.': 'Na het aanmaken van het account bent u elkaars contact. U hoeft niets meer goed te keuren.',
+		'Once the account is made you are contacts of each other. You do not have to approve anything else.': 'Na het aanmaken van het account bent u elkaars contact. U hoeft niets meer goed te keuren.',
 		'Does this person already have an account? Then they get no invitation, but a request to approve you.': 'Heeft deze persoon al een account? Dan krijgt hij of zij geen uitnodiging, maar een verzoek om u goed te keuren.',
 		'The person receives your invitation.': 'De ander ontvangt uw uitnodiging.',
 		'If they have no account yet, they can create one with the link. It works for 14 days.':
@@ -444,7 +444,7 @@ export default {
 		'This message is in the e-mail, below your name.': 'This message is in the e-mail, below your name.',
 		'The person gets an e-mail with a link. The link works for 14 days.': 'The person gets an e-mail with a link. The link works for 14 days.',
 		'With the link they create an account. The e-mail address is already filled in.': 'With the link they create an account. The e-mail address is already filled in.',
-		'Once the account is made you are each other\'s contact. You do not have to approve anything else.': 'Once the account is made you are each other\'s contact. You do not have to approve anything else.',
+		'Once the account is made you are contacts of each other. You do not have to approve anything else.': 'Once the account is made you are contacts of each other. You do not have to approve anything else.',
 		'Does this person already have an account? Then they get no invitation, but a request to approve you.': 'Does this person already have an account? Then they get no invitation, but a request to approve you.',
 		'The person receives your invitation.':
 			'The person receives your invitation.',

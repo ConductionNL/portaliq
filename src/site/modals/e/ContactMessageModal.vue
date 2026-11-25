@@ -95,7 +95,7 @@ export default {
 	 *
 	 * @return {void}
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	mounted() {
 		openDialog(this.$refs.dialog, this.$refs.heading)
@@ -106,7 +106,7 @@ export default {
 	 *
 	 * @return {void}
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	beforeUnmount() {
 		closeDialog(this.$refs.dialog)
@@ -118,7 +118,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 		 */
 		async submit() {
 			this.problem = ''

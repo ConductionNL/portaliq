@@ -257,7 +257,7 @@ export default {
 	computed: {
 		/**
 		 * @return {object} The contact calls over the portal api.
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		client() {
 			return contactsApi(this.api)
@@ -265,7 +265,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} Requests to answer, then invitations sent.
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		waiting() {
 			return [...this.overview.incoming, ...this.overview.outgoing]
@@ -273,7 +273,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} The contacts of the chosen role chip.
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		shown() {
 			return contactsOfRole(this.overview.contacts, this.role)
@@ -285,7 +285,7 @@ export default {
 	 *
 	 * @return {Promise<void>} Resolves when read.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 	 */
 	async mounted() {
 		await this.load()
@@ -301,7 +301,7 @@ export default {
 		 * @param {string} chip The chip.
 		 * @return {number} How many approved contacts it holds.
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		count(chip) {
 			return Number(this.overview.counts?.[chip] || 0)
@@ -313,7 +313,7 @@ export default {
 		 * @param {object} row The row.
 		 * @return {string} The date.
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		sent(row) {
 			return row.sentAt ? longDate(row.sentAt, readerLocale(this.locale)) : ''
@@ -325,7 +325,7 @@ export default {
 		 * @param {object} row The requested row.
 		 * @return {string} The role, the line and the date asked, as far as known.
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t09
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t09
 		 */
 		waitingLine(row) {
 			const who = [this.t(this.label(row.role)), row.line].filter((part) => part).join(', ')
@@ -338,7 +338,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when read.
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		async load() {
 			const overview = await this.client.fetchContacts()
@@ -355,7 +355,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when read.
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		async invited() {
 			this.inviting = false
@@ -369,7 +369,7 @@ export default {
 		 * @param {object} row The contact.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 		 */
 		openMessage(row) {
 			this.notice = ''
@@ -382,7 +382,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 		 */
 		messageSent() {
 			this.writingTo = null
@@ -398,7 +398,7 @@ export default {
 		 * @param {object} [extra] More arguments, such as `accept`.
 		 * @return {Promise<void>} Resolves when done.
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		async act(action, row, extra = {}) {
 			this.notice = ''

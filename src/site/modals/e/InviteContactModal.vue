@@ -90,7 +90,7 @@
 						{{ t('With the link they create an account. The e-mail address is already filled in.') }}
 					</li>
 					<li class="utrecht-ordered-list__item">
-						{{ t('Once the account is made you are each other\'s contact. You do not have to approve anything else.') }}
+						{{ t('Once the account is made you are contacts of each other. You do not have to approve anything else.') }}
 					</li>
 				</ol>
 			</div>
@@ -154,7 +154,7 @@ export default {
 	 *
 	 * @return {void}
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 	 */
 	mounted() {
 		openDialog(this.$refs.dialog, this.$refs.heading)
@@ -165,7 +165,7 @@ export default {
 	 *
 	 * @return {void}
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 	 */
 	beforeUnmount() {
 		closeDialog(this.$refs.dialog)
@@ -177,7 +177,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		async submit() {
 			this.problem = ''
