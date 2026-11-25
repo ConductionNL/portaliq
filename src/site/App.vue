@@ -520,6 +520,8 @@
 				:menus="footerMenus"
 				:legalLinks="legalLinks"
 				:footer="site.footer || {}"
+				:organisationType="site.organisationTypeLabel || ''"
+				:locale="locale"
 				:addressOf="hrefForRoute"
 				@navigate="go" />
 			<WidgetGrid

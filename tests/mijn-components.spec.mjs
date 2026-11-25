@@ -28,6 +28,7 @@ import {
 	taskRows,
 } from '../src/site/components/mijn/rows.js'
 import strings from '../src/site/components/mijn/strings.js'
+import { organisationKindLine } from '../src/site/lib/footerLine.js'
 import { collectionIdsFor } from '../src/site/pages/collections/collectionLoader.js'
 import { resolveBlocks } from '../src/site/pages/collections/pageBlocks.js'
 import { instance, inState } from './support/page-instance.mjs'
@@ -537,6 +538,14 @@ test('a water authority is not called a municipality', () => {
 	assert.equal(organisationKind('gemeente', 'nl'), 'de gemeente')
 	assert.equal(strings.nl['From {organisation}'], 'Van {organisation}')
 	assert.equal(strings.nl['From the municipality'], undefined)
+})
+
+test('the footer line names the kind with its article, and nothing without a type', () => {
+	assert.equal(organisationKindLine('waterschap', 'nl'), 'Een website van het waterschap')
+	assert.equal(organisationKindLine('Provincie', 'nl-NL'), 'Een website van de provincie')
+	assert.equal(organisationKindLine('', 'nl'), '')
+	assert.equal(organisationKindLine('  ', 'nl'), '')
+	assert.equal(organisationKindLine('waterschap', 'en'), '')
 })
 
 test('no type reads van de organisatie', () => {
