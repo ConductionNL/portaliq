@@ -689,7 +689,10 @@ OC.L10N.register(
         "The form this widget is bound to no longer exists.": "The form this widget is bound to no longer exists.",
         "The fields of this form could not be read or saved.": "The fields of this form could not be read or saved.",
         "Variables": "Variables",
-        "Changed on": "Changed on"
+        "Changed on": "Changed on",
+        "Form submits that failed: %1$s": "Form submits that failed: %1$s",
+        "%1$s submits on %2$s did not reach their destination in the past 24 hours. The residents kept their answers and saw the error code.": "%1$s submits on %2$s did not reach their destination in the past 24 hours. The residents kept their answers and saw the error code.",
+        "Form submits that failed": "Form submits that failed"
     },
     "nplurals=2; plural=(n != 1);"
 )
