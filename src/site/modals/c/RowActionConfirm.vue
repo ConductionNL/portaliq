@@ -303,7 +303,7 @@ export default {
 
 		/**
 		 * @return {object|null} The action's `files` declaration while the dialog asks, else null.
-		 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 		 */
 		fileSlot() {
 			const files = this.action.files
@@ -312,7 +312,7 @@ export default {
 
 		/**
 		 * @return {string} The hint id, and the error id when there is an error.
-		 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 		 */
 		fileHintIds() {
 			const hint = `rowaction-files-hint-${this.action.id}`
@@ -370,7 +370,7 @@ export default {
 		 * Keep the files the resident chose.
 		 *
 		 * @param {Event} event The change event of the file input.
-		 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 		 */
 		pickFiles(event) {
 			this.files = Array.from(event?.target?.files || [])
@@ -381,7 +381,7 @@ export default {
 		 * Check the number and size of the chosen files before anything is sent.
 		 *
 		 * @return {boolean} True when the files may go.
-		 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 		 */
 		checkFiles() {
 			const { max, maxBytes } = this.fileSlot

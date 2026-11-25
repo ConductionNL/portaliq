@@ -47,7 +47,7 @@ interface RowActionFilesInterface {
 	 *
 	 * @return array{files: list<array{name: string, type: string, tmp_name: string, size: int}>, error: string|null}
 	 *
-	 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 	 */
 	public function collect(array $action, IRequest $request): array;
 }//end interface

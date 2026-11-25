@@ -88,7 +88,7 @@ interface PortalActionForwarderInterface {
 	 * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
 	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-frozen-assertion-wire-format
 	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-every-call-to-this-instance-goes-through-one-loopback-service
-	 * @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 	 */
 	public function forward(array $action, array $subject, ?array $whitelisted = null, string $scopeValue = '', array $files = []): ?IResponse;
 
