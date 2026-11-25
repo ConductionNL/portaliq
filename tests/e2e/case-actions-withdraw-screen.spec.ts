@@ -24,6 +24,14 @@ const ADMIN = Buffer.from('admin:admin').toString('base64')
 const ORGANISATION = 'dev-org'
 
 /**
+ * What the current test seeded, removed after it. The portal reads ONE active
+ * portalPage per audience and takes the lowest id when several are active, so
+ * a page left behind can shadow the page the next test (or the next spec)
+ * seeds, and that test then reads "Deze zaak is niet van u".
+ */
+const created: string[] = []
+
+/**
  * Create one object through OpenRegister's own object API, as the dev admin.
  *
  * @param request The request fixture.
@@ -50,13 +58,6 @@ async function seed(
 	return id
 }
 
-/**
- * What the current test seeded, removed after it. The portal reads ONE active
- * portalPage per audience and takes the lowest id when several are active, so
- * a page left behind can shadow the page the next test (or the next spec)
- * seeds, and that test then reads "Deze zaak is niet van u".
- */
-const created: string[] = []
 
 /**
  * A case type, a contribution showing the cases with the case screen, and one
