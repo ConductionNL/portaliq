@@ -12566,7 +12566,7 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "contact-page-question-form-and-not-found",
-				"requirement": "openspec/changes/contact-page-question-form-and-not-found/specs/site-contact/spec.md :: A resident can ask a question without a case (REQ-SCN-001)",
+				"requirement": "openspec/specs/site-contact/spec.md :: A resident can ask a question without a case (REQ-SCN-001)",
 				"plan": [
 					"contact-question-form-names-its-action",
 					"contact-question-form-reads-dutch"
@@ -12953,7 +12953,7 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "contact-page-question-form-and-not-found",
-				"requirement": "openspec/changes/contact-page-question-form-and-not-found/specs/site-chrome/spec.md :: The not-found page offers a way on (REQ-SCN-004)"
+				"requirement": "openspec/specs/site-chrome/spec.md :: The not-found page offers a way on (REQ-SCN-004)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -12989,7 +12989,7 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"spec": "openspec/specs/portaliq-cms",
-				"requirement": "openspec/changes/contact-page-question-form-and-not-found/specs/site-contact/spec.md :: The example contact page follows the Contact board (REQ-SCN-003)",
+				"requirement": "openspec/specs/site-contact/spec.md :: The example contact page follows the Contact board (REQ-SCN-003)",
 				"plan": [
 					"contact-question-form-names-its-action",
 					"contact-question-form-reads-dutch"

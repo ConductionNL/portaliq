@@ -27,7 +27,7 @@ use RuntimeException;
  * gets "We have received your question", naming the subject and never the
  * question text, at their confirmed address and nowhere else.
  *
- * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t02
  */
 class ContactConfirmationMailerTest extends TestCase {
 
