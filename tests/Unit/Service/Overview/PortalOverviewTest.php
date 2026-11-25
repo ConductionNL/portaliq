@@ -21,7 +21,7 @@ use PHPUnit\Framework\TestCase;
 /**
  * The dashboard's figures of all published portals together.
  *
- * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+ * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
  */
 class PortalOverviewTest extends TestCase {
 	/**
@@ -30,7 +30,7 @@ class PortalOverviewTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
 	 */
 	public function testTrafficOfAllPortalsAddsUp(): void {
 		$asked = [];
@@ -59,11 +59,52 @@ class PortalOverviewTest extends TestCase {
 	}//end testTrafficOfAllPortalsAddsUp()
 
 	/**
+	 * A roll-up portal's record is the sum of its members, so the overview
+	 * leaves it out of the traffic: its members' visits count once, not twice.
+	 * A portal whose `rollupOf` names only itself is not a roll-up.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+	 */
+	public function testARollupPortalIsNotCountedAgain(): void {
+		$asked = [];
+		$traffic = $this->createMock(originalClassName: TrafficEventStore::class);
+		$traffic->method('dailyBetween')->willReturnCallback(
+			function (string $portal, string $from, string $to) use (&$asked): array {
+				$asked[] = $portal;
+				$page = ['path' => '/', 'views' => 42, 'entrances' => 9, 'exits' => 9, 'avgEngagementSeconds' => 1.0];
+				return [['portal' => $portal, 'date' => $to, 'pageViews' => 42, 'sessions' => 9, 'visitors' => 9, 'engagedSessions' => 9, 'pages' => [$page]]];
+			}
+		);
+		$portals = $this->createMock(originalClassName: PublishedPortals::class);
+		$portals->method('allPublishedPortals')->willReturn(
+			value: [
+				['slug' => 'tilburg', 'title' => 'Tilburg'],
+				['slug' => 'samen', 'title' => 'Samen', 'traffic' => ['enabled' => true, 'rollupOf' => ['tilburg', 'venray']]],
+				['slug' => 'eigen', 'title' => 'Eigen', 'traffic' => ['enabled' => true, 'rollupOf' => ['eigen']]],
+			]
+		);
+		$overview = new PortalOverview(
+			portals: $portals,
+			traffic: $traffic,
+			numbers: new TrafficReportNumbers(),
+			availability: new AvailabilityReport(store: $this->createMock(originalClassName: AvailabilityStore::class))
+		);
+
+		$figures = $overview->traffic(days: 7, now: new DateTimeImmutable(datetime: '2026-10-07T09:00:00+00:00'));
+
+		$this->assertSame(expected: ['tilburg', 'eigen'], actual: $asked);
+		$this->assertSame(expected: [84, 18], actual: [$figures['pageViews'], $figures['visitors']]);
+		$this->assertSame(expected: ['tilburg', 'eigen'], actual: array_column(array: $figures['pages'], column_key: 'portal'));
+	}//end testARollupPortalIsNotCountedAgain()
+
+	/**
 	 * No traffic reads as zeros and no engaged share, never a division by zero.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
 	 */
 	public function testNoTrafficHasNoEngagedShare(): void {
 		$traffic = $this->createMock(originalClassName: TrafficEventStore::class);
@@ -82,7 +123,7 @@ class PortalOverviewTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
 	 */
 	public function testAvailabilityOfLastMonthPerPortalAndTogether(): void {
 		$store = $this->createMock(originalClassName: AvailabilityStore::class);

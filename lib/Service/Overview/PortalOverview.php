@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+ * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
  */
 
 declare(strict_types=1);
@@ -33,12 +33,13 @@ use OCA\Portaliq\Kernel\Contracts\PortalOverviewInterface;
 use OCA\Portaliq\Service\Availability\AvailabilityReport;
 use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\Traffic\TrafficEventStore;
+use OCA\Portaliq\Service\Traffic\TrafficReportDefinitions;
 use OCA\Portaliq\Service\Traffic\TrafficReportNumbers;
 
 /**
  * Folds the figures of all published portals into one overview.
  *
- * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+ * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
  */
 class PortalOverview implements PortalOverviewInterface {
 	/**
@@ -53,19 +54,23 @@ class PortalOverview implements PortalOverviewInterface {
 	 * @param TrafficEventStore $traffic The daily traffic records.
 	 * @param TrafficReportNumbers $numbers Folds daily records into totals.
 	 * @param AvailabilityReport $availability The monthly availability per portal.
+	 * @param TrafficReportDefinitions $reports Reads a portal's `traffic.rollupOf`.
 	 */
 	public function __construct(
 		private readonly PublishedPortals $portals,
 		private readonly TrafficEventStore $traffic,
 		private readonly TrafficReportNumbers $numbers,
 		private readonly AvailabilityReport $availability,
+		private readonly TrafficReportDefinitions $reports = new TrafficReportDefinitions(),
 	) {
 	}//end __construct()
 
 	/**
 	 * Traffic of every published portal over the last days, up to and
 	 * including today. Visitors are added per portal, so a person who visited
-	 * two portals counts twice.
+	 * two portals counts twice. A roll-up portal is left out: its daily
+	 * record is already the sum of its members, so adding it would count
+	 * every one of their visits a second time.
 	 *
 	 * @param int $days How many days.
 	 * @param DateTimeImmutable $now The moment asked for.
@@ -74,7 +79,7 @@ class PortalOverview implements PortalOverviewInterface {
 	 *                              `engagedSessions`, `engagedShare` (percent, null without sessions)
 	 *                              and `pages` (`path`, `portal`, `title`, `views`).
 	 *
-	 * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
 	 */
 	public function traffic(int $days, DateTimeImmutable $now): array {
 		$today = $now->setTimezone(new DateTimeZone('UTC'))->setTime(0, 0);
@@ -82,7 +87,7 @@ class PortalOverview implements PortalOverviewInterface {
 		$to    = $today->format('Y-m-d');
 
 		$folds = [];
-		foreach ($this->published() as $owner) {
+		foreach ($this->published(withRollups: false) as $owner) {
 			$folds[] = [$owner, $this->numbers->fold(records: $this->traffic->dailyBetween(portal: $owner['portal'], from: $from, to: $to))];
 		}
 
@@ -98,15 +103,29 @@ class PortalOverview implements PortalOverviewInterface {
 	 * Every published portal with a slug, as its `portal` and `title`; a
 	 * portal without a title is named by its slug.
 	 *
+	 * @param bool $withRollups Whether roll-up portals (a non-empty
+	 *                          `traffic.rollupOf`) are listed too.
+	 *
 	 * @return array<int, array{portal: string, title: string}>
+	 *
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
 	 */
-	private function published(): array {
+	private function published(bool $withRollups = true): array {
 		$owners = [];
 		foreach ($this->portals->allPublishedPortals() as $portal) {
 			$slug = (string)($portal['slug'] ?? '');
-			if ($slug !== '') {
-				$owners[] = ['portal' => $slug, 'title' => (string)($portal['title'] ?? $slug)];
+			if ($slug === '') {
+				continue;
 			}
+
+			$traffic = $portal['traffic'] ?? null;
+			if ($withRollups === false && is_array($traffic) === true
+				&& $this->reports->rollupOf(value: ($traffic['rollupOf'] ?? null), self: $slug) !== []
+			) {
+				continue;
+			}
+
+			$owners[] = ['portal' => $slug, 'title' => (string)($portal['title'] ?? $slug)];
 		}
 
 		return $owners;
@@ -175,7 +194,7 @@ class PortalOverview implements PortalOverviewInterface {
 	 *                              `outageMinutes`, `lastOutage` and `portals` (`portal`, `title`,
 	 *                              `percentage`).
 	 *
-	 * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
 	 */
 	public function availability(DateTimeImmutable $now): array {
 		$reports = $this->lastMonthReports(now: $now);

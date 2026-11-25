@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+ * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCP\IRequest;
 /**
  * Figures of all published portals together, for the dashboard.
  *
- * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+ * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
  */
 class PortalOverviewController extends Controller {
 	/**
@@ -73,7 +73,7 @@ class PortalOverviewController extends Controller {
 	 *       same posture as the traffic summary. Nextcloud checks it before
 	 *       this method runs; admin-only is the absence of an opt-out attribute.
 	 *
-	 * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
 	 */
 	public function traffic(string $days = ''): JSONResponse {
 		if ($days === '') {
@@ -98,7 +98,7 @@ class PortalOverviewController extends Controller {
 	 * @auth admin-only availability is an operator's surface, the same posture
 	 *       as the availability report.
 	 *
-	 * @spec openspec/changes/dashboard-figures-across-portals/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
+	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
 	 */
 	public function availability(): JSONResponse {
 		$response = new JSONResponse($this->overview->availability(now: $this->now()));
