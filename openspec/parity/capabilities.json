@@ -12842,8 +12842,8 @@
 				"owner": "ConductionNL/portaliq",
 				"change": "personal-action-list",
 				"requirement": [
-					"openspec/changes/personal-action-list/specs/resident-actions/spec.md :: A resident keeps a list of own actions (REQ-RAL-001)",
-					"openspec/changes/personal-action-list/specs/resident-actions/spec.md :: The assignee gets a reminder before the end date (REQ-RAL-003)"
+					"openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md :: A resident keeps a list of own actions (REQ-RAL-001)",
+					"openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md :: The assignee gets a reminder before the end date (REQ-RAL-003)"
 				]
 			},
 			"provider": "portaliq",

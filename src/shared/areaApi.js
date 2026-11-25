@@ -280,7 +280,7 @@ export function plansApi(api) {
  * @param {{request: Function}} api The portal api.
  * @return {object} The calls.
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
  */
 export function actionsApi(api) {
 	const path = (id, rest = '', plan = '') => {
