@@ -51,18 +51,36 @@ run on `origin/development` first and seen red.
 
 ## 5. Live
 
-- [ ] 5.1 Live check after merge on the dev instance: a publication with a PDF, a CSV and an open comment
+- [x] 5.1 Live check after merge on the dev instance: a publication with a PDF, a CSV and an open comment
   period. Record the document page, the ZIP download status and the period line.
+  — done 25 Nov 2026 (live-portaliq-1) on a sandbox Nextcloud 34.0.6 + MariaDB with OpenRegister main,
+  opencatalogi, dossiq, pipelinq and portaliq development and the Zuiddrecht example set: the public
+  publication "Overeenkomst levering en plaatsing verlichting fietspad Lindelaan" with its two PDFs, a
+  CSV added and published as sandbox seed, and a comment period opened 20 Nov 2026 to 1 Jan 2027
+  (zienswijze). The page reads "Reageren kan tot en met 4 januari 2027" (1 January rolled to the next
+  working day) (REQ-PDC-005) and "Download alles (3 documenten)"; that ZIP answers 200
+  `application/zip` with the three files under Bijlagen/ and a summary PDF (REQ-PDC-003). Each document
+  row offers Downloaden, Details, Metadata (JSON) and Metadata (DiWoo XML) (REQ-PDC-004), and Bekijken
+  (opens in a new tab) for the PDFs only (REQ-PDC-001). The document page
+  `/document/<publication>/<file>` reads "Onderdeel van" the publication, the file name, Bestandstype PDF
+  or CSV and Grootte, with Bekijken (PDF), Downloaden and both metadata links (REQ-PDC-002). Seen, not
+  this change's: the publication page ends with an "Alle gegevens" table in raw English field names
+  and ids (Title, Organization <uuid>, Themes <uuids>, Unlist), which publication-page-all-details 1.4
+  owns.
 
 ## 6. Verify and deliver
 
 - [x] 6.1 `TMPDIR` set to a sibling directory beside the clone.
 - [x] 6.2 While building, run `node --test` on the touched node tests.
-- [ ] 6.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
+- [x] 6.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n`, `npm run check:manifest`,
   `npm run check:specs` and `npm run build:site`, plus any other leg `code-quality.yml` requires. Then
   hydra's `scripts/run-hydra-gates.sh --base origin/development`; count the gates that ran.
-- [ ] 6.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
-- [ ] 6.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
+- [x] 6.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
+- [x] 6.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. The rows then read `yes` (build), 6.4 fully only with
   `files-preview-in-place` in the pinned library, and `production` only with a store release.
+
+> 6.3 to 6.5 for the live round (25 Nov 2026, live-portaliq-1): this round changes only openspec files
+> and `@spec` paths, so no new statements and no coverage arithmetic; hydra diff-check with only the
+> inherited gate-23 finding; one PR on development, merged.

@@ -35,7 +35,7 @@
  * target comes from BASE_URL (see tests/e2e/base-url.ts); the portal from
  * PORTALIQ_E2E_PORTAL (see tests/e2e/portal-nav.ts).
  *
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 
 import type { Page } from '@playwright/test'

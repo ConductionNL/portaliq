@@ -1471,7 +1471,7 @@ export default {
 		/**
 		 * @return {{publicationId: string, documentId: string}|null} The ids of the
 		 *   document page on screen, or null on any other route.
-		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
 		 */
 		documentRoute() {
 			return documentRouteOf(this.route)
@@ -2508,7 +2508,7 @@ export default {
 		 * or null on any other route.
 		 *
 		 * @return {string|null} The label.
-		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
 		 */
 		ownRouteCrumbLabel() {
 			const own = [
@@ -2524,7 +2524,7 @@ export default {
 		 *
 		 * @param {string} label The current route's label.
 		 * @return {Array<object>} `{route, label, href}` crumbs, home first.
-		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
 		 */
 		homeAndHereCrumbs(label) {
 			return [
@@ -2538,7 +2538,7 @@ export default {
 		 * nothing of the document (REQ-PDC-002).
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
 		 */
 		onDocumentMissing() {
 			this.subject = null
@@ -2551,7 +2551,7 @@ export default {
 		 *
 		 * @param {{title: string}|null} subject What the page shows.
 		 * @return {void}
-		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
 		 */
 		onDocumentSubject(subject) {
 			this.subject = subject
@@ -2593,7 +2593,7 @@ export default {
 		 *
 		 * @param {string} route The in-portal route.
 		 * @return {boolean} Whether the route was one of them.
-		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
 		 */
 		openPagelessRoute(route) {
 			// The signed-in area renders from the session, not from a CMS

@@ -14277,10 +14277,10 @@
 				"state": "specified",
 				"evidence": "Not built: 0 of 11 tasks; no document route, ZIP download or metadata links in src/site.",
 				"requirement": [
-					"openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md :: Every public document has a page of its own (REQ-PDC-002)",
-					"openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md :: A document opens in the browser (REQ-PDC-001)",
-					"openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md :: The publication downloads as one archive (REQ-PDC-003)",
-					"openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md :: A document's metadata downloads beside it (REQ-PDC-004)"
+					"openspec/specs/portal-federated-search/spec.md :: Every public document has a page of its own (REQ-PDC-002)",
+					"openspec/specs/portal-federated-search/spec.md :: A document opens in the browser (REQ-PDC-001)",
+					"openspec/specs/portal-federated-search/spec.md :: The publication downloads as one archive (REQ-PDC-003)",
+					"openspec/specs/portal-federated-search/spec.md :: A document's metadata downloads beside it (REQ-PDC-004)"
 				],
 				"plan": "publication-detail-page-complete",
 				"note": "Row added 2026-11-12 in the closing round: the open change publication-detail-page-complete had no capability row (decision 395)."
