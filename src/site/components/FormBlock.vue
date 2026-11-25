@@ -64,6 +64,7 @@
 					class="utrecht-textbox utrecht-textbox--html-input pq-form__date-picker"
 					:min="dateLimit(field.earliest) || undefined"
 					:max="dateLimit(field.latest) || undefined"
+					:aria-labelledby="`${fieldElementId(field)}-label`"
 					:required="!!field.required"
 					:aria-invalid="errors[field.id] ? 'true' : undefined"
 					:aria-describedby="describedBy"
