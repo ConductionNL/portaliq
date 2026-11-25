@@ -799,7 +799,7 @@ class PortalThemeResolverTest extends TestCase {
 	 * resolves, and a portal with no theme at all, are not
 	 * (portal-theme-application, an unresolvable theme is obvious).
 	 *
-	 * @spec openspec/changes/portal-theme-application/specs/portaliq-cms/spec.md#requirement-an-unresolvable-theme-must-be-obvious-not-silently-default
+	 * @spec openspec/changes/archive/2026-11-25-portal-theme-application/specs/portaliq-cms/spec.md#requirement-an-unresolvable-theme-must-be-obvious-not-silently-default
 	 *
 	 * @return void
 	 */
@@ -815,4 +815,27 @@ class PortalThemeResolverTest extends TestCase {
 		$this->assertNotNull($resolver->stylesheetFor(theme: 'vng'), 'a theme that resolves says nothing');
 		$this->assertNull($resolver->stylesheetFor(theme: ''), 'a portal with no theme says nothing');
 	}//end testAThemeThatDoesNotResolveIsReportedByName()
+
+	/**
+	 * A named theme on an installation without the theme app names the
+	 * missing app as the cause.
+	 *
+	 * @spec openspec/changes/archive/2026-11-25-portal-theme-application/specs/portaliq-cms/spec.md#requirement-portaliq-must-declare-its-dependency-on-themiq
+	 *
+	 * @return void
+	 */
+	public function testAMissingThemeAppIsNamedAsTheCause(): void {
+		$this->appManager->method('isInstalled')->willReturn(false);
+		$this->appManager->method('isEnabledForAnyone')->willReturn(false);
+		$this->appManager->method('getAppPath')->willThrowException(new \OCP\App\AppPathNotFoundException('thematiq'));
+		$logger = $this->createMock(\Psr\Log\LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with(
+			$this->logicalAnd($this->stringContains('theme does not resolve'), $this->stringContains('thematiq or nldesign'), $this->stringContains('is not installed')),
+			['theme' => 'vng']
+		);
+
+		$resolver = new PortalThemeResolver(appManager: $this->appManager, logger: $logger);
+
+		$this->assertNull($resolver->stylesheetFor(theme: 'vng'));
+	}//end testAMissingThemeAppIsNamedAsTheCause()
 }//end class
