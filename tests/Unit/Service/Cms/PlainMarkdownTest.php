@@ -76,6 +76,48 @@ class PlainMarkdownTest extends TestCase {
 	}//end testTheSubsetRenders()
 
 	/**
+	 * A pipe table renders as a table, with inline markup in its cells, and
+	 * ends at the first line without a pipe.
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-the-server-renders-a-plain-version-of-every-public-page-req-shj-002
+	 *
+	 * @return void
+	 */
+	public function testAPipeTableRendersAsATable(): void {
+		$markdown = implode("\n", [
+			'Een tabel:',
+			'| Kolom | Waarde |',
+			'| :--- | ---: |',
+			'| **Een** | 1 |',
+			'| Twee | <b>2</b> |',
+			'Daarna tekst.',
+		]);
+
+		$this->assertSame(
+			implode("\n", [
+				'<p>Een tabel:</p>',
+				'<table><thead><tr><th>Kolom</th><th>Waarde</th></tr></thead>'
+				.'<tbody><tr><td><strong>Een</strong></td><td>1</td></tr><tr><td>Twee</td><td>&lt;b&gt;2&lt;/b&gt;</td></tr></tbody></table>',
+				'<p>Daarna tekst.</p>',
+			]),
+			(new PlainMarkdown())->render($markdown)
+		);
+	}//end testAPipeTableRendersAsATable()
+
+	/**
+	 * A line with a pipe but no delimiter row under it stays a paragraph, and
+	 * a table without body rows keeps its header.
+	 *
+	 * @return void
+	 */
+	public function testAPipeWithoutADelimiterRowIsText(): void {
+		$markdown = new PlainMarkdown();
+
+		$this->assertSame('<p>a | b'."\n".'c | d</p>', $markdown->render("a | b\nc | d"));
+		$this->assertSame('<table><thead><tr><th>a</th><th>b</th></tr></thead></table>', $markdown->render("a | b\n--- | ---"));
+	}//end testAPipeWithoutADelimiterRowIsText()
+
+	/**
 	 * A script element shows as text.
 	 *
 	 * @return void
