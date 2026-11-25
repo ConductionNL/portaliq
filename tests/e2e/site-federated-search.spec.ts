@@ -43,7 +43,7 @@
  * `/site?route=<route>`: `nlSubjectLanding` reads its slug from the last
  * path segment, because WidgetGrid.propsFor() hands it no `routeParam`.
  *
- * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  * @spec openspec/changes/search-filter-by-kind/specs/portal-federated-search/spec.md
  */
 
@@ -102,10 +102,16 @@ const PEER_PARKING: Row = {
 	},
 }
 
-/** A publication from a second peer catalogue. */
+/**
+ * A publication from a second peer catalogue. Its name carries "parkeer"
+ * itself: the stub matches by substring, and "parkeren" does not contain
+ * "parkeer", so a name without it drops this row from the 'parkeer' search
+ * S31, S32 and the kinds test count on. The document and the subject below
+ * carry it for the same reason.
+ */
 const OTHER_PEER_PARKING: Row = {
 	id: 'e2e-pfs-peer-b',
-	name: 'Parkeren bij evenementen',
+	name: 'Parkeerafspraken bij evenementen',
 	summary: 'Afspraken over parkeren rond evenementen in Horst.',
 	publicationDate: '2026-07-01T09:00:00+00:00',
 	categories: ['verkeer'],
@@ -121,7 +127,7 @@ const OTHER_PEER_PARKING: Row = {
 /** A document whose text holds the term (REQ-SFK-002, REQ-PFS-CONTENT-001). */
 const DOCUMENT_HIT: Row = {
 	id: 'd-42',
-	name: 'Bijlage geluidsscherm parkeren A2.pdf',
+	name: 'Bijlage geluidsscherm parkeerterrein A2.pdf',
 	resultType: 'document',
 	publication: { id: 'p-7', title: 'Besluit Stationsweg' },
 	'@self': { id: 'd-42', schema: 'document', relevance: 60 },
@@ -131,6 +137,8 @@ const DOCUMENT_HIT: Row = {
 const SUBJECT_HIT: Row = {
 	id: 'th-parkeren',
 	name: 'Parkeren',
+	// "parkeer" in the summary keeps the subject in the stub's 'parkeer' search.
+	summary: 'Parkeervergunningen, parkeerplaatsen en tarieven.',
 	slug: 'parkeren',
 	resultType: 'subject',
 	publicationCount: 14,
@@ -493,7 +501,7 @@ test.afterAll(async () => {
 test.describe('an anonymous visitor searches federated publications', () => {
 	test.setTimeout(120_000)
 
-	// @e2e openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#scenario-a-term-matches-a-publication
+	// @e2e openspec/specs/portal-federated-search/spec.md#scenario-a-term-matches-a-publication
 	test('S30: a term present in one publication lists it with its title and a link', async ({
 		page,
 	}) => {
@@ -514,7 +522,7 @@ test.describe('an anonymous visitor searches federated publications', () => {
 		expect(new URL(page.url()).searchParams.get('_search')).toBe('binnenstad')
 	})
 
-	// @e2e openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#scenario-the-block-mounts-at-a-public-origin
+	// @e2e openspec/specs/portal-federated-search/spec.md#scenario-the-block-mounts-at-a-public-origin
 	test('S30b: without a Nextcloud session the block asks with fetch and no CSRF token', async ({
 		page,
 	}) => {
@@ -533,7 +541,7 @@ test.describe('an anonymous visitor searches federated publications', () => {
 		await expect(page.getByTestId('federated-search-result').first()).toBeVisible()
 	})
 
-	// @e2e openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#scenario-a-federated-row-names-its-peer
+	// @e2e openspec/specs/portal-federated-search/spec.md#scenario-a-federated-row-names-its-peer
 	// REQ-SNF-001 (search-names-only-a-foreign-source): a row of this portal names no source.
 	test('S31: each row from another catalogue names its own directory, not one banner for the page', async ({
 		page,
@@ -557,7 +565,7 @@ test.describe('an anonymous visitor searches federated publications', () => {
 		).toHaveCount(0)
 	})
 
-	// @e2e openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#scenario-an-object-field-facet-produces-filters
+	// @e2e openspec/specs/portal-federated-search/spec.md#scenario-an-object-field-facet-produces-filters
 	test('S32: an object-field facet lists each category with its count and narrows the results', async ({
 		page,
 	}) => {
@@ -607,6 +615,10 @@ test.describe('an anonymous visitor searches federated publications', () => {
 
 test.describe('the results filter by kind (search-filter-by-kind)', () => {
 	test.setTimeout(120_000)
+	// The seeded portal offers nl and en, and the site follows the browser's
+	// language among those, so an en-US browser reads the kinds in English.
+	// These assertions read the Dutch names.
+	test.use({ locale: 'nl-NL' })
 
 	// REQ-SFK-001, scenario "Only subjects"; REQ-SFK-002 (a subject links to /onderwerp/{slug} with its count).
 	// search-filter-by-kind task 2.2: search a seeded term, choose "Onderwerp", open the subject.

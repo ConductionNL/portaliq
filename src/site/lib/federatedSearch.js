@@ -9,7 +9,7 @@
  * function a plain node script can import. What is left in the `.vue` file is
  * lifecycle and rendering.
  *
- * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
  */
 
 /**
@@ -243,7 +243,7 @@ export function toResult(row) {
  *
  * @param {object} row One row of the endpoint's answer.
  * @return {object} The row the block draws.
- * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
  */
 function baseResult(row) {
 	const source = row || {}
@@ -351,7 +351,7 @@ export function withKindField(fields, hideKind = false) {
  * @param {object} row One API result.
  * @return {string} 'document', 'subject' or 'publication'.
  *
- * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-a-visitors-search-reaches-the-text-inside-public-documents-req-pfs-content-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-visitors-search-reaches-the-text-inside-public-documents-req-pfs-content-001
  */
 export function resultKind(row) {
 	const word = kindWordOf(row || {})

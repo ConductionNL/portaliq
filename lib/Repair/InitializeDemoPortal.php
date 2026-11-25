@@ -69,7 +69,7 @@ use Psr\Log\LoggerInterface;
  * connect timeout, and the operator would see the installer stop with no
  * explanation.
  *
- * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
  */
 class InitializeDemoPortal implements IRepairStep {
 	/**
@@ -317,7 +317,7 @@ class InitializeDemoPortal implements IRepairStep {
 	 *
 	 * @return string The step name.
 	 *
-	 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+	 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 	 */
 	public function getName(): string {
 		return 'Provision a themed portal with search on first install';
@@ -331,7 +331,7 @@ class InitializeDemoPortal implements IRepairStep {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+	 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 	 */
 	public function run(IOutput $output): void {
 		$refusal = $this->refusal();

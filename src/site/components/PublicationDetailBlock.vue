@@ -507,7 +507,7 @@ const PUBLIC_PREVIEW = false
  * that read `window.location` would work only at the one route an author
  * happened to place it on.
  *
- * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
  */
 export default {
 	name: 'PublicationDetailBlock',
@@ -522,7 +522,7 @@ export default {
 		/**
 		 * The publication id, taken from the route by the host renderer.
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		subjectId: {
 			type: String,
@@ -638,7 +638,7 @@ export default {
 		/**
 		 * @return {string} The publication's title.
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		title() {
 			const row = this.publication || {}
@@ -767,7 +767,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		subjectId() {
 			this.load()
@@ -784,7 +784,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves once state is updated.
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-a-malformed-federated-row-must-not-blank-the-list
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-malformed-federated-row-must-not-blank-the-list
 		 */
 		async load() {
 			if (!this.subjectId) {
@@ -956,7 +956,7 @@ export default {
 		 * @param {object} row One API result.
 		 * @return {boolean} True when the row's id matches the route.
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-a-malformed-federated-row-must-not-blank-the-list
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-malformed-federated-row-must-not-blank-the-list
 		 */
 		matchesId(row) {
 			const self = (row || {})['@self'] || {}
