@@ -10,7 +10,7 @@
 // Usage:
 //   node --test tests/admin-dialogs-board-look.spec.mjs
 //
-// @spec openspec/changes/admin-dialogs-board-look/specs/admin-dialogs-board-look/spec.md
+// @spec openspec/specs/admin-dialogs-board-look/spec.md
 
 import assert from 'node:assert/strict'
 import { readdirSync, readFileSync } from 'node:fs'

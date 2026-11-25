@@ -174,7 +174,7 @@ export default {
 		 * The selected card's item, or null.
 		 *
 		 * @return {object|null}
-		 * @spec openspec/changes/admin-dialogs-board-look/specs/admin-dialogs-board-look/spec.md#requirement-the-media-picker-draws-the-library-as-cards
+		 * @spec openspec/specs/admin-dialogs-board-look/spec.md#requirement-the-media-picker-draws-the-library-as-cards
 		 */
 		selected() {
 			return this.items.find((item) => item.id === this.selectedId) || null
@@ -184,7 +184,7 @@ export default {
 		 * The context line above the title: the page and what is done for it.
 		 *
 		 * @return {string}
-		 * @spec openspec/changes/admin-dialogs-board-look/specs/admin-dialogs-board-look/spec.md#requirement-an-admin-dialog-names-where-it-was-opened
+		 * @spec openspec/specs/admin-dialogs-board-look/spec.md#requirement-an-admin-dialog-names-where-it-was-opened
 		 */
 		eyebrow() {
 			return this.pageTitle
@@ -236,7 +236,7 @@ export default {
 		 *
 		 * @param {object} item The item.
 		 * @return {void}
-		 * @spec openspec/changes/admin-dialogs-board-look/specs/admin-dialogs-board-look/spec.md#requirement-the-media-picker-draws-the-library-as-cards
+		 * @spec openspec/specs/admin-dialogs-board-look/spec.md#requirement-the-media-picker-draws-the-library-as-cards
 		 */
 		select(item) {
 			this.selectedId = item.id
@@ -248,7 +248,7 @@ export default {
 		 *
 		 * @param {object} item The item.
 		 * @return {string}
-		 * @spec openspec/changes/admin-dialogs-board-look/specs/admin-dialogs-board-look/spec.md#requirement-the-media-picker-draws-the-library-as-cards
+		 * @spec openspec/specs/admin-dialogs-board-look/spec.md#requirement-the-media-picker-draws-the-library-as-cards
 		 */
 		thumbnail(item) {
 			const path = thumbnailPath(item, this.portal)

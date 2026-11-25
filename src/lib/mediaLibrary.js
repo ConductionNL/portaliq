@@ -78,7 +78,7 @@ function filesPath(id) {
  *
  * @param {object} data The files answer's data.
  * @return {string} The file name, or '' when the item has no file.
- * @spec openspec/changes/admin-dialogs-board-look/specs/admin-dialogs-board-look/spec.md#requirement-the-media-picker-draws-the-library-as-cards
+ * @spec openspec/specs/admin-dialogs-board-look/spec.md#requirement-the-media-picker-draws-the-library-as-cards
  */
 export function newestFileName(data) {
 	const files = Array.isArray(data?.results) ? data.results : []
@@ -98,7 +98,7 @@ export function newestFileName(data) {
  * @param {object} item A listed item.
  * @param {string} portal The portal slug.
  * @return {string} The path relative to the Nextcloud root, or '' for a file.
- * @spec openspec/changes/admin-dialogs-board-look/specs/admin-dialogs-board-look/spec.md#requirement-the-media-picker-draws-the-library-as-cards
+ * @spec openspec/specs/admin-dialogs-board-look/spec.md#requirement-the-media-picker-draws-the-library-as-cards
  */
 export function thumbnailPath(item, portal) {
 	if (!item || item.kind !== 'image' || !item.id) {
@@ -148,7 +148,7 @@ export function createMediaLibrary({ get }) {
 		 *
 		 * @param {string} id The item id.
 		 * @return {Promise<string>}
-		 * @spec openspec/changes/admin-dialogs-board-look/specs/admin-dialogs-board-look/spec.md#requirement-the-media-picker-draws-the-library-as-cards
+		 * @spec openspec/specs/admin-dialogs-board-look/spec.md#requirement-the-media-picker-draws-the-library-as-cards
 		 */
 		async fileName(id) {
 			try {
