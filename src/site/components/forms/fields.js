@@ -232,6 +232,8 @@ export const DUTCH = Object.freeze({
 	statementRequired: 'Vink deze verklaring aan voordat u verstuurt.',
 	decisionDown: 'Er is een storing bij een koppeling. Uw antwoorden zijn bewaard.',
 	retry: 'Opnieuw proberen',
+	sendFailed: 'Het versturen is niet gelukt. Uw antwoorden staan nog in dit formulier.',
+	errorCode: 'Foutcode: {code}. Noem deze code als u ons belt.',
 	fetchDownTitle: 'Er is een storing',
 	fetchDown:
 		'Wij kunnen uw gegevens nu niet ophalen bij een ander systeem. Daardoor kunt u dit formulier nu niet afmaken. Probeer het later opnieuw.',

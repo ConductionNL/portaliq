@@ -106,6 +106,9 @@
         <!-- site-multi-step-forms: hourly, deletes drafts past their retention. -->
         <job>OCA\Portaliq\BackgroundJob\PortalDraftPurgeJob</job>
         <job>OCA\Portaliq\BackgroundJob\CosignDeadlineJob</job>
+        <!-- form-governance REQ-FGV-003: hourly check, one digest of failed
+             form submits a day from 07:00 to each portal's administrators. -->
+        <job>OCA\Portaliq\BackgroundJob\FormFailureDigestJob</job>
         <!-- media-usage-count: hourly, how many records of its portal use each media item. -->
         <job>OCA\Portaliq\BackgroundJob\MediaUsageJob</job>
         <!-- portal-scoping-and-auth: twice a day, re-checks the record of every

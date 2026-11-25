@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
+ * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-3
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCP\IRequest;
 /**
  * Shows the TXT record of a portal's domains and checks it.
  *
- * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
+ * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-3
  */
 class CmsDomainController extends Controller {
 	/**
@@ -72,7 +72,7 @@ class CmsDomainController extends Controller {
 	 *       `adminGroups`; any other caller gets the 404 an unknown portal gets
 	 *       (PortalAdminScope)
 	 *
-	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
+	 * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-3
 	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
 	 */
 	#[NoAdminRequired]
@@ -106,7 +106,7 @@ class CmsDomainController extends Controller {
 	 *       `adminGroups`; any other caller gets the 404 an unknown portal gets
 	 *       (PortalAdminScope)
 	 *
-	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
+	 * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-3
 	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
 	 */
 	#[NoAdminRequired]

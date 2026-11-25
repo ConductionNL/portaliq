@@ -126,4 +126,15 @@ interface PortalFormBindingResolverInterface {
 	 * @spec openspec/changes/embedded-intake-form/specs/embedded-intake-form/spec.md
 	 */
 	public function requiredTrust(array $site, array $binding, array $render): ?string;
+
+	/**
+	 * The published form a binding resolves to today, or null.
+	 *
+	 * @param array<string, mixed> $binding The binding.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t09
+	 */
+	public function publishedForm(array $binding): ?array;
 }//end interface

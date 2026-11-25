@@ -117,6 +117,14 @@ interface MailTemplateRendererInterface {
 				'reference' => 'AANVRAAG-7',
 			],
 		],
+		'form-failure-digest' => [
+			'label' => 'Form submits that failed',
+			'variables' => ['portal', 'count'],
+			'sample' => [
+				'portal' => 'Gemeente Voorbeeld',
+				'count' => '2',
+			],
+		],
 		'form-confirmation' => [
 			'label' => 'Confirmation of a request',
 			'variables' => ['portal', 'reference', 'formName'],

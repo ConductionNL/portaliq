@@ -24,8 +24,8 @@
  * context with an empty storage state and a fresh subject, so no row of an
  * earlier run is in view. The base URL comes from tests/e2e/base-url.ts.
  *
- * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#4.1
- * @spec openspec/changes/portal-controller-http-test-coverage/specs/supplier-portal/spec.md
+ * @spec openspec/changes/archive/2026-11-25-portal-controller-http-test-coverage/tasks.md#4.1
+ * @spec openspec/changes/archive/2026-11-25-portal-controller-http-test-coverage/specs/supplier-portal/spec.md
  */
 
 import type { APIRequestContext } from '@playwright/test'

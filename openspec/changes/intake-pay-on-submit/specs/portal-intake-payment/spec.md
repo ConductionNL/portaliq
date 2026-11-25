@@ -15,6 +15,14 @@ Portaliq SHALL read a request's fee only from `portalCaseType.portalFee` of
 the binding's case type. The amount forwarded to the case app SHALL be the
 declared amount, and any amount in the request body SHALL be ignored.
 
+When the published form the binding resolves to serves its own `fee`
+(buildiq `forms-fee-on-submit`, REQ-OBRF-010), the form's `amount`,
+`currency` and `description` SHALL replace the case type's, and the
+`payAction` SHALL still come from the case type's `portalFee`. A form fee on a
+case type that declares no `payAction` SHALL be no fee: there is nothing to
+take the payment. The form page, the catalogue and the pay route SHALL all
+read the same fee.
+
 #### Scenario: A resident sees the declared fee
 - **GIVEN** a parking permit form whose case type declares a fee of 38.50 EUR
 - **WHEN** a signed-in resident submits it
@@ -26,6 +34,13 @@ declared amount, and any amount in the request body SHALL be ignored.
 - **WHEN** a crafted pay request carries `amount: "0.01"`
 - **THEN** the case app receives `amount: "38.50"`
 - @e2e exclude Tamper assertion on a crafted body; pinned by PortalIntakeControllerTest::testPayForwardsTheDeclaredAmount
+
+#### Scenario: A form's own fee is the fee
+- **GIVEN** a case type whose `portalFee` declares 38.50 EUR and `payAction` `create-payment`
+- **AND** the published form for it serves `fee` 25 EUR "Leges standplaats"
+- **WHEN** a signed-in resident opens the form, reads the catalogue entry and pays
+- **THEN** all three show and forward 25.00 EUR "Leges standplaats" through `create-payment`
+- @e2e exclude Fee resolution between two declarations; pinned by PortalFeeTest::testTheFormsFeeReplacesTheAmountAndKeepsThePayAction and PortalIntakePaymentsTest::testThePayRouteChargesTheFormsFee
 
 ### Requirement: A fee-bearing form asks the visitor to sign in first (REQ-IPS-002)
 

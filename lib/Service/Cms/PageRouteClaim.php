@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-cms-admin-ui/specs/portaliq-cms/spec.md#requirement-publishing-must-refuse-content-that-would-render-broken
+ * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/specs/portaliq-cms/spec.md#requirement-publishing-must-refuse-content-that-would-render-broken
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use OCA\Portaliq\Service\RowIdLookup;
 /**
  * Finds the route a page would hold twice on its portal.
  *
- * @spec openspec/changes/portal-cms-admin-ui/specs/portaliq-cms/spec.md#requirement-publishing-must-refuse-content-that-would-render-broken
+ * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/specs/portaliq-cms/spec.md#requirement-publishing-must-refuse-content-that-would-render-broken
  */
 class PageRouteClaim {
 
@@ -46,7 +46,7 @@ class PageRouteClaim {
 	 *
 	 * @return string The duplicated route, normalised.
 	 *
-	 * @spec openspec/changes/portal-cms-admin-ui/specs/portaliq-cms/spec.md#requirement-publishing-must-refuse-content-that-would-render-broken
+	 * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/specs/portaliq-cms/spec.md#requirement-publishing-must-refuse-content-that-would-render-broken
 	 */
 	public function duplicate(array $page, string $pageId, array $others): string {
 		$route = $this->route(route: $page['route'] ?? '');

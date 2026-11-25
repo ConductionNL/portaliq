@@ -266,16 +266,21 @@ class PortalCatalogueReader implements PortalCatalogueReaderInterface {
 	}//end bindingFor()
 
 	/**
-	 * The fee the binding's case type declares, or null when it declares none or cannot be read.
+	 * The fee of the binding, or null when it has none or cannot be read: the
+	 * case type's, with the published form's own amount when it serves one
+	 * (the form is read only when the case type declares a fee).
 	 *
 	 * @param PortalFee            $fees    The fee reader.
 	 * @param array<string, mixed> $binding The binding.
 	 *
 	 * @return array{amount: string, currency: string, description: string}|null
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t09
 	 */
 	private function feeOf(PortalFee $fees, array $binding): array|null {
+		$bindings = $this->bindings;
 		try {
-			$fee = $fees->forBinding(binding: $binding);
+			$fee = $fees->forBinding(binding: $binding, form: static fn (): ?array => $bindings?->publishedForm(binding: $binding));
 		} catch (Throwable) {
 			return null;
 		}

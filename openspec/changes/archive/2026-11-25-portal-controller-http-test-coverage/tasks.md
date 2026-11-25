@@ -50,17 +50,22 @@
 
 ## 4. Playwright e2e (T13)
 
-- [ ] 4.1 `tests/e2e/portal-supplier-flow.spec.ts`: dev-login → assert `GET
+Live run 25 Nov 2026 (live-portaliq-1): `tests/e2e/portal-supplier-flow.spec.ts`
+4/4 green on a sandbox Nextcloud 34.0.6 (MariaDB, php -S) with OpenRegister
+main and portaliq development, seeded by `tests/e2e/ci-seed.sh`. The DEFERRED
+notes below are kept as history; 4.1-4.4 now run and pass.
+
+- [x] 4.1 `tests/e2e/portal-supplier-flow.spec.ts`: dev-login → assert `GET
       /portal/api/session` reflects authenticated → assert `GET
       /portal/api/contributions` lists the demo contribution. — DEFERRED:
       needs a running Nextcloud + OpenRegister instance with the dev-login
       gate open; not run as part of this apply pass (isolated worktree, no
       live instance available). Left as an explicit gap, not faked. — not run: needs a live instance
-- [ ] 4.2 Load an entitled collection → assert 200 + rendered rows in the DOM.
+- [x] 4.2 Load an entitled collection → assert 200 + rendered rows in the DOM.
       — DEFERRED, same reason as 4.1. — not run: needs a live instance
-- [ ] 4.3 Attempt a non-entitled `(register, schema)` combination directly
+- [x] 4.3 Attempt a non-entitled `(register, schema)` combination directly
       against the API → assert 403. — DEFERRED, same reason as 4.1. — not run: needs a live instance
-- [ ] 4.4 Perform a `type: create` action → assert the new row appears after
+- [x] 4.4 Perform a `type: create` action → assert the new row appears after
       the collection reload. — DEFERRED, same reason as 4.1. — not run: needs a live instance
 
 ## 5. Gates
