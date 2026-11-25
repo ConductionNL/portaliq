@@ -149,4 +149,22 @@ class PortalFormTrustLevelTest extends TestCase {
 	public function testTheStrictestLevelWins(array $site, array $binding, array $render, string $expected): void {
 		$this->assertSame(expected: $expected, actual: (new PortalFormTrustLevel())->required(site: $site, binding: $binding, render: $render));
 	}//end testTheStrictestLevelWins()
+
+	/**
+	 * A served form its maker did not open to visitors needs a session; a public
+	 * form, or one that does not say, asks nothing more (competitor-parity 17.1).
+	 *
+	 * @return void
+	 */
+	public function testAServedFormThatIsNotPublicNeedsASession(): void {
+		$level = new PortalFormTrustLevel();
+
+		$this->assertSame(expected: 'low', actual: $level->required(site: [], binding: [], render: ['isPublic' => false]));
+		$this->assertNull(actual: $level->required(site: [], binding: [], render: ['isPublic' => true]));
+		$this->assertNull(actual: $level->required(site: [], binding: [], render: ['isPublic' => null]));
+		$this->assertSame(
+			expected: 'substantial',
+			actual: $level->required(site: [], binding: [], render: ['isPublic' => false, 'minTrust' => 'substantial'])
+		);
+	}//end testAServedFormThatIsNotPublicNeedsASession()
 }//end class

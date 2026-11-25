@@ -78,12 +78,15 @@ class PortalFormTrustLevel {
 	}//end required()
 
 	/**
-	 * The levels the portal asks for: any session for identified intake, substantial for a fee.
+	 * The levels the portal asks for: any session for identified intake, substantial for a fee,
+	 * any session for a served form that is not public.
 	 *
 	 * @param array<string, mixed> $site   The portal.
 	 * @param array<string, mixed> $render What render() returned for it.
 	 *
 	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/competitor-parity-2026-09/tasks.md#17
 	 */
 	private function portalLevels(array $site, array $render): array {
 		$levels = [];
@@ -95,6 +98,13 @@ class PortalFormTrustLevel {
 		// at substantial (intake-pay-on-submit REQ-IPS-002).
 		if (is_array($render['fee'] ?? null) === true) {
 			$levels[] = 'substantial';
+		}
+
+		// A served form its maker did not open to visitors needs a session
+		// (buildiq-registration-form `isPublic`, competitor-parity task 17.1).
+		// A form that does not say keeps the levels above, as before.
+		if (($render['isPublic'] ?? null) === false) {
+			$levels[] = 'low';
 		}
 
 		return $levels;

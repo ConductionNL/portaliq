@@ -225,6 +225,39 @@ class PortalFormBindingResolverTest extends TestCase {
 
 	}//end testTheFormsSignInLevelIsCarriedToTheRender()
 
+
+	/**
+	 * A served form that is not public reaches the render and asks for a
+	 * session; one that does not say carries null (competitor-parity 17.1).
+	 *
+	 * @return void
+	 */
+	public function testAServedFormThatIsNotPublicAsksForASession(): void {
+		$this->seedForm(audience: 'client', fields: [['name' => 'postcode', 'order' => 1]], extra: ['isPublic' => false]);
+		$resolver = $this->resolver();
+
+		$render = $resolver->render(binding: $this->binding());
+
+		$this->assertFalse(condition: $render['isPublic']);
+		$this->assertSame(expected: 'low', actual: $resolver->requiredTrust(site: ['slug' => 'gemeente-x'], binding: $this->binding(), render: $render));
+	}//end testAServedFormThatIsNotPublicAsksForASession()
+
+
+	/**
+	 * A form without `isPublic`, or with a value that is no boolean, renders as before.
+	 *
+	 * @return void
+	 */
+	public function testAFormThatDoesNotSayStaysAsBefore(): void {
+		$this->seedForm(audience: 'client', fields: [['name' => 'postcode', 'order' => 1]], extra: ['isPublic' => 'no']);
+		$resolver = $this->resolver();
+
+		$render = $resolver->render(binding: $this->binding());
+
+		$this->assertNull(actual: $render['isPublic']);
+		$this->assertNull(actual: $resolver->requiredTrust(site: ['slug' => 'gemeente-x'], binding: $this->binding(), render: $render));
+	}//end testAFormThatDoesNotSayStaysAsBefore()
+
 	public function testTheStrictestOfPortalBindingAndFormWins(): void {
 		$resolver = $this->resolver();
 		$identified = ['authentication' => ['requiresIdentifiedIntake' => true]];
