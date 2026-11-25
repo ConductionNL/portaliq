@@ -14,7 +14,7 @@
   - An administrator can create a site, menu, markdown page and glossary term and publish them, with no API client, and the public site then renders
   - The menu editor enforces the two-level limit the schema declares
 - [x] Implement (already built: the Portals, Menus, Pages and Glossary index and detail pages in `src/manifest.json`, over the shared manifest components; the schema declares the two-level menu limit)
-- [ ] Test — the spec is written (`tests/e2e/cms-admin.spec.ts`: the four surfaces are the shared index pages; a site is checked, published, served by the public content API and rendered); not run: needs a live instance
+- [x] Test — run live 25 Nov 2026 (live-portaliq-1): `tests/e2e/cms-admin.spec.ts` 3/3 green on a sandbox Nextcloud 34.0.6 (MariaDB) with OpenRegister main. The spec is written (`tests/e2e/cms-admin.spec.ts`: the four surfaces are the shared index pages; a site is checked, published, served by the public content API and rendered); not run: needs a live instance
 
 ### Task 2: Publish-time validation
 - **spec_ref**: `openspec/changes/portal-cms-admin-ui/specs/portaliq-cms/spec.md#requirement-publishing-must-refuse-content-that-would-render-broken`
@@ -35,4 +35,4 @@
   - Verification can be run and RE-run without re-adding the domain, because "DNS has not propagated yet" is the normal first outcome, not an error state
   - The e2e covers the whole editorial path: create a site, add a domain, see the record, publish a page, load the public site
 - [x] Implement: `PortalDomainVerifier` and `CmsDomainController` (`GET /api/cms/domains`, `POST /api/cms/domains/verify`) show the exact record, check it, and can be run again. The screen is manifest configuration, not `src/views/cms/WebsiteDomains.vue`: the `portal-domains` field list on the portal's settings tab (`src/manifest.json`) shows a pending domain's record as "Publish this TXT record: {name} = {value}", offers "Check again" per pending domain, and puts a "Copy name" and a "Copy value" button beside the record (`row.detail.copy`, available in nextcloud-vue 2.180) (`tests/portal-domains.spec.mjs`)
-- [ ] Test — partial: `PortalDomainVerifierTest` covers the record, pending and verified; `tests/e2e/cms-admin.spec.ts` is written (the pending domain's record, the check run twice without the domain being added again, and both endpoints refused to a caller without a session) and not run: needs a live instance
+- [x] Test — run live 25 Nov 2026 (live-portaliq-1): the domain test of `tests/e2e/cms-admin.spec.ts` green (record shown, check run twice, both endpoints refused without a session). Earlier: `PortalDomainVerifierTest` covers the record, pending and verified; `tests/e2e/cms-admin.spec.ts` is written (the pending domain's record, the check run twice without the domain being added again, and both endpoints refused to a caller without a session) and not run: needs a live instance

@@ -38,15 +38,20 @@ namespace OCA\Portaliq\Kernel\Contracts;
 interface PortalFeeInterface {
 
 	/**
-	 * The fee declared on a binding's case type, or null when the request is free.
+	 * The fee of a binding, or null when the request is free: the case type's
+	 * declaration, with the amount, currency and description of the published
+	 * form's own `fee` when the form serves one.
 	 *
-	 * @param array<string, mixed> $binding The binding.
+	 * @param array<string, mixed>                    $binding The binding.
+	 * @param array<string, mixed>|\Closure|null      $form    The published form, a callable that reads it
+	 *                                                         (called only when the case type declares a fee), or null.
 	 *
 	 * @return array{amount: string, currency: string, description: string, payAction: string}|null
 	 *
 	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t03
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t09
 	 */
-	public function forBinding(array $binding): ?array;
+	public function forBinding(array $binding, array|\Closure|null $form = null): ?array;
 
 	/**
 	 * What the resident is told about a payment, from the provider's status.
