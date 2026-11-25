@@ -2183,6 +2183,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t02
 	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
 	 */
 	private function createFrom(array $subject, array $match, string $register, string $schema, array $carried=[]): JSONResponse {
 		$action = $match['action'];
@@ -2234,6 +2235,13 @@ class ContributionController extends Controller implements PortalProtected {
 		));
 
 		if ($created === null) {
+			// The record's own app refused it before it was stored (a reaction
+			// on a closed consultation): no longer possible, not a store
+			// failure. Its text stays on the server.
+			if ($this->writer->lastRefusedByOwner() === true) {
+				return new JSONResponse(['error' => 'refused'], Http::STATUS_CONFLICT);
+			}
+
 			// A value the store refused names its field (site-action-forms).
 			return $this->writeRefusal->response(failure: $this->writer->lastFailure(), data: $data)
 				?? new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);

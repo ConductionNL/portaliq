@@ -191,6 +191,8 @@ if (interface_exists(\OCP\IUser::class) === false && is_dir(__DIR__ . '/../vendo
 // so the leaf tests run in CI where no sibling checkout exists.
 foreach ([
 	'Exception\\NotImplementedException' => 'Exception/NotImplementedException.php',
+	// What OpenRegister throws when an owning app's hook stops a write (the-owning-apps-refusal-reads-as-no-longer-possible).
+	'Exception\\HookStoppedException' => 'Exception/HookStoppedException.php',
 	'Service\\Integration\\IntegrationProvider' => 'Service/Integration/IntegrationProvider.php',
 	'Service\\Integration\\LeafIdentity' => 'Service/Integration/LeafIdentity.php',
 	'Service\\Integration\\LeafAvailability' => 'Service/Integration/LeafAvailability.php',
