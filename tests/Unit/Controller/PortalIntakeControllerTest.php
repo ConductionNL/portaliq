@@ -923,7 +923,7 @@ class PortalIntakeControllerTest extends TestCase {
 	 * REQ-FFL-002: a value the browser sent for a calculated field is replaced
 	 * by the server's own result before anything is recorded.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
 	public function testATamperedCalculatedValueIsReplacedBeforeItIsStored(): void {
 		$controller = $this->controller(
@@ -944,7 +944,7 @@ class PortalIntakeControllerTest extends TestCase {
 	/**
 	 * REQ-FFL-003: a rule engine that does not answer on submit records nothing.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
 	 */
 	public function testASubmissionWhoseDecisionCannotBeAskedIsNotRecorded(): void {
 		$controller = $this->controller(
@@ -996,7 +996,7 @@ class PortalIntakeControllerTest extends TestCase {
 	 * REQ-FFL-003: the decide route answers outcome, field and next step, and
 	 * the form the browser gets carries no rule.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
 	 */
 	public function testTheDecideRouteAnswersTheOutcomeAndTheRuleStaysOnTheServer(): void {
 		$controller = $this->controller(
@@ -1021,7 +1021,7 @@ class PortalIntakeControllerTest extends TestCase {
 	/**
 	 * REQ-FFL-003: an engine that is down is a 503 the form can retry, with no answer lost.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
 	 */
 	public function testTheDecideRouteIsUnavailableWhenTheEngineIsDown(): void {
 		$controller = $this->controller(render: $this->flowForm(), decision: $this->decisionAnswering(null));

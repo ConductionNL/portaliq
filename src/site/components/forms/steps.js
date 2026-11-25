@@ -262,7 +262,7 @@ export function retentionDate(iso, locale) {
  * @param {Array<object>} flow The steps walked through.
  * @param {string} id The step id.
  * @return {number} The index, or -1 when the flow has no such step.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t06
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t06
  */
 export function stepIndexById(flow, id) {
 	return (Array.isArray(flow) ? flow : []).findIndex(

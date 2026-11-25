@@ -46,7 +46,7 @@ interface PortalFormDecisionInterface {
 	 * @return array{status: string, outcome: string, output: string, nextStep: string}
 	 *         `status` is DECIDED, UNAVAILABLE or NO_OUTCOME; `nextStep` is the step the outcome opens, or ''.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
 	 */
 	public function decide(array $decision, array $answers): array;
 }//end interface

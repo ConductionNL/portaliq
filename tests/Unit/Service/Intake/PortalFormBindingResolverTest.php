@@ -533,7 +533,7 @@ class PortalFormBindingResolverTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
 	public function testAnUnknownCalculationResolvesToNoForm(): void {
 		$this->seedForm(audience: 'client', fields: [
@@ -603,8 +603,11 @@ class PortalFormBindingResolverTest extends TestCase {
 	 * @return string The form's uuid.
 	 */
 	private function seedForm(string $audience, array $fields, array $extra = []): string {
+		// Buildiq's registrationForm names the type it serves in typeValue
+		// (beside typeProperty); the resolver asks for that field.
 		return $this->seedRow('registrationForm', array_merge([
-			'caseType' => 'verhuizing',
+			'typeProperty' => 'caseType',
+			'typeValue' => 'verhuizing',
 			'audience' => $audience,
 			'status' => 'published',
 			'name' => 'verhuizing-' . $audience,

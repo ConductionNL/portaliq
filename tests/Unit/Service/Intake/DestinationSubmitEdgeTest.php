@@ -99,7 +99,23 @@ class DestinationSubmitEdgeTest extends TestCase {
 			public function __construct(private mixed $result) {
 			}
 
-			public function validate(array $mapping, object $schema, array $options=[]): mixed {
+			/**
+			 * The destination the last validate() was handed.
+			 *
+			 * @var object|null
+			 */
+			public ?object $destination = null;
+
+			/**
+			 * Answer the fixed result, as OpenRegister's validator would.
+			 *
+			 * @param array<string, mixed> $mapping     The mapping.
+			 * @param object               $destination The schema and audience.
+			 *
+			 * @return mixed
+			 */
+			public function validate(array $mapping, object $destination): mixed {
+				$this->destination = $destination;
 				if ($this->result instanceof \Throwable) {
 					throw $this->result;
 				}
@@ -224,4 +240,25 @@ class DestinationSubmitEdgeTest extends TestCase {
 
 		$this->assertSame([], (new DestinationSubmit($container, $this->createMock(LoggerInterface::class)))->findings(destination: ['register' => 'a', 'schema' => 'case'], mapping: [], audience: 'public'));
 	}//end testAValidMappingHasNoFindings()
+
+	/**
+	 * OpenRegister's validator takes one FormDestination with the schema and
+	 * the audience; the older named arguments threw "Unknown named parameter".
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md
+	 */
+	public function testTheValidatorIsHandedTheSchemaAndTheAudienceAsOneDestination(): void {
+		$schema    = new \stdClass();
+		$validator = self::validator(result: []);
+		$container = self::container(services: [self::VALIDATOR => $validator, self::MAPPER => self::mapper(result: [$schema])]);
+		$submit    = new DestinationSubmit(container: $container, logger: $this->createMock(originalClassName: LoggerInterface::class));
+
+		$findings = $submit->findings(destination: ['register' => 'a', 'schema' => 'case'], mapping: [], audience: 'public');
+		$this->assertSame(expected: [], actual: $findings);
+		$this->assertInstanceOf(expected: \OCA\OpenRegister\Service\Form\FormDestination::class, actual: $validator->destination);
+		$this->assertSame(expected: $schema, actual: $validator->destination->schema);
+		$this->assertSame(expected: 'public', actual: $validator->destination->audience);
+	}//end testTheValidatorIsHandedTheSchemaAndTheAudienceAsOneDestination()
 }//end class
