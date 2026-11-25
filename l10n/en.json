@@ -3668,7 +3668,8 @@
         "The explanation shown under the public outcome (case-outcome-on-the-case-page REQ-COC-001).": "The explanation shown under the public outcome (case-outcome-on-the-case-page REQ-COC-001).",
         "The outcome the resident may read once the case has ended, such as \"Vergunning verleend\" (case-outcome-on-the-case-page REQ-COC-001).": "The outcome the resident may read once the case has ended, such as \"Vergunning verleend\" (case-outcome-on-the-case-page REQ-COC-001).",
         "When the case ended; empty while it runs. A collection names it as its closedField (case-outcome-on-the-case-page).": "When the case ended; empty while it runs. A collection names it as its closedField (case-outcome-on-the-case-page).",
-        "When the decision was sent; the objection window an onCase action declares counts from it (case-page-objection-and-complaint).": "When the decision was sent; the objection window an onCase action declares counts from it (case-page-objection-and-complaint)."
+        "When the decision was sent; the objection window an onCase action declares counts from it (case-page-objection-and-complaint).": "When the decision was sent; the objection window an onCase action declares counts from it (case-page-objection-and-complaint).",
+        "Media library": "Media library"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

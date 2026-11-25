@@ -3827,7 +3827,8 @@
         "The explanation shown under the public outcome (case-outcome-on-the-case-page REQ-COC-001).": "De toelichting die onder de openbare uitkomst staat (case-outcome-on-the-case-page REQ-COC-001).",
         "The outcome the resident may read once the case has ended, such as \"Vergunning verleend\" (case-outcome-on-the-case-page REQ-COC-001).": "De uitkomst die de inwoner mag lezen zodra de zaak is afgerond, zoals \"Vergunning verleend\" (case-outcome-on-the-case-page REQ-COC-001).",
         "When the case ended; empty while it runs. A collection names it as its closedField (case-outcome-on-the-case-page).": "Wanneer de zaak is afgerond; leeg zolang die loopt. Een collectie noemt dit veld als closedField (case-outcome-on-the-case-page).",
-        "When the decision was sent; the objection window an onCase action declares counts from it (case-page-objection-and-complaint).": "Wanneer het besluit is verzonden; de bezwaartermijn die een onCase-actie opgeeft telt vanaf dit moment (case-page-objection-and-complaint)."
+        "When the decision was sent; the objection window an onCase action declares counts from it (case-page-objection-and-complaint).": "Wanneer het besluit is verzonden; de bezwaartermijn die een onCase-actie opgeeft telt vanaf dit moment (case-page-objection-and-complaint).",
+        "Media library": "Mediabibliotheek"
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"
