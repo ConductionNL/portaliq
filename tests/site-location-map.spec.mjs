@@ -85,3 +85,13 @@ test('the Zuiddrecht example has the Locaties page of the board', () => {
 	assert.equal(normaliseLocations(block.props.locations).length, 3)
 	assert.equal(markerPositions(normaliseLocations(block.props.locations)).length, 3)
 })
+
+test('a place link to a site route takes the site address', () => {
+	// Seen live on the Zuiddrecht rehearsal (25 Nov 2026): "Afspraak maken"
+	// read a bare /afspraak-maken under the app path and left the site.
+	// @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
+	const source = read('src/site/widgets/nlLocationMap/NlLocationMap.vue')
+	assert.match(source, /:href="addressFor\(link\.href\)"/)
+	assert.doesNotMatch(source, /:href="link\.href"/)
+	assert.match(source, /linkAddress\(href, \(route\) =>\s*addressOfRoute\(/)
+})

@@ -79,7 +79,7 @@
 										rel="noopener noreferrer">{{ routeLabel }}<span class="nl-location-map__hidden">, {{ place.name }}, {{ newWindowLabel }}</span></a>
 								</li>
 								<li v-for="link in place.links" :key="link.href" class="utrecht-link-list__item">
-									<a class="utrecht-link" :href="link.href">{{ link.label }}</a>
+									<a class="utrecht-link" :href="addressFor(link.href)">{{ link.label }}</a>
 								</li>
 							</ul>
 						</div>
@@ -94,6 +94,9 @@
 </template>
 
 <script>
+import { runtimeConfig } from '../../lib/contentApi.js'
+import { linkAddress } from '../../lib/shellData.js'
+import { addressOfRoute } from '../../lib/siteAddress.js'
 import { categoryChips, MAP_BOX, markerPositions, normaliseLocations, routeHref } from './locationMap.js'
 
 import '@utrecht/button-css/dist/index.css'
@@ -217,6 +220,28 @@ export default {
 		 */
 		route(place) {
 			return routeHref(place)
+		},
+
+		/**
+		 * A place's own link in the site's own addressing: under the app path
+		 * a bare `/afspraak-maken` leaves the site (seen live on the Zuiddrecht
+		 * rehearsal, 25 Nov 2026). Another link stays as authored.
+		 *
+		 * @param {string} href The authored destination.
+		 * @return {string} The href.
+		 * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
+		 */
+		addressFor(href) {
+			if (typeof window === 'undefined') {
+				return href
+			}
+			return linkAddress(href, (route) =>
+				addressOfRoute(
+					route,
+					window.location.href,
+					runtimeConfig(),
+				).toString(),
+			)
 		},
 	},
 }
