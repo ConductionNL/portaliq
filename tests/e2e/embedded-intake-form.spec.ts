@@ -100,7 +100,7 @@ async function seedDestination(request: APIRequestContext): Promise<void> {
 		data: {
 			title: `E2E embed ${DESTINATION}`,
 			slug: DESTINATION,
-			properties: { caseType: { type: 'string' }, postcode: { type: 'string' } },
+			properties: { caseType: { type: 'string' }, postcode: { type: 'string' }, origin: { type: 'string' } },
 			required: ['postcode'],
 			authorization: { create: ['public'], read: ['admin'] },
 		},
@@ -202,6 +202,7 @@ test.describe('embedded-intake-form', () => {
 	//
 	// Everything below needs a real page, because the defect was invisible to
 	// anything that did not run the bundle.
+	// @e2e embedded-intake-form::a-frame-on-an-allowed-site-renders-the-form
 	test('the frame actually renders the form, not just a div for it', async ({
 		page,
 		request,
@@ -226,6 +227,7 @@ test.describe('embedded-intake-form', () => {
 		await expect(page.locator('#portaliq-embed')).not.toBeEmpty()
 	})
 
+	// @e2e embedded-intake-form::a-frame-on-another-site-gets-a-message
 	test('a frame on a page of another origin gets words, judged by its Referer', async ({
 		page,
 		request,
@@ -254,6 +256,46 @@ test.describe('embedded-intake-form', () => {
 		// broken, still loading, or simply not for them.
 		await expect(page.getByTestId('embed-refusal')).toBeVisible()
 		await expect(page.getByTestId('embed-form')).toHaveCount(0)
+	})
+
+	// @e2e embedded-intake-form::no-origin-and-no-referer-serves-nobody
+	test('without Origin or Referer the frame serves nobody', async ({ request }) => {
+		const route = `aanvragen/embed-no-origin-${Date.now()}`
+		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
+
+		const res = await request.get(`${EMBED_PATH}?route=${encodeURIComponent(route)}`)
+
+		expect(await res.text()).not.toContain('"postcode"')
+	})
+
+	// @e2e embedded-intake-form::an-origin-header-wins-over-the-referer
+	test('an Origin header that is sent wins over an allowed Referer', async ({ request }) => {
+		const route = `aanvragen/embed-origin-wins-${Date.now()}`
+		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
+
+		const res = await request.get(`${EMBED_PATH}?route=${encodeURIComponent(route)}`, {
+			headers: { Origin: OTHER_ORIGIN, Referer: `${ALLOWED_ORIGIN}/loket/verhuizen` },
+		})
+
+		expect(await res.text()).not.toContain('"postcode"')
+	})
+
+	// @e2e embedded-intake-form::a-submission-records-the-origin-not-the-page
+	test('a submission without Origin records the Referer origin, not the page', async ({ request }) => {
+		const route = `aanvragen/embed-referer-submit-${Date.now()}`
+		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
+		const postcode = `${1000 + Math.floor(Math.random() * 8999)} RF`
+
+		const accepted = await request.post(EMBED_SUBMIT, {
+			headers: { Referer: `${ALLOWED_ORIGIN}/loket/verhuizen?bsn=1` },
+			data: { route, answers: { postcode } },
+		})
+		expect(accepted.ok(), await accepted.text()).toBeTruthy()
+
+		const sent = await request.get(`${OR_OBJECTS_BASE}/${DESTINATION}/${DESTINATION}?_limit=100`, { headers: ADMIN_HEADERS })
+		const rows = ((await sent.json()).results ?? []) as Array<{ postcode?: string, origin?: string }>
+		const row = rows.find((candidate) => candidate.postcode === postcode)
+		expect(row?.origin).toBe(ALLOWED_ORIGIN)
 	})
 
 	test('a form with no allowed origins serves nobody', async ({ request }) => {

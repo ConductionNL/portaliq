@@ -142,19 +142,23 @@ class PortalEmbedControllerTest extends TestCase {
 	 * the Referer's origin is judged by the same list.
 	 *
 	 * @spec openspec/changes/embed-frame-reads-the-referer-origin/specs/embedded-intake-form/spec.md
+	 *
+	 * @return void
 	 */
 	public function testAFrameWithoutOriginIsJudgedByItsReferersOrigin(): void {
 		$controller = $this->controller(origin: '', referer: 'https://WWW.gemeente.nl/loket/verhuizen?stap=1#formulier');
 
 		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
 
-		$this->assertArrayNotHasKey('refused', $params);
-		$this->assertSame(['postcode'], array_column($params['fields'], 'name'));
+		$this->assertArrayNotHasKey(key: 'refused', array: $params);
+		$this->assertSame(expected: ['postcode'], actual: array_column($params['fields'], 'name'));
 
 	}//end testAFrameWithoutOriginIsJudgedByItsReferersOrigin()
 
 	/**
 	 * @spec openspec/changes/embed-frame-reads-the-referer-origin/specs/embedded-intake-form/spec.md
+	 *
+	 * @return void
 	 */
 	public function testARefererOnAnotherOriginIsRefusedBeforeTheFormIsRead(): void {
 		$controller = $this->controller(origin: '', referer: 'https://www.elders.nl/gemeente.nl');
@@ -162,13 +166,15 @@ class PortalEmbedControllerTest extends TestCase {
 
 		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
 
-		$this->assertSame('origin_not_allowed', $params['refused']);
-		$this->assertSame([], $params['fields']);
+		$this->assertSame(expected: 'origin_not_allowed', actual: $params['refused']);
+		$this->assertSame(expected: [], actual: $params['fields']);
 
 	}//end testARefererOnAnotherOriginIsRefusedBeforeTheFormIsRead()
 
 	/**
 	 * @spec openspec/changes/embed-frame-reads-the-referer-origin/specs/embedded-intake-form/spec.md
+	 *
+	 * @return void
 	 */
 	public function testAFrameWithNeitherOriginNorRefererServesNobody(): void {
 		foreach (['', 'not a url', '/loket/verhuizen', 'https://'] as $referer) {
@@ -177,7 +183,7 @@ class PortalEmbedControllerTest extends TestCase {
 
 			$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
 
-			$this->assertSame('origin_not_allowed', $params['refused'], 'Referer: ' . $referer);
+			$this->assertSame(expected: 'origin_not_allowed', actual: $params['refused'], message: 'Referer: ' . $referer);
 		}
 
 	}//end testAFrameWithNeitherOriginNorRefererServesNobody()
@@ -187,13 +193,15 @@ class PortalEmbedControllerTest extends TestCase {
 	 * does not rescue a disallowed Origin.
 	 *
 	 * @spec openspec/changes/embed-frame-reads-the-referer-origin/specs/embedded-intake-form/spec.md
+	 *
+	 * @return void
 	 */
 	public function testAnOriginHeaderWinsOverTheReferer(): void {
 		$controller = $this->controller(origin: 'https://www.elders.nl', referer: 'https://www.gemeente.nl/loket');
 
 		$params = $controller->frame(route: 'aanvragen/verhuizing')->getParams()['embed'];
 
-		$this->assertSame('origin_not_allowed', $params['refused']);
+		$this->assertSame(expected: 'origin_not_allowed', actual: $params['refused']);
 
 	}//end testAnOriginHeaderWinsOverTheReferer()
 
@@ -201,14 +209,16 @@ class PortalEmbedControllerTest extends TestCase {
 	 * A submission without Origin records the Referer's origin, never its path.
 	 *
 	 * @spec openspec/changes/embed-frame-reads-the-referer-origin/specs/embedded-intake-form/spec.md
+	 *
+	 * @return void
 	 */
 	public function testASubmissionWithoutOriginRecordsTheReferersOriginOnly(): void {
 		$controller = $this->controller(origin: '', referer: 'https://www.gemeente.nl/loket/verhuizen?bsn=1');
 
 		$data = $controller->submit(route: 'aanvragen/verhuizing', answers: ['postcode' => '1234 AB'])->getData();
 
-		$this->assertSame('2026-0042', $data['reference']);
-		$this->assertSame('https://www.gemeente.nl', $this->submit->calls[0]['mapping']['fixed']['origin']);
+		$this->assertSame(expected: '2026-0042', actual: $data['reference']);
+		$this->assertSame(expected: 'https://www.gemeente.nl', actual: $this->submit->calls[0]['mapping']['fixed']['origin']);
 
 	}//end testASubmissionWithoutOriginRecordsTheReferersOriginOnly()
 
