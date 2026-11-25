@@ -34,6 +34,7 @@ use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCA\Portaliq\Kernel\Contracts\DestinationLookupInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalFeeInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalFormBindingResolverInterface;
 
 /**
  * Forwards the case app's pay action for a created object and reports the state of the payment.
@@ -54,6 +55,7 @@ class PortalIntakePayments implements PortalIntakePaymentsInterface {
 	 * @param PortalContributionRegistryInterface|null $registry  Finds the case app's pay action in the subject's own manifest.
 	 * @param PortalActionForwarderInterface|null      $forwarder Forwards the pay action with a server-built body.
 	 * @param PortalDeepLinkBuilderInterface|null      $deepLinks Builds the address the resident returns to.
+	 * @param PortalFormBindingResolverInterface|null  $forms     Reads the published form, whose own fee sets the amount.
 	 */
 	public function __construct(
 		private readonly ?DestinationLookupInterface $lookup = null,
@@ -61,6 +63,7 @@ class PortalIntakePayments implements PortalIntakePaymentsInterface {
 		private readonly ?PortalContributionRegistryInterface $registry = null,
 		private readonly ?PortalActionForwarderInterface $forwarder = null,
 		private readonly ?PortalDeepLinkBuilderInterface $deepLinks = null,
+		private readonly ?PortalFormBindingResolverInterface $forms = null,
 	) {
 	}//end __construct()
 
@@ -148,19 +151,26 @@ class PortalIntakePayments implements PortalIntakePaymentsInterface {
 	}//end payFound()
 
 	/**
-	 * The fee the object's case type declares, or null when there is none or it is paid.
+	 * The fee of the object's binding, or null when there is none or it is
+	 * paid: the case type's, with the published form's own amount when it
+	 * serves one, so the pay route charges what the form page showed.
 	 *
 	 * @param PortalFeeInterface                                                                                       $fees  Reads the fee of a binding.
 	 * @param array{object: array<string, mixed>, binding: array<string, mixed>, schema: array<string, mixed>} $found The object.
 	 *
 	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t09
 	 */
 	private function feeToPay(PortalFeeInterface $fees, array $found): ?array {
 		if (($this->paymentOf(found: $found)['state'] ?? '') === 'paid') {
 			return null;
 		}
 
-		return $fees->forBinding(binding: $found['binding']);
+		$forms   = $this->forms;
+		$binding = $found['binding'];
+
+		return $fees->forBinding(binding: $binding, form: static fn (): ?array => $forms?->publishedForm(binding: $binding));
 	}//end feeToPay()
 
 	/**

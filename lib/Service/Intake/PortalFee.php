@@ -22,14 +22,16 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use Closure;
 use OCA\Portaliq\Kernel\Contracts\PortalFeeInterface;
 use OCA\Portaliq\Service\CaseTypeReader;
 
 /**
  * What a request costs, and where the resident may be sent to pay it.
  *
- * The fee is the case type's declaration and nothing else: the portal holds
- * no price and takes no amount from the browser. A declaration that does not
+ * The fee is the case type's declaration, with the published form's own fee
+ * over its amount when the form serves one: the portal holds no price and
+ * takes no amount from the browser. A declaration that does not
  * read as a positive amount in a three-letter currency is no fee at all, and
  * a checkout address is followed only when it is https on a host the portal
  * names.
@@ -46,15 +48,22 @@ class PortalFee implements PortalFeeInterface {
 	}//end __construct()
 
 	/**
-	 * The fee declared on a binding's case type, or null when the request is free.
+	 * The fee of a binding, or null when the request is free: the case type's
+	 * declaration, with the amount, currency and description of the published
+	 * form's own `fee` when the form serves one. The pay action always comes
+	 * from the case type (decision 25 Nov 2026), so a form fee on a case type
+	 * without one is no fee.
 	 *
-	 * @param array<string, mixed> $binding The binding.
+	 * @param array<string, mixed>               $binding The binding.
+	 * @param array<string, mixed>|Closure|null  $form    The published form, a callable that reads it
+	 *                                                    (called only when the case type declares a fee), or null.
 	 *
 	 * @return array{amount: string, currency: string, description: string, payAction: string}|null
 	 *
 	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t03
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t09
 	 */
-	public function forBinding(array $binding): ?array {
+	public function forBinding(array $binding, array|Closure|null $form = null): ?array {
 		$caseType = $this->caseTypes->readCaseType(
 			register: (string)($binding['typeRegister'] ?? ''),
 			schema: (string)($binding['typeSchema'] ?? ''),
@@ -64,8 +73,64 @@ class PortalFee implements PortalFeeInterface {
 			return null;
 		}
 
-		return $this->normalise(declared: ($caseType['portalFee'] ?? null));
+		$declared = ($caseType['portalFee'] ?? null);
+		if (is_array($declared) === false) {
+			// No fee and no pay action: the form is not read at all.
+			return null;
+		}
+
+		return $this->normalise(declared: $this->withFormFee(declared: $declared, form: $form));
 	}//end forBinding()
+
+	/**
+	 * The case type's declaration with the form's amount, currency and
+	 * description over it, or the declaration as it is when the form serves
+	 * no fee.
+	 *
+	 * @param array<string, mixed>              $declared The case type's `portalFee`.
+	 * @param array<string, mixed>|Closure|null $form     The published form, or a callable that reads it.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t09
+	 */
+	private function withFormFee(array $declared, array|Closure|null $form): array {
+		if ($form instanceof Closure) {
+			$form = $form();
+		}
+
+		$own = (is_array($form) === true) ? ($form['fee'] ?? null) : null;
+		if (is_array($own) === false || isset($own['amount']) === false) {
+			return $declared;
+		}
+
+		// The form says what the request costs; the case type says which of
+		// its actions takes the payment.
+		return [
+			'amount' => $this->amountText(amount: $own['amount']),
+			'currency' => (string)($own['currency'] ?? 'EUR'),
+			'description' => (string)($own['description'] ?? ''),
+			'payAction' => (string)($declared['payAction'] ?? ''),
+		];
+	}//end withFormFee()
+
+	/**
+	 * A served amount as the decimal text normalise() reads: buildiq serves a
+	 * number, a case type declares a string.
+	 *
+	 * @param mixed $amount The served amount.
+	 *
+	 * @return string The amount as text, or '' when it is not a number.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t09
+	 */
+	private function amountText(mixed $amount): string {
+		if (is_int($amount) === true || is_float($amount) === true) {
+			return (string)$amount;
+		}
+
+		return (is_string($amount) === true) ? $amount : '';
+	}//end amountText()
 
 	/**
 	 * A declaration in its safe shape, or null when it is not a usable fee.

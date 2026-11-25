@@ -184,7 +184,8 @@ class PortalIntakeController extends Controller implements PortalProtected {
 			fees: $fees,
 			registry: $registry,
 			forwarder: $forwarder,
-			deepLinks: $deepLinks
+			deepLinks: $deepLinks,
+			forms: $bindings
 		);
 		$this->confirmation = new PortalIntakeConfirmation(confirmationMail: $confirmationMail);
 	}//end __construct()

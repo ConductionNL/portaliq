@@ -211,6 +211,24 @@ class PortalFormBindingResolverTest extends TestCase {
 		$this->assertNull($this->resolver()->requiredTrust(site: ['slug' => 'gemeente-x'], binding: $this->binding(), render: $free));
 	}//end testFeeRequiresSession()
 
+	/**
+	 * intake-pay-on-submit T09: the render carries the form's own fee with
+	 * the case type's pay action.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t09
+	 */
+	public function testTheRenderCarriesTheFormsFee(): void {
+		$this->seedForm(audience: 'client', fields: [['name' => 'kenteken', 'order' => 1]], extra: ['fee' => ['amount' => 25, 'currency' => 'EUR', 'description' => 'Leges standplaats']]);
+		$reader = $this->createMock(\OCA\Portaliq\Service\CaseTypeReader::class);
+		$reader->method('readCaseType')->willReturn(['portalFee' => ['amount' => '38.50', 'currency' => 'EUR', 'payAction' => 'create-payment']]);
+		$resolver = new PortalFormBindingResolver($this->fakeReader(), new FormStepsNormaliser(), null, new VisibleWhenLocal(), null, new \OCA\Portaliq\Service\Intake\PortalFormCalculator(), new \OCA\Portaliq\Service\Intake\PortalFee($reader));
+
+		$render = $resolver->render(binding: $this->binding());
+
+		$this->assertSame(['amount' => '25.00', 'currency' => 'EUR', 'description' => 'Leges standplaats', 'payAction' => 'create-payment'], $render['fee']);
+		$this->assertSame('substantial', $resolver->requiredTrust(site: ['slug' => 'gemeente-x'], binding: $this->binding(), render: $render));
+	}//end testTheRenderCarriesTheFormsFee()
+
 	public function testTheFormsSignInLevelIsCarriedToTheRender(): void {
 		// portaliq#725: buildiq writes the per-form sign-in level on the
 		// registration form (buildiq#935); the render must carry it or no

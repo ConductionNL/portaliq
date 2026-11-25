@@ -105,6 +105,22 @@ class PortalCatalogueCostsTest extends TestCase {
 
 	}//end testAnEntryCarriesTheFeeItsCaseTypeDeclares()
 
+	/**
+	 * intake-pay-on-submit T09: the entry shows the published form's own fee,
+	 * the same one the form page and the pay route use.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t09
+	 */
+	public function testAnEntryCarriesTheFormsOwnFee(): void {
+		$this->caseTypes['standplaats'] = ['portalFee' => ['amount' => '38.50', 'currency' => 'EUR', 'payAction' => 'pay-leges']];
+		$this->seedRow('publication', ['portal' => 'gemeente-x', 'topic' => 'Wonen', 'title' => 'Standplaats', 'route' => 'aanvragen/standplaats', 'status' => 'published']);
+		$this->seedRow('portalFormBinding', ['portal' => 'gemeente-x', 'route' => 'aanvragen/standplaats', 'status' => 'published', 'typeRegister' => 'zaken', 'typeSchema' => 'zaaktype', 'typeId' => 'standplaats', 'audience' => 'client']);
+		$this->seedRow('registrationForm', ['typeProperty' => 'caseType', 'typeValue' => 'standplaats', 'audience' => 'client', 'status' => 'published', 'name' => 'Standplaats', 'fee' => ['amount' => 25, 'currency' => 'EUR', 'description' => 'Leges standplaats']]);
+
+		$this->assertSame(['amount' => '25.00', 'currency' => 'EUR', 'description' => 'Leges standplaats'], $this->onlyEntry()['fee']);
+
+	}//end testAnEntryCarriesTheFormsOwnFee()
+
 	public function testAnEntryWhoseCaseTypeDeclaresNoFeeHasNone(): void {
 		$this->caseTypes['verhuizen'] = ['title' => 'Verhuizing'];
 		$this->seedEntryWithBinding('aanvragen/verhuizen', 'verhuizen');
