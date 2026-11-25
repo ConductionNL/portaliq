@@ -554,7 +554,9 @@ class PortalIdentityMailer implements PortalIdentityMailerInterface {
 		$l10n = $this->l10nFactory->get(AppIdentity::APP_ID, $this->site->language(portal: $notice->portal));
 		// IL10N::l() reads only a mutable \DateTime; a DateTimeImmutable would
 		// be cast to an integer and read as 1 January 1970.
-		$day  = (string)$l10n->l($keys['moment'], DateTime::createFromInterface($notice->moment), ['width' => 'long']);
+		$when = new DateTime('@' . $notice->moment->getTimestamp());
+		$when->setTimezone($notice->moment->getTimezone());
+		$day = (string)$l10n->l($keys['moment'], $when, ['width' => 'long']);
 
 		$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . $notice->template, []);
 		$mail->setSubject($l10n->t($keys['subject'], [$name]));

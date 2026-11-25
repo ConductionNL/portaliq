@@ -149,7 +149,11 @@ class SubmissionReceiptServiceTest extends TestCase {
 				// As Nextcloud's L10N::l(): only a mutable \DateTime is read as a
 				// moment; anything else is cast to an integer (a DateTimeImmutable
 				// became 1 January 1970, seen live 25 Nov 2026).
-				return $data instanceof \DateTime ? $data->format('j-n-Y H:i e') : gmdate('j-n-Y H:i e', (int)$data);
+				if ($data instanceof \DateTime) {
+					return $data->format('j-n-Y H:i e');
+				}
+
+				return gmdate('j-n-Y H:i e', (int)$data);
 			}
 		);
 		$factory = $this->createMock(IFactory::class);

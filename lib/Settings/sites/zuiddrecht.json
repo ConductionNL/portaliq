@@ -86,7 +86,6 @@
                 {
                     "title": "Vragen en contact",
                     "items": [
-                        "pipelinq:questions",
                         "portaliq:meldingen"
                     ]
                 },
@@ -111,6 +110,7 @@
                 "opencatalogi:zoekopdrachten",
                 "pipelinq:requests",
                 "pipelinq:complaints",
+                "pipelinq:questions",
                 "zaakafhandelapp:citizenZaken",
                 "zaakafhandelapp:citizenTaken",
                 "zaakafhandelapp:citizenBerichten"
