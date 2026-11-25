@@ -9,7 +9,7 @@
  * names, and the documents (resident-sees-words-not-codes); the archive's own
  * bookkeeping stays off the page.
  *
- * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
  */
 
 import { valueLabel } from './facetLabels.js'
