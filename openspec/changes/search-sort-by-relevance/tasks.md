@@ -49,9 +49,10 @@ on `origin/development` first and seen red; put the failing line in the PR body.
   data; `SuggestionWordListJob` rebuilds it daily. T09 adds the route to `openapi.json`; the block
   asks under three results and shows the link inside its live region. T10's "How search ranks" is a
   section of the portal's Instellingen tab (`PortalSearchRanking`), in English and Dutch.
-- [ ] **T11**: e2e `tests/e2e/search-sort-by-relevance.spec.ts` gains: a misspelt title is found, and a
+- [x] **T11**: e2e `tests/e2e/search-sort-by-relevance.spec.ts` gains: a misspelt title is found, and a
   misspelt summary word gets a suggestion that finds results (REQ-SSR-004, REQ-SSR-005). Live check
   after merge on the dev instance: record one suggestion and its result count.
+  - Run live 25 Nov 2026 on the PostgreSQL 16 + `pg_trgm` sandbox (Nextcloud 34.0.6, OpenRegister main, opencatalogi and portaliq development), `E2E_CONTAINER` set: the whole spec 5 passed, twice. The REQ-SSR-005 seed now creates the publication as a draft and moves it submit, approve, publish (OpenRegister refuses `published` on create: `lifecycle-invalid-initial`; opencatalogi requires review). Recorded suggestion: `GET /api/site/search/suggest?portal=open-tilburg&q=hondenbelasing` answers `{"suggestion":"hondenbelasting","results":1}`. The word-list job needs `overwrite.cli.url` to name the instance's real port, or its loopback reads nothing.
 - [ ] **T12**: Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then
   `npm run lint`, `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n`,
   `npm run check:manifest`, `npm run check:specs` and `npm run build:site`, plus any other leg
