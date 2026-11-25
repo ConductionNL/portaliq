@@ -928,7 +928,7 @@ export default {
 		 *
 		 * @return {Array<object>}
 		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-page-may-be-the-record-page-of-a-collection
-		 * @spec openspec/changes/mandated-case-offers-no-writes/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-offers-no-writes
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-a-case-read-under-a-mandate-offers-no-writes
 		 */
 		visibleBlocks() {
 			const record = this.recordPage
