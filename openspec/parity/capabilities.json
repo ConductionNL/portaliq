@@ -12881,7 +12881,7 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "password-reset-from-the-sign-in-page",
-				"requirement": "openspec/changes/password-reset-from-the-sign-in-page/specs/portal-ways-in/spec.md :: The sign-in page leads to Nextcloud's own password reset (REQ-PWR-001)"
+				"requirement": "openspec/changes/archive/2026-11-25-password-reset-from-the-sign-in-page/specs/portal-ways-in/spec.md :: The sign-in page leads to Nextcloud's own password reset (REQ-PWR-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
