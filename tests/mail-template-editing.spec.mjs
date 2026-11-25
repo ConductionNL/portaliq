@@ -168,3 +168,29 @@ test('the dialog writes the text in CnMarkdownEditor with the kind\'s variables,
 	const registry = readFileSync('src/customComponents.js', 'utf8')
 	assert.match(registry, /\.\.\.mailTemplateHandlers,/)
 })
+
+test('the page lists every kind from the rows endpoint; a default row opens as a new text of its kind (T09)', async () => {
+	const manifest = JSON.parse(readFileSync('src/manifest.json', 'utf8'))
+	const config = manifest.pages.find((p) => p.id === 'MailTemplates').config
+	assert.equal(config.entitySource, 'endpoint')
+	assert.equal(config.sourceConfig.url, '/apps/portaliq/api/mail-templates/rows')
+	const columns = config.columns.map((c) => c.key)
+	for (const key of ['kindLabel', 'subject', 'variableCount', 'updated']) {
+		assert.ok(columns.includes(key), key)
+	}
+	const reset = config.actions.find((a) => a.handler === 'resetMailTemplate')
+	assert.deepEqual(reset.visibleWhen, { field: 'text', op: 'eq', value: 'own' }, 'only a stored text can go back to the default')
+
+	const defaultRow = { id: 'default-status', stored: false, templateKey: 'status', subject: '', portal: '', active: true }
+	assert.deepEqual(formFromRow(defaultRow), { id: '', templateKey: 'status', portal: '', subject: '', body: '', active: true })
+	assert.equal(formFromRow({ ...ROW, stored: true }).id, 'r1')
+
+	const { handlers, seen } = page({
+		'/apps/portaliq/api/mail-templates': { kinds: [STATUS] },
+		'/apps/openregister/api/objects/portaliq/portal?_limit=200': { results: [{ slug: 'zuiddrecht', title: 'Zuiddrecht' }] },
+	})
+	await handlers.editMailTemplate({ item: defaultRow })
+	assert.equal(seen.opened[0].form.templateKey, 'status')
+	assert.deepEqual(seen.opened[0].portals, [{ slug: 'zuiddrecht', title: 'Zuiddrecht' }], 'a new text picks its portal')
+	assert.equal(await handlers.resetMailTemplate({ item: defaultRow }), false, 'a default row has nothing to remove')
+})
