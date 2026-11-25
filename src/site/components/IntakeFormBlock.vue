@@ -1386,8 +1386,8 @@ export default {
 					statements: this.accepted,
 					onBehalf: this.onBehalf,
 					proof: await challengeProof(this.render.challenge),
-					verifiedEmails: this.verifiedEmails,
 					idempotencyKey: this.keyOfThisSubmission(),
+					verifiedEmails: this.verifiedEmails,
 				})
 				if (outcome.unavailable) {
 					this.render = { ...this.render, unavailable: outcome.unavailable }
