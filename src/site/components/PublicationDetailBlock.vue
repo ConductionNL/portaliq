@@ -586,7 +586,7 @@ export default {
 		 * The catalogue's slug, for opencatalogi's catalogue ZIP route. Empty
 		 * links the ZIP route beside the publication read instead.
 		 *
-		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
 		 */
 		catalogSlug: {
 			type: String,
@@ -672,7 +672,7 @@ export default {
 		/**
 		 * @return {{href: string, count: number}|null} The "download all" link.
 		 *
-		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
 		 */
 		downloadAll() {
 			return downloadAllLink({
@@ -686,7 +686,7 @@ export default {
 		/**
 		 * @return {{state: string, text: string, formUrl: string}|null} The reaction period line.
 		 *
-		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-page-states-the-reaction-period-req-pdc-005
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-page-states-the-reaction-period-req-pdc-005
 		 */
 		period() {
 			return commentPeriodLine(this.publication, this.t)
@@ -738,10 +738,11 @@ export default {
 
 		/**
 		 * Whether a published table carries a view. The views and their
-		 * drawing load on demand, only then (REQ-DSV-003).
+		 * drawing load on demand, only then (REQ-DSV-003 of the
+		 * dataset-views-on-the-public-page change, which lives outside this repo).
 		 *
 		 * @return {boolean} Whether the data section is drawn.
-		 * @spec openspec/changes/dataset-views-on-the-public-page/specs/open-data-tables/spec.md#requirement-the-public-page-draws-each-view-and-offers-its-data-as-a-table-req-dsv-003
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-show-what-a-visitor-needs-in-words
 		 */
 		hasDatasetViews() {
 			const tables = this.publication?.tables
@@ -921,7 +922,7 @@ export default {
 		 * @param {object} document One row of `documents`.
 		 * @return {string} The route.
 		 *
-		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
 		 */
 		documentPage(document) {
 			return documentPageRoute(this.subjectId, (document || {}).id)
@@ -933,7 +934,7 @@ export default {
 		 * @param {object} document One row of `documents`.
 		 * @return {string} The href.
 		 *
-		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
 		 */
 		documentHref(document) {
 			const route = this.documentPage(document)

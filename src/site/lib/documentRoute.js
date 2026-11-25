@@ -7,7 +7,7 @@
 // Imports nothing, so the site shell can match the route without pulling the
 // page's reading code into the first bundle (webpack.site.js budget).
 //
-// @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+// @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
 /** The in-site route of a document's page; the ids are appended. */
 export const DOCUMENT_ROUTE = '/document'
 
@@ -23,7 +23,7 @@ export const PUBLICATION_ENDPOINT =
  *
  * @param {string} part The route segment.
  * @return {string} The id.
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
  */
 function decodedId(part) {
 	try {
@@ -39,7 +39,7 @@ function decodedId(part) {
  *
  * @param {string} route The in-site route.
  * @return {{publicationId: string, documentId: string}|null}
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
  */
 export function documentRouteOf(route) {
 	const path = String(route || '')
@@ -63,7 +63,7 @@ export function documentRouteOf(route) {
  *
  * @param {string} route The in-site route.
  * @return {boolean}
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
  */
 export function isDocumentRoute(route) {
 	return documentRouteOf(route) !== null
@@ -75,7 +75,7 @@ export function isDocumentRoute(route) {
  * @param {string} publicationId The publication's id.
  * @param {string} documentId The document's id.
  * @return {string}
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
  */
 export function documentPageRoute(publicationId, documentId) {
 	const publication = String(publicationId ?? '').trim()
@@ -92,7 +92,7 @@ export function documentPageRoute(publicationId, documentId) {
  *
  * @param {string} publicationId The publication's id.
  * @return {string}
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
  */
 export function publicationPageRoute(publicationId) {
 	return `${PUBLICATION_ROUTE}/${encodeURIComponent(String(publicationId ?? '').trim())}`

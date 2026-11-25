@@ -108,7 +108,7 @@ const PUBLIC_PREVIEW = false
  * found emits `notfound`, and the shell renders its not-found page: a draft's
  * document and an unknown id get the same answer.
  *
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
  */
 export default {
 	name: 'DocumentPage',
@@ -153,7 +153,7 @@ export default {
 		 * Read again when the route moves to another document.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
 		 */
 		documentId() {
 			this.load()
@@ -163,7 +163,7 @@ export default {
 		 * Read again when the route moves to another publication.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
 		 */
 		publicationId() {
 			this.load()
@@ -179,7 +179,7 @@ export default {
 		 * Read the document, then tell the shell what it shows.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
 		 */
 		async load() {
 			const asked = `${this.publicationId}/${this.documentId}`

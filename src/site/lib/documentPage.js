@@ -13,7 +13,7 @@
 //
 // Imports only plain modules, so tests/document-page.spec.mjs runs it as node.
 //
-// @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+// @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
 
 import { PUBLICATION_ENDPOINT, publicationPageRoute } from './documentRoute.js'
 import { formatDutchDate } from './federatedSearch.js'
@@ -50,7 +50,7 @@ function isPublication(publication, publicationId) {
  *
  * @param {unknown} value The value.
  * @return {string} The text.
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
  */
 function trimmed(value) {
 	return String(value || '').trim()
@@ -63,7 +63,7 @@ function trimmed(value) {
  * @param {object} file One row of the attachment list.
  * @param {(key: string) => string} t The translator.
  * @return {Array<{label: string, value: string}>}
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
  */
 export function documentFacts(file, t) {
 	const row = file || {}
@@ -87,7 +87,7 @@ export function documentFacts(file, t) {
  *
  * @param {object} publication The publication read.
  * @return {string} The title, '' without one.
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
  */
 function publicationTitle(publication) {
 	const self = publication['@self'] || {}
@@ -108,7 +108,7 @@ function publicationTitle(publication) {
  * @param {(key: string) => string} reads.t The translator.
  * @param {boolean} [reads.preview] Whether a public data-file preview exists.
  * @return {object|null} `{document, facts, publication: {id, title, route}}`.
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
  */
 export function documentPageOf({
 	publication,
@@ -145,7 +145,7 @@ export function documentPageOf({
  *
  * @param {(url: string, init: object) => Promise<object>} fetcher `fetch` or a stand-in.
  * @return {(url: string) => Promise<object|null>} The reader.
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
  */
 function jsonReader(fetcher) {
 	return async (url) => {
@@ -170,7 +170,7 @@ function jsonReader(fetcher) {
  * @param {string} [asked.endpoint] The publication read's base.
  * @param {(url: string, init: object) => Promise<object>} [asked.fetcher] A stand-in for `fetch` in a test.
  * @return {Promise<object|null>} The page, or null for not found.
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
  */
 export async function loadDocumentPage({
 	publicationId,

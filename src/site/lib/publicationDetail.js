@@ -216,7 +216,7 @@ function safeLink(value) {
  *
  * @param {string} link A link `safeLink` accepted.
  * @return {string} The path.
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-a-document-opens-in-the-browser-req-pdc-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-document-opens-in-the-browser-req-pdc-001
  */
 function linkPath(link) {
 	if (/^https?:\/\//i.test(link) === false) {
@@ -238,7 +238,7 @@ function linkPath(link) {
  * @param {string} value The candidate link.
  * @return {string} The link, or ''.
  *
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-a-document-opens-in-the-browser-req-pdc-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-document-opens-in-the-browser-req-pdc-001
  */
 function publicFileLink(value) {
 	const link = safeLink(value)
@@ -264,7 +264,7 @@ function publicFileLink(value) {
  * @param {boolean} preview Whether a public data-file preview is available.
  * @return {string} The link to open, or ''.
  *
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-a-document-opens-in-the-browser-req-pdc-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-document-opens-in-the-browser-req-pdc-001
  */
 function viewLink(file, type, preview) {
 	const viewable =
@@ -282,7 +282,7 @@ function viewLink(file, type, preview) {
  *
  * @param {unknown} id The candidate.
  * @return {boolean} True for a non-empty string.
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
  */
 function isId(id) {
 	return typeof id === 'string' && id !== ''
@@ -293,7 +293,7 @@ function isId(id) {
  *
  * @param {number} total The count.
  * @return {boolean} True for a whole number of 1 or more.
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
  */
 function isDocumentCount(total) {
 	return Number.isInteger(total) === true && total >= 1
@@ -306,7 +306,7 @@ function isDocumentCount(total) {
  * @param {string} [slug] The catalogue's slug, empty without one.
  * @param {string} [endpoint] The publication read's base.
  * @return {string} The base, without a trailing slash.
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
  */
 function downloadBase(slug, endpoint) {
 	const name = String(slug || '')
@@ -331,7 +331,7 @@ function downloadBase(slug, endpoint) {
  * @param {string} [publication.endpoint] The publication read's base.
  * @return {{href: string, count: number}|null} The link and the count.
  *
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-publication-downloads-as-one-archive-req-pdc-003
  */
 export function downloadAllLink({ id, count, catalogSlug, endpoint }) {
 	const total = Number(count)
@@ -349,7 +349,7 @@ export function downloadAllLink({ id, count, catalogSlug, endpoint }) {
  *
  * @param {unknown} period The publication's `commentPeriod`.
  * @return {{state: string, text: string, date: string}|null} The state, the line and its date field.
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-page-states-the-reaction-period-req-pdc-005
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-page-states-the-reaction-period-req-pdc-005
  */
 function periodWords(period) {
 	if (!period || typeof period !== 'object') {
@@ -369,7 +369,7 @@ function periodWords(period) {
  * @param {(key: string, vars?: object) => string} t The translator.
  * @return {{state: string, text: string, formUrl: string}|null} The line.
  *
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-the-page-states-the-reaction-period-req-pdc-005
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-page-states-the-reaction-period-req-pdc-005
  */
 export function commentPeriodLine(publication, t) {
 	const period = (publication || {}).commentPeriod
@@ -446,7 +446,7 @@ function fileType(file) {
  *
  * @param {object|Array|null} attachments The attachment list's answer.
  * @return {Array} The rows, empty for anything else.
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
  */
 export function attachmentRows(attachments) {
 	if (Array.isArray(attachments) === true) {
@@ -463,7 +463,7 @@ export function attachmentRows(attachments) {
  *
  * @param {object} file An attachment row.
  * @return {string} The stable `documentId`, else the file id, else ''.
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-public-document-has-a-page-of-its-own-req-pdc-002
  */
 export function attachmentId(file) {
 	return String(file.documentId ?? file.id ?? '')
@@ -475,7 +475,7 @@ export function attachmentId(file) {
  * @param {object} file An attachment row.
  * @param {boolean} preview Whether a public data-file preview is available.
  * @return {object} `{id, title, type, size, href, view, metadataUrl, diwooUrl}`.
- * @spec openspec/changes/publication-detail-page-complete/specs/portal-federated-search/spec.md#requirement-a-document-opens-in-the-browser-req-pdc-001
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-document-opens-in-the-browser-req-pdc-001
  */
 function documentRow(file, preview) {
 	const type = fileType(file)
