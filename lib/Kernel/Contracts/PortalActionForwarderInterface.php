@@ -60,7 +60,7 @@ interface PortalActionForwarderInterface {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
 	 */
 	public function failureResponse(): JSONResponse;
 

@@ -295,7 +295,7 @@ export default {
 		 * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
 		 * @return {Promise<object>} The result in the form's send shape.
 		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
-		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
 		 */
 		async sendForward(body, options = {}) {
 			const api =

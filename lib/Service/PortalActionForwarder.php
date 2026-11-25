@@ -28,7 +28,7 @@
  *
  * @spec openspec/changes/archive/2026-09-07-contract-v2/tasks.md#T8
  * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
- * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
  */
 
 declare(strict_types=1);
@@ -261,7 +261,7 @@ class PortalActionForwarder implements PortalActionForwarderInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
 	 */
 	public function lastForwardTimedOut(): bool {
 		return $this->timedOut;
@@ -275,7 +275,7 @@ class PortalActionForwarder implements PortalActionForwarderInterface {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
 	 */
 	public function failureResponse(): JSONResponse {
 		if ($this->timedOut === true) {
@@ -293,7 +293,7 @@ class PortalActionForwarder implements PortalActionForwarderInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
 	 */
 	private function isTimeout(Throwable $failure): bool {
 		for ($current = $failure; $current !== null; $current = $current->getPrevious()) {
@@ -311,7 +311,7 @@ class PortalActionForwarder implements PortalActionForwarderInterface {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
 	 */
 	private function submissionKey(): string {
 		$key = trim((string)$this->request->getHeader(self::SUBMISSION_HEADER));
