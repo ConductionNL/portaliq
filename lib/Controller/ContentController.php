@@ -142,7 +142,7 @@ class ContentController extends Controller {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
 	 */
 	private function portalImage(array $portal, string $field): string {
 		$value = $portal[$field] ?? '';

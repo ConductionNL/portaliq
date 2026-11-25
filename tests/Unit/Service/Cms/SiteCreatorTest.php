@@ -15,7 +15,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Portaliq\Service\Cms\SiteCreator
  *
- * @spec openspec/changes/portal-identity-from-the-admin/specs
+ * @spec openspec/specs/portaliq-cms/spec.md
  */
 final class SiteCreatorTest extends TestCase {
 

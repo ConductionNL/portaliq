@@ -32,7 +32,7 @@
  * admin/admin). The visitor's contexts start from an empty storage state. The
  * target comes from BASE_URL (see tests/e2e/base-url.ts).
  *
- * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md
+ * @spec openspec/specs/portaliq-cms/spec.md
  */
 
 import type { APIRequestContext } from '@playwright/test'

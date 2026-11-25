@@ -141,7 +141,7 @@ class SiteShellTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
 	 */
 	public function testTheTemplateGetsThePortalsOwnIcon(): void {
 		$portal = ['slug' => 'zuid', 'favicon' => 'media:fav'];
@@ -157,7 +157,7 @@ class SiteShellTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
 	 */
 	public function testNoPortalIconLeavesItToTheTheme(): void {
 		[$withoutService] = $this->shell(['portal' => 'zuid'], 'nl', ['slug' => 'zuid', 'favicon' => 'media:fav']);
@@ -175,7 +175,7 @@ class SiteShellTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 	 */
 	public function testTheHeadNamesTheCreatorAndItsType(): void {
 		$portal = ['slug' => 'noord', 'title' => 'Mijn Noord', 'organisation' => 'hhn', 'organisationTypeLabel' => 'waterschap'];

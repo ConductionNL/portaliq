@@ -113,7 +113,7 @@ export function heroPopularLinks(links) {
  * @param {string} heroImage The portal's resolved hero image address, or ''.
  * @return {object} The props to render.
  *
- * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
  */
 export function heroWithPortalImage(props, heroImage) {
 	const own = typeof props?.backgroundImage === 'string' ? props.backgroundImage.trim() : ''

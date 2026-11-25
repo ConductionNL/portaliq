@@ -20,7 +20,7 @@ use PHPUnit\Framework\TestCase;
  * favicon, then its logo, then the theme's icon, then portaliq's own mark,
  * and a media reference becomes the item's public address.
  *
- * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
  */
 #[CoversClass(SiteIcon::class)]
 #[UsesClass(MediaReferences::class)]
