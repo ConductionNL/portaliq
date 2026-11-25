@@ -457,6 +457,7 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 	 * @return array<string, mixed>
 	 *
 	 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
+	 * @spec openspec/changes/competitor-parity-2026-09/tasks.md#17
 	 */
 	private function hostedPayload(array $binding, array $form, array $fields, array $settings): array {
 		$fee = $this->fees?->forBinding(binding: $binding);
@@ -479,6 +480,9 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 			// The sign-in level the maker chose for this form (buildiq#935).
 			// Carried as declared; requiredTrust() decides what it means.
 			'minTrust' => ($form['minTrust'] ?? null),
+			// Whether the maker opened the form to visitors without a session
+			// (buildiq-registration-form `isPublic`); null when the form does not say.
+			'isPublic' => (is_bool($form['isPublic'] ?? null) === true ? $form['isPublic'] : null),
 		];
 	}//end hostedPayload()
 

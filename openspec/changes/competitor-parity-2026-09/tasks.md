@@ -53,10 +53,19 @@ change is archived.
 
 - [ ] 17 What `buildiq-registration-form` and `buildiq-page-layout` serve to
   the portal; leaf shapes and example answers in `buildiq-consumer-halves.md`.
-  - [ ] 17.1 `isPublic` arrives on each served form: only a form with
+  - [x] 17.1 `isPublic` arrives on each served form: only a form with
     `isPublic: true` opens for a visitor without a session; cluster 51 keeps
     the captcha, the address check and the reuse of earlier case data as
     they are (buildiq `forms-per-case-type` 8.4, `competitor-parity-2026-09` 2.4).
+    Built 25 Nov 2026: `PortalFormBindingResolver::render()` carries the
+    served form's `isPublic` (a boolean, else null) and `PortalFormTrustLevel`
+    asks for any session (`low`) when it is `false`, so the page, the embed
+    and the submit (`FormSignInGate`, `PortalEmbedController`) all refuse an
+    anonymous visitor. A form that does not say keeps today's levels; the
+    captcha, address check and earlier-case reuse are untouched. Tests:
+    `PortalFormTrustLevelTest::testAServedFormThatIsNotPublicNeedsASession`,
+    `PortalFormBindingResolverTest::testAServedFormThatIsNotPublicAsksForASession`,
+    `::testAFormThatDoesNotSayStaysAsBefore`.
   - [x] 17.2 `confirmationText` arrives on each served form and replaces the
     intake confirmation for that form. Already consumed:
     `PortalFormBindingResolver::withFormConfirmation()`.
