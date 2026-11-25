@@ -22,12 +22,14 @@
  *
  * THE ONE PRECONDITION. The catalogue rows are opencatalogi's publications,
  * kept in OpenRegister under register `opencatalogi`, schema `publication`.
- * The publication is seeded there through OpenRegister's object API. On an
- * instance without that register the seed is refused and the test SKIPS,
- * saying why, rather than passing on a stubbed answer.
+ * The publication is seeded there through OpenRegister's object API, as a
+ * draft that is then published (opencatalogi's lifecycle; the instance needs
+ * `publication_review_required` off). On an instance without that register, or
+ * one that requires a review, the test SKIPS, saying why, rather than passing
+ * on a stubbed answer.
  *
- * The visitor reads signed out, in a fresh context with an empty storage
- * state. Everything seeded is deleted again afterwards. The base URL comes
+ * The visitor is a dev-login resident in a fresh context: the intake routes
+ * sit behind the portal session gate, so the catalogue answers 401 signed out. Everything seeded is deleted again afterwards. The base URL comes
  * from tests/e2e/base-url.ts.
  *
  * @spec openspec/changes/catalogue-entry-shows-costs-and-conditions/tasks.md#T05
@@ -37,7 +39,7 @@ import type { APIRequestContext } from '@playwright/test'
 
 import { expect, request, test } from '@playwright/test'
 import { resolveBaseURL } from './base-url.ts'
-import { SITE_PATH, SITE_PORTAL } from './portal-nav.ts'
+import { devLogin, seedSiteSession, SITE_PATH, SITE_PORTAL } from './portal-nav.ts'
 
 test.use({ storageState: { cookies: [], origins: [] } })
 
@@ -86,6 +88,35 @@ async function seed(register: string, schema: string, data: Record<string, unkno
 	return id
 }
 
+/**
+ * The destination the binding points at: a binding is published only against
+ * a schema a public visitor may create in, so the spec makes its own and
+ * removes it afterwards. The catalogue never writes to it.
+ */
+const DESTINATION = `e2e-parkeren-${STAMP}`
+const destinationIds: { schema?: number, register?: number } = {}
+
+/**
+ * Create the destination register and schema.
+ */
+async function seedDestination(): Promise<void> {
+	const schema = await api.post('/index.php/apps/openregister/api/schemas', {
+		data: {
+			title: `E2E ${DESTINATION}`,
+			slug: DESTINATION,
+			properties: { caseType: { type: 'string' }, subjectRef: { type: 'string' } },
+			authorization: { create: ['public'], read: ['admin'] },
+		},
+	})
+	expect(schema.ok(), `the destination schema must be created: ${await schema.text()}`).toBeTruthy()
+	destinationIds.schema = (await schema.json()).id
+	const register = await api.post('/index.php/apps/openregister/api/registers', {
+		data: { title: `E2E ${DESTINATION}`, slug: DESTINATION, schemas: [destinationIds.schema] },
+	})
+	expect(register.ok(), `the destination register must be created: ${await register.text()}`).toBeTruthy()
+	destinationIds.register = (await register.json()).id
+}
+
 test.beforeAll(async () => {
 	const basic = Buffer.from(`${ADMIN_USER}:${ADMIN_PASS}`).toString('base64')
 	api = await request.newContext({
@@ -97,6 +128,12 @@ test.beforeAll(async () => {
 test.afterAll(async () => {
 	for (const path of created.reverse()) {
 		await api.delete(`${OBJECTS}/${path}`)
+	}
+	if (destinationIds.register) {
+		await api.delete(`/index.php/apps/openregister/api/registers/${destinationIds.register}`)
+	}
+	if (destinationIds.schema) {
+		await api.delete(`/index.php/apps/openregister/api/schemas/${destinationIds.schema}`)
 	}
 	await api.dispose()
 })
@@ -119,6 +156,7 @@ test.describe('catalogue-entry-shows-costs-and-conditions', () => {
 		expect(caseType, 'the case type must be created').not.toBe('')
 
 		// The published binding that resolves the entry's route to that case type.
+		await seedDestination()
 		const binding = await seed('portaliq', 'portalFormBinding', {
 			portal: SITE_PORTAL,
 			route: FORM_ROUTE,
@@ -126,10 +164,9 @@ test.describe('catalogue-entry-shows-costs-and-conditions', () => {
 			typeSchema: 'portalCaseType',
 			typeId: caseType,
 			audience: 'citizen',
-			formRegister: 'portaliq',
+			formRegister: 'buildiq',
 			formSchema: 'registrationForm',
-			caseRegister: 'portaliq',
-			caseSchema: 'portalCase',
+			destination: { register: DESTINATION, schema: DESTINATION, subjectField: 'subjectRef' },
 			intakeKind: 'hosted',
 			status: 'published',
 		})
@@ -142,12 +179,23 @@ test.describe('catalogue-entry-shows-costs-and-conditions', () => {
 			title: TITLE,
 			summary: SUMMARY,
 			route: FORM_ROUTE,
-			status: 'published',
 		})
 		test.skip(
 			publication === '',
 			'OpenRegister has no opencatalogi/publication register on this instance; '
 				+ 'the catalogue reads its entries there, so this scenario needs opencatalogi installed.',
+		)
+		// A publication starts as a draft (opencatalogi's lifecycle) and is
+		// published in a second step, which opencatalogi allows without a
+		// review only while `publication_review_required` is off.
+		const published = await api.patch(`${OBJECTS}/opencatalogi/publication/${publication}`, {
+			data: { status: 'published' },
+		})
+		test.skip(
+			!published.ok(),
+			'opencatalogi refused to publish the entry without a review; run with '
+				+ '`occ config:app:set opencatalogi publication_review_required --value=false`. '
+				+ (await published.text()).slice(0, 200),
 		)
 
 		// A page of the portal that holds the catalogue block.
@@ -175,6 +223,10 @@ test.describe('catalogue-entry-shows-costs-and-conditions', () => {
 		})
 		expect(catalogue, 'the catalogue page must be created').not.toBe('')
 
+		// The intake routes sit behind the portal session gate
+		// (PortalIntakeController is PortalProtected), so the catalogue
+		// answers a signed-in resident; signed out it answers 401.
+		await seedSiteSession(page, await devLogin(api, `e2e-parkeren-${STAMP}`, 'client', 'dev-org'))
 		const params = new URLSearchParams({ portal: SITE_PORTAL, route: CATALOGUE_PAGE })
 		await page.goto(`${SITE_PATH}?${params.toString()}`)
 
