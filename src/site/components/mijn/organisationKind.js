@@ -8,7 +8,7 @@
 //
 // Imports nothing, so the node tests read it as is.
 //
-// @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+// @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 
 /**
  * The Dutch nouns that take "het"; every other kind takes "de".
@@ -24,7 +24,7 @@ const HET = ['waterschap', 'ministerie']
  * @param {string} [label] The portal's organisation type label.
  * @param {string} [locale] The page language.
  * @return {string}
- * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
 export function organisationKind(label = '', locale = 'nl') {
 	const noun = String(label || '').trim().toLowerCase()

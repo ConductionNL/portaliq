@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ namespace OCA\Portaliq\Service\Cms;
  * library, through the public content API, so the address answers without a
  * session. A reference that does not resolve is skipped, never emitted.
  *
- * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
  */
 class SiteIcon {
 
@@ -55,7 +55,7 @@ class SiteIcon {
 	 *
 	 * @return string The public address, or '' when the portal sets none that resolves.
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
 	 */
 	public function forPortal(?array $portal): string {
 		if ($portal === null) {
@@ -80,7 +80,7 @@ class SiteIcon {
 	 *
 	 * @return string The first non-empty address, or ''.
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
 	 */
 	public static function first(string ...$candidates): string {
 		foreach ($candidates as $candidate) {

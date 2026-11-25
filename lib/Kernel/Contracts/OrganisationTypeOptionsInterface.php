@@ -54,7 +54,7 @@ interface OrganisationTypeOptionsInterface {
 	 *
 	 * @return array{refusal: string|null, portal: array<string, mixed>}
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 	 */
 	public function settle(array $portal, array $old): array;
 }//end interface

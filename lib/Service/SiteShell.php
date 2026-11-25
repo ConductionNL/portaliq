@@ -418,7 +418,7 @@ class SiteShell implements SiteShellInterface {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
 	 */
 	private function sitePortalIcon(): string {
 		if ($this->siteIcon === null) {
@@ -438,7 +438,7 @@ class SiteShell implements SiteShellInterface {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 	 */
 	private function siteCreator(): string {
 		try {

@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use Throwable;
 /**
  * Reads the organisation types from the concept register and settles a portal's choice.
  *
- * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
  */
 class OrganisationTypeOptions implements OrganisationTypeOptionsInterface {
 
@@ -75,7 +75,7 @@ class OrganisationTypeOptions implements OrganisationTypeOptionsInterface {
 	 * @param IL10N              $l10n      For the sentences.
 	 * @param LoggerInterface    $logger    Notes an unreadable concept register.
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
@@ -92,7 +92,7 @@ class OrganisationTypeOptions implements OrganisationTypeOptionsInterface {
 	 *
 	 * @return array{installed: bool, message: string|null, options: list<array{value: string, label: string}>}
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 	 */
 	public function options(): array {
 		$concepts = $this->concepts();
@@ -129,7 +129,7 @@ class OrganisationTypeOptions implements OrganisationTypeOptionsInterface {
 	 *
 	 * @return array{refusal: string|null, portal: array<string, mixed>}
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 	 */
 	public function settle(array $portal, array $old): array {
 		$portal = $this->withSchemeId(portal: $portal);
@@ -156,7 +156,7 @@ class OrganisationTypeOptions implements OrganisationTypeOptionsInterface {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 	 */
 	public function schemeUri(): string {
 		$uri = trim($this->appConfig->getValueString(app: AppIdentity::APP_ID, key: self::SCHEME_KEY, default: ''));
@@ -174,7 +174,7 @@ class OrganisationTypeOptions implements OrganisationTypeOptionsInterface {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 	 */
 	private function withSchemeId(array $portal): array {
 		unset($portal[self::SCHEME_ID_FIELD]);
