@@ -612,7 +612,7 @@ export default {
 		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-blocks-must-take-their-data-as-props-and-nothing-else-req-ptb-007
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
 		 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-offers-the-portals-own-ways-in
-		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+		 * @spec openspec/specs/portal-federated-search/spec.md
 		 */
 		propsFor(widget) {
 			// `style` and `class` never reach a block (REQ-PTB-007).
