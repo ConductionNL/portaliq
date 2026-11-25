@@ -25,7 +25,7 @@
 			</p>
 			<ul v-if="ways.length > 0">
 				<li v-for="way in ways" :key="way.id">
-					<a :href="way.href">{{ way.label }}</a>
+					<a class="pq-contact-form__sign-in" :href="way.href">{{ way.label }}</a>
 				</li>
 			</ul>
 		</div>
@@ -231,3 +231,18 @@ export default {
 	},
 }
 </script>
+
+<style scoped>
+/*
+ * A sign-in way (DigiD, eHerkenning, ...) is a 24px target. The bare list
+ * links were 19px high with less than 24px between them, and WCAG 2.2 SC
+ * 2.5.8 asks 24 by 24 CSS pixels or that much space; axe flagged them on the
+ * Zuiddrecht /contact/vraag page (the only finding left in a 55-page sweep).
+ * @spec openspec/changes/public-site-meets-wcag-aa/tasks.md#t05
+ */
+.pq-contact-form__sign-in {
+	display: inline-flex;
+	align-items: center;
+	min-block-size: 24px;
+}
+</style>
