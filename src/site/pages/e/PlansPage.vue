@@ -75,49 +75,64 @@
 						:key="plan.id"
 						class="pq-plans__card"
 						data-testid="plan-card">
-						<h3 class="utrecht-heading-4">
-							{{ plan.title }}
-						</h3>
-						<span class="pq-plans__tag" :data-state="plan.state">{{
-							words[plan.state]
-						}}</span>
-						<span v-if="daysText(plan)">{{ daysText(plan) }}</span>
-						<span v-if="plan.goal"
-							>{{ words.goal }}: {{ plan.goal }}</span
-						>
-						<span v-if="plan.endDate"
-							>{{ words.endDate }}: {{ plan.endDate }}</span
-						>
-						<span>{{
-							fill(words.openActions, { count: plan.openActions })
-						}}</span>
-						<span>{{ sharedText(plan) }}</span>
-						<span class="pq-plans__people">
-							<span
-								v-for="person in plan.participants"
-								:key="person.ref"
-								class="pq-plans__person">
-								<span
-									class="pq-plans__initials"
-									aria-hidden="true"
-									>{{ initials(person.displayName) }}</span
-								>
-								{{ person.displayName }}
+						<div class="pq-plans__title">
+							<h3 class="utrecht-heading-4">
+								<button
+									type="button"
+									class="pq-plans__open"
+									data-testid="plan-open"
+									@click="openId = plan.id">
+									{{ plan.title }}
+								</button>
+							</h3>
+							<span class="pq-plans__tag" :data-state="plan.state">{{
+								words[plan.state]
+							}}</span>
+							<span v-if="daysText(plan)" class="pq-plans__tag pq-plans__tag--ending">{{
+								daysText(plan)
+							}}</span>
+						</div>
+						<p v-if="plan.goal" class="utrecht-paragraph pq-plans__goal">
+							<strong>{{ words.goal }}:</strong> {{ plan.goal }}
+						</p>
+						<dl class="pq-plans__meta">
+							<div v-if="plan.endDate">
+								<dt>{{ words.endDate }}</dt>
+								<dd>{{ dateText(plan.endDate) }}</dd>
+							</div>
+							<div>
+								<dt>{{ words.openActionsLabel }}</dt>
+								<dd>{{ plan.openActions }}</dd>
+							</div>
+							<div>
+								<dt>{{ words.shared }}</dt>
+								<dd>{{ sharedText(plan) }}</dd>
+							</div>
+						</dl>
+						<div class="pq-plans__foot">
+							<span class="pq-plans__people">
+								<span class="pq-plans__faces" aria-hidden="true">
+									<span
+										v-for="person in plan.participants"
+										:key="person.ref"
+										class="pq-plans__initials">{{ initials(person.displayName) }}</span>
+								</span>
+								<span class="pq-plans__names">{{ peopleText(plan) }}</span>
 							</span>
-						</span>
-						<span v-if="plan.totalActions > 0">{{
-							fill(words.progress, {
-								done: plan.doneActions,
-								total: plan.totalActions,
-							})
-						}}</span>
-						<button
-							type="button"
-							class="utrecht-button utrecht-button--secondary-action"
-							data-testid="plan-open"
-							@click="openId = plan.id">
-							{{ words.open }}: {{ plan.title }}
-						</button>
+							<span v-if="plan.totalActions > 0" class="pq-plans__progress">
+								<span>{{
+									fill(words.progress, {
+										done: plan.doneActions,
+										total: plan.totalActions,
+									})
+								}}</span>
+								<progress
+									class="pq-plans__bar"
+									:value="plan.doneActions"
+									:max="plan.totalActions"
+									aria-hidden="true" />
+							</span>
+						</div>
 					</li>
 				</ul>
 			</template>
@@ -146,11 +161,13 @@ import { plansApi } from '../../../shared/areaApi.js'
 import {
 	chipCount,
 	daysLine,
+	endingSoon,
 	fill,
 	plansOfChip,
 	planWords,
 } from '../../lib/plans.js'
 import { initialsOf } from './contacts.js'
+import { longDate, readerLocale } from './format.js'
 
 /**
  * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
@@ -229,7 +246,32 @@ export default {
 		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t03
 		 */
 		daysText(plan) {
-			return plan.state === 'done' ? '' : daysLine(plan.daysLeft, this.words)
+			if (plan.state === 'done' || !endingSoon(plan.daysLeft)) {
+				return ''
+			}
+			return daysLine(plan.daysLeft, this.words)
+		},
+
+		/**
+		 * @param {string} date An end date, `YYYY-MM-DD`.
+		 * @return {string} "20 oktober 2026" in the reader's language, or the date as it came.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t10
+		 */
+		dateText(date) {
+			return longDate(date, readerLocale(this.locale)) || date
+		},
+
+		/**
+		 * @param {{participants: Array<{ref: string, displayName: string}>}} plan A card.
+		 * @return {string} "Sanne de Vries (u), Mark Jansen": the people in the plan.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t10
+		 */
+		peopleText(plan) {
+			const viewer = this.session?.subjectRef || this.session?.subject?.subjectRef || ''
+			return (plan.participants || [])
+				.filter((person) => person.displayName)
+				.map((person) => (person.ref === viewer ? `${person.displayName} (${this.words.you.toLocaleLowerCase()})` : person.displayName))
+				.join(', ')
 		},
 
 		/**
@@ -288,13 +330,21 @@ export default {
 </script>
 
 <style scoped>
+/*
+ * The list as board Plannen draws it (shared-plans-with-a-caseworker T10):
+ * one card per plan in a column, the title a link with its state and, in
+ * the last 14 days, the ending tag beside it; the goal; end date, open
+ * actions and who shared it on one line; the people and the progress bar at
+ * the foot. Colours come from the theme tokens.
+ */
 .pq-plans > * + * {
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
 }
 
 .pq-plans__head,
 .pq-plans__chips,
-.pq-plans__people {
+.pq-plans__people,
+.pq-plans__title {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -306,9 +356,9 @@ export default {
 }
 
 .pq-plans__cards {
-	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
-	gap: var(--utrecht-space-block-md, 1rem);
+	display: flex;
+	flex-direction: column;
+	gap: var(--utrecht-space-block-sm, 0.75rem);
 	list-style: none;
 	margin: 0;
 	padding: 0;
@@ -317,18 +367,87 @@ export default {
 .pq-plans__card {
 	display: flex;
 	flex-direction: column;
-	gap: var(--utrecht-space-block-xs, 0.25rem);
+	gap: 0.5rem;
 	padding: var(--utrecht-space-block-md, 1rem);
 	border: var(--utrecht-border-width-sm, 1px) solid
-		var(--utrecht-color-grey-80, currentcolor);
+		var(--nldesign-color-border-light, var(--utrecht-color-grey-80, color-mix(in srgb, currentcolor 18%, transparent)));
+	border-radius: var(--utrecht-border-radius-md, 0.375rem);
+}
+
+.pq-plans__title h3 {
+	margin: 0;
+}
+
+.pq-plans__open {
+	min-block-size: 24px;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--utrecht-link-color, LinkText);
+	font: inherit;
+	text-decoration: underline;
+	cursor: pointer;
 }
 
 .pq-plans__tag {
-	align-self: flex-start;
-	padding: 0 var(--utrecht-space-inline-sm, 0.5rem);
-	border: var(--utrecht-border-width-sm, 1px) solid
-		var(--utrecht-color-grey-80, currentcolor);
+	padding: 0.125rem 0.5rem;
 	border-radius: 999px;
+	background: var(--nldesign-color-primary-light, var(--utrecht-color-grey-90, Canvas));
+	font-size: 0.75em;
+}
+
+.pq-plans__tag[data-state='action'] {
+	background: var(--utrecht-feedback-warning-background-color, var(--nldesign-color-warning-light, Canvas));
+}
+
+.pq-plans__tag--ending {
+	background: var(--utrecht-feedback-danger-background-color, var(--nldesign-color-error-light, Canvas));
+	color: var(--utrecht-feedback-danger-color, currentcolor);
+}
+
+.pq-plans .pq-plans__goal {
+	margin: 0;
+}
+
+.pq-plans__meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem 1.5rem;
+	margin: 0;
+	font-size: 0.875em;
+}
+
+.pq-plans__meta div {
+	display: flex;
+	gap: 0.375rem;
+}
+
+.pq-plans__meta dt {
+	color: var(--nldesign-color-text-muted, var(--utrecht-color-grey-30, GrayText));
+}
+
+.pq-plans__meta dd {
+	margin: 0;
+	font-weight: var(--utrecht-typography-weight-scale-bold-font-weight, bold);
+}
+
+.pq-plans__foot {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem 1.5rem;
+	padding-block-start: 0.5rem;
+	border-block-start: 1px solid
+		var(--nldesign-color-border-light, var(--utrecht-color-grey-80, color-mix(in srgb, currentcolor 18%, transparent)));
+}
+
+.pq-plans__faces {
+	display: inline-flex;
+}
+
+.pq-plans__faces .pq-plans__initials + .pq-plans__initials {
+	margin-inline-start: -0.5rem;
 }
 
 .pq-plans__initials {
@@ -336,8 +455,33 @@ export default {
 	place-items: center;
 	inline-size: 2rem;
 	block-size: 2rem;
+	border: 2px solid var(--utrecht-document-background-color, Canvas);
 	border-radius: 50%;
-	background: var(--utrecht-color-grey-90, Canvas);
+	background: var(--nldesign-color-primary-light, var(--utrecht-color-grey-90, Canvas));
+	font-size: 0.75em;
+	font-weight: var(--utrecht-typography-weight-scale-bold-font-weight, bold);
+}
+
+.pq-plans__names {
+	font-size: 0.875em;
+}
+
+.pq-plans__progress {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	min-inline-size: min(18rem, 100%);
+	font-size: 0.875em;
+}
+
+.pq-plans__bar {
+	inline-size: 100%;
+	block-size: 0.375rem;
+	accent-color: var(--utrecht-feedback-success-color, var(--nldesign-color-success, currentcolor));
+}
+
+.pq-plans__chips .utrecht-button {
+	border-radius: 999px;
 }
 
 .pq-plans__error {
