@@ -3278,7 +3278,11 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		try {
-			$this->destinations->discardDraft(destination: $this->drafts->destinationOf(action: $action), subjectRef: $subjectRef, draftId: (string)$draft['id']);
+			$this->destinations->discardDraft(
+				destination: $this->drafts->destinationOf(action: $action),
+				subjectRef: $subjectRef,
+				draftId: (string)$draft['id']
+			);
 		} catch (\Throwable) {
 			// Kept until its retention ends.
 			return;

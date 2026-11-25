@@ -133,15 +133,19 @@ class ActionDraftTest extends TestCase {
 			'draftSchema' => ['register' => 'learniq', 'schema' => 'werkproces-assessment-draft'],
 		];
 		$withoutIt = array_merge($endpoint, ['id' => 'plain', 'draftSchema' => null]);
-		$drafts    = $this->drafts(['contributions' => [['app' => 'learniq', 'actions' => [$endpoint, $withoutIt]]]]);
+		$drafts    = $this->drafts(aggregate: ['contributions' => [['app' => 'learniq', 'actions' => [$endpoint, $withoutIt]]]]);
 		$subject   = ['subjectRef' => 'trainer-1', 'trust' => 'low', 'organisation' => 'org-1'];
 
-		$this->assertSame(expected: ['action' => $endpoint, 'app' => 'learniq'], actual: $drafts->actionFor(subject: $subject, appId: 'learniq', actionId: 'assess'));
+		$match     = ['action' => $endpoint, 'app' => 'learniq'];
+		$this->assertSame(expected: $match, actual: $drafts->actionFor(subject: $subject, appId: 'learniq', actionId: 'assess'));
 		$this->assertNull(actual: $drafts->actionFor(subject: $subject, appId: 'learniq', actionId: 'plain'));
-		$this->assertSame(expected: ['register' => 'learniq', 'schema' => 'werkproces-assessment-draft'], actual: $drafts->destinationOf(action: $endpoint));
+		$this->assertSame(
+			expected: ['register' => 'learniq', 'schema' => 'werkproces-assessment-draft'],
+			actual: $drafts->destinationOf(action: $endpoint)
+		);
 		$this->assertSame(
 			expected: ['werkprocesCode' => 'WP1', 'practicalTrainerId' => 'trainer-1', 'organisation' => 'org-1'],
-			actual: $drafts->bodyOf(match: ['action' => $endpoint, 'app' => 'learniq'], subject: $subject, answers: ['werkprocesCode' => 'WP1', 'other' => 'x'])
+			actual: $drafts->bodyOf(match: $match, subject: $subject, answers: ['werkprocesCode' => 'WP1', 'other' => 'x'])
 		);
 	}//end testAnEndpointActionHoldsItsDraftOnItsDraftSchema()
 
