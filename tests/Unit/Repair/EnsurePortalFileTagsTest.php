@@ -33,7 +33,7 @@ class EnsurePortalFileTagsTest extends TestCase {
 	 * @return ISystemTag
 	 */
 	private function tag(string $name): ISystemTag {
-		$tag = $this->createMock(ISystemTag::class);
+		$tag = $this->createMock(originalClassName: ISystemTag::class);
 		$tag->method('getName')->willReturn($name);
 		return $tag;
 	}//end tag()
@@ -44,12 +44,15 @@ class EnsurePortalFileTagsTest extends TestCase {
 	 * @return void
 	 */
 	public function testAMissingTagIsCreated(): void {
-		$tags = $this->createMock(ISystemTagManager::class);
+		$tags = $this->createMock(originalClassName: ISystemTagManager::class);
 		// A tag whose name only contains the searched one does not count.
 		$tags->method('getAllTags')->willReturn([$this->tag(name: 'portal:from-applicant-old')]);
-		$tags->expects($this->once())->method('createTag')->with('portal:from-applicant', true, true)->willReturn($this->tag(name: 'portal:from-applicant'));
+		$tags->expects($this->once())
+			->method('createTag')
+			->with('portal:from-applicant', true, true)
+			->willReturn($this->tag(name: 'portal:from-applicant'));
 
-		(new EnsurePortalFileTags(tags: $tags))->run(output: $this->createMock(IOutput::class));
+		(new EnsurePortalFileTags(tags: $tags))->run(output: $this->createMock(originalClassName: IOutput::class));
 	}//end testAMissingTagIsCreated()
 
 	/**
@@ -58,11 +61,11 @@ class EnsurePortalFileTagsTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnExistingTagIsLeftAlone(): void {
-		$tags = $this->createMock(ISystemTagManager::class);
+		$tags = $this->createMock(originalClassName: ISystemTagManager::class);
 		$tags->method('getAllTags')->willReturn([$this->tag(name: 'portal:from-applicant')]);
 		$tags->expects($this->never())->method('createTag');
 
-		(new EnsurePortalFileTags(tags: $tags))->run(output: $this->createMock(IOutput::class));
+		(new EnsurePortalFileTags(tags: $tags))->run(output: $this->createMock(originalClassName: IOutput::class));
 	}//end testAnExistingTagIsLeftAlone()
 
 	/**
@@ -71,11 +74,11 @@ class EnsurePortalFileTagsTest extends TestCase {
 	 * @return void
 	 */
 	public function testARefusedCreationIsAWarning(): void {
-		$tags = $this->createMock(ISystemTagManager::class);
+		$tags = $this->createMock(originalClassName: ISystemTagManager::class);
 		$tags->method('getAllTags')->willReturn([]);
 		$tags->method('createTag')->willThrowException(new RuntimeException('forbidden'));
-		$output = $this->createMock(IOutput::class);
-		$output->expects($this->once())->method('warning')->with($this->stringContains('portal:from-applicant'));
+		$output = $this->createMock(originalClassName: IOutput::class);
+		$output->expects($this->once())->method('warning')->with($this->stringContains(needle: 'portal:from-applicant'));
 
 		(new EnsurePortalFileTags(tags: $tags))->run(output: $output);
 	}//end testARefusedCreationIsAWarning()

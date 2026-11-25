@@ -62,6 +62,8 @@ class EnsurePortalFileTags implements IRepairStep {
 	 * The step's name.
 	 *
 	 * @return string
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
 	 */
 	public function getName(): string {
 		return 'Create the file tags portal uploads carry';
