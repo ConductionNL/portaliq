@@ -219,7 +219,7 @@ class PortalActionForwarderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
 	 */
 	public function testTheSubmissionKeyIsRelayedAndAMalformedOneIsDropped(): void {
 		foreach (['0f8fad5b-d9cb-469f-a165-70867728950e' => true, 'not a key; drop table' => false] as $key => $relayed) {
@@ -255,7 +255,7 @@ class PortalActionForwarderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
 	 */
 	public function testATimeoutIsToldApartFromAFailure(): void {
 		foreach (['cURL error 28: Operation timed out' => 504, 'cURL error 7: refused' => 502] as $message => $status) {

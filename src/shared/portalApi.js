@@ -31,7 +31,7 @@ const TOKEN_KEY = 'portaliq_token'
  *
  * @param {{submissionKey?: string}|undefined} options The send's options.
  * @return {Record<string, string>} The header to add.
- * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
  */
 function submissionHeaders(options) {
 	const key = options && options.submissionKey
