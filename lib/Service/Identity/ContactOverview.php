@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
  */
 
 declare(strict_types=1);
@@ -27,7 +27,7 @@ namespace OCA\Portaliq\Service\Identity;
 /**
  * The resident's contacts, and what waits for an answer.
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
  */
 class ContactOverview {
 	/**
@@ -48,7 +48,7 @@ class ContactOverview {
 	 *
 	 * @return array<string, mixed> `incoming`, `outgoing` and `contacts` lists of rows, and `counts` per role.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function overview(string $owner, string $organisation): array {
 		$overview = ['incoming' => [], 'outgoing' => [], 'contacts' => [], 'counts' => ['all' => 0, 'begeleider' => 0, 'contact' => 0, 'organisatie' => 0]];
@@ -68,7 +68,7 @@ class ContactOverview {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	private function withRow(array $overview, string $state, array $shown): array {
 		switch ($state) {
@@ -97,7 +97,7 @@ class ContactOverview {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	private function withContact(array $overview, array $shown): array {
 		$overview['contacts'][] = $shown;
@@ -141,7 +141,7 @@ class ContactOverview {
 	 *
 	 * @return array{id: string, ref: string, displayName: string}|null The contact.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	public function approvedContact(string $owner, string $organisation, string $id): ?array {
 		if ($id === '') {
@@ -165,7 +165,7 @@ class ContactOverview {
 	 *
 	 * @return array<int, string> The other accounts' subject references.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	public function approvedRefs(string $owner, string $organisation): array {
 		$refs = [];
@@ -188,7 +188,7 @@ class ContactOverview {
 	 *
 	 * @return array<string, string> Name by subject reference.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	public function namesByRef(string $owner, string $organisation): array {
 		$names = [];

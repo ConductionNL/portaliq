@@ -215,7 +215,7 @@ export function captureEmailLink(location, history) {
  * @param {Storage|null} storage sessionStorage, or null.
  * @return {string}
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
  */
 export function keptContactInvitation(storage) {
 	try {

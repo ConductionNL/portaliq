@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use PHPUnit\Framework\TestCase;
  * Following an invitation link, over an in-memory store that honours the
  * scope field of every read and write.
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
  */
 class ContactInvitationLinkTest extends TestCase {
 

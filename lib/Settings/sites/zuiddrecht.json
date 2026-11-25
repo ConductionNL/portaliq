@@ -10,6 +10,8 @@
         "status": "published",
         "kind": "site",
         "theme": "zuiddrecht",
+        "contactsEnabled": true,
+        "plansEnabled": true,
         "headerVariant": "double",
         "domains": [],
         "locales": [

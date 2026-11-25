@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
  * The secret is only ever compared by its hash (ContactRows::byToken); a
  * joined or expired invitation answers like an unknown one.
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
  */
 class ContactInvitationLink {
 
@@ -64,7 +64,7 @@ class ContactInvitationLink {
 	 *
 	 * @return string SENT when joined, else NOT_FOUND (also for an expired or used link), or FAILED.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function accept(array $subject, string $token, string $displayName, ?DateTimeImmutable $now=null): string {
 		$newRef       = (string)($subject['subjectRef'] ?? '');
@@ -97,7 +97,7 @@ class ContactInvitationLink {
 	 *
 	 * @return bool Whether an open invitation was held.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function holdForRegistration(string $token, string $newRef, string $organisation, ?DateTimeImmutable $now=null): bool {
 		if ($token === '' || $newRef === '' || $organisation === '') {
@@ -129,7 +129,7 @@ class ContactInvitationLink {
 	 *
 	 * @return int How many invitations joined.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function joinOnActivation(array $account, ?DateTimeImmutable $now=null): int {
 		$newRef       = (string)($account['subjectRef'] ?? '');
@@ -160,7 +160,7 @@ class ContactInvitationLink {
 	 *
 	 * @return string The address, or '' for a link that is unknown, expired or used.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function invitationEmail(string $token, string $organisation, ?DateTimeImmutable $now=null): string {
 		if ($token === '' || $organisation === '') {

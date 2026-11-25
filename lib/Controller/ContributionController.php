@@ -459,7 +459,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<int, array{special: string, label: string, icon: string}> The pages, in menu order.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t08
 	 * @spec openspec/changes/personal-action-list/tasks.md#t05
 	 */

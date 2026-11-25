@@ -53,19 +53,40 @@
 				<h2 id="pq-contacts-waiting" class="utrecht-heading-3">
 					{{ t('Waiting for approval') }}
 				</h2>
-				<ul class="utrecht-unordered-list pq-contacts__list">
+				<p class="utrecht-paragraph pq-contacts__hint">
+					{{ t('Someone only becomes your contact once you have both approved each other.') }}
+				</p>
+				<ul class="pq-contacts__cards">
 					<li
 						v-for="row in waiting"
 						:key="row.id"
-						class="utrecht-unordered-list__item"
+						class="pq-contacts__card"
+						:class="{ 'pq-contacts__card--request': row.state === 'requested' }"
 						data-testid="contacts-waiting-row"
 						:data-state="row.state">
-						<strong>{{ row.displayName || row.email }}</strong>
-						<span v-if="row.state === 'declined'">{{
-							t('Not accepted')
+						<span class="pq-contacts__initials" aria-hidden="true">{{
+							initials(row.displayName || row.email)
 						}}</span>
-						<span v-else-if="sent(row) !== ''">{{
-							t('Sent on {date}', { date: sent(row) })
+						<span class="pq-contacts__who">
+							<strong v-if="row.state === 'requested'">{{
+								t('{name} wants to add you as a contact', { name: row.displayName || row.email })
+							}}</strong>
+							<strong v-else-if="row.state === 'invited'">{{
+								t('Invitation to {email}', { email: row.email || row.displayName })
+							}}</strong>
+							<strong v-else>{{ row.displayName || row.email }}</strong>
+							<span class="pq-contacts__line">
+								<template v-if="row.state === 'declined'">{{ t('Not accepted') }}</template>
+								<template v-else-if="row.state === 'requested'">{{
+									waitingLine(row)
+								}}</template>
+								<template v-else-if="sent(row) !== ''">{{
+									t('Sent on {date}', { date: sent(row) })
+								}}</template>
+							</span>
+						</span>
+						<span v-if="row.state === 'invited'" class="pq-contacts__badge pq-contacts__badge--waiting">{{
+							t('Waiting for a reply')
 						}}</span>
 						<span class="pq-contacts__buttons">
 							<template v-if="row.state === 'requested'">
@@ -87,14 +108,14 @@
 							<template v-else-if="row.state === 'invited'">
 								<button
 									type="button"
-									class="utrecht-button utrecht-button--secondary-action"
+									class="pq-contacts__link"
 									data-testid="contact-resend"
 									@click="act('resend', row)">
 									{{ t('Send again') }}
 								</button>
 								<button
 									type="button"
-									class="utrecht-button utrecht-button--secondary-action"
+									class="pq-contacts__link pq-contacts__link--danger"
 									data-testid="contact-withdraw"
 									@click="act('withdraw', row)">
 									{{ t('Withdraw') }}
@@ -117,16 +138,13 @@
 						v-for="chip in filters"
 						:key="chip"
 						type="button"
-						class="utrecht-button"
-						:class="
-							chip === role
-								? 'utrecht-button--primary-action'
-								: 'utrecht-button--secondary-action'
-						"
+						class="pq-contacts__chip"
+						:class="{ 'pq-contacts__chip--on': chip === role }"
 						:aria-pressed="chip === role ? 'true' : 'false'"
 						:data-testid="`contacts-chip-${chip}`"
 						@click="role = chip">
-						{{ t(label(chip)) }} ({{ count(chip) }})
+						{{ t(label(chip)) }}
+						<span class="pq-contacts__count">{{ count(chip) }}</span>
 					</button>
 				</div>
 				<p
@@ -135,37 +153,43 @@
 					data-testid="contacts-empty">
 					{{ t('You have no contacts yet.') }}
 				</p>
-				<ul v-else class="utrecht-unordered-list pq-contacts__list">
+				<ul v-else class="pq-contacts__rows">
 					<li
 						v-for="row in shown"
 						:key="row.id"
-						class="utrecht-unordered-list__item"
+						class="pq-contacts__row"
 						data-testid="contact-row">
 						<span class="pq-contacts__initials" aria-hidden="true">{{
 							initials(row.displayName)
 						}}</span>
-						<strong>{{ row.displayName }}</strong>
-						<span>{{ t(label(row.role)) }}</span>
-						<span v-if="row.line !== ''">{{ row.line }}</span>
-						<button
-							type="button"
-							class="utrecht-button utrecht-button--primary-action"
-							data-testid="contact-message-open"
-							@click="openMessage(row)">
-							{{ t('Send message') }}
-						</button>
-						<button
-							type="button"
-							class="utrecht-button utrecht-button--secondary-action"
-							data-testid="contact-remove"
-							@click="act('remove', row)">
-							{{ t('Remove') }}
-						</button>
+						<span class="pq-contacts__who">
+							<span class="pq-contacts__name">
+								<strong>{{ row.displayName }}</strong>
+								<span class="pq-contacts__badge" :class="`pq-contacts__badge--${row.role}`">{{ t(label(row.role)) }}</span>
+							</span>
+							<span v-if="row.line" class="pq-contacts__line">{{ row.line }}</span>
+						</span>
+						<span class="pq-contacts__buttons">
+							<button
+								type="button"
+								class="pq-contacts__link"
+								data-testid="contact-message-open"
+								@click="openMessage(row)">
+								{{ t('Send message') }}
+							</button>
+							<button
+								type="button"
+								class="pq-contacts__link pq-contacts__link--danger"
+								data-testid="contact-remove"
+								@click="act('remove', row)">
+								{{ t('Remove') }}
+							</button>
+						</span>
 					</li>
 				</ul>
 			</section>
 
-			<section aria-labelledby="pq-contacts-sees">
+			<section aria-labelledby="pq-contacts-sees" class="pq-contacts__callout">
 				<h2 id="pq-contacts-sees" class="utrecht-heading-3">
 					{{ t('What does a contact see of you?') }}
 				</h2>
@@ -233,7 +257,7 @@ export default {
 	computed: {
 		/**
 		 * @return {object} The contact calls over the portal api.
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		client() {
 			return contactsApi(this.api)
@@ -241,7 +265,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} Requests to answer, then invitations sent.
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		waiting() {
 			return [...this.overview.incoming, ...this.overview.outgoing]
@@ -249,7 +273,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} The contacts of the chosen role chip.
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		shown() {
 			return contactsOfRole(this.overview.contacts, this.role)
@@ -261,7 +285,7 @@ export default {
 	 *
 	 * @return {Promise<void>} Resolves when read.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 	 */
 	async mounted() {
 		await this.load()
@@ -277,7 +301,7 @@ export default {
 		 * @param {string} chip The chip.
 		 * @return {number} How many approved contacts it holds.
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		count(chip) {
 			return Number(this.overview.counts?.[chip] || 0)
@@ -289,10 +313,24 @@ export default {
 		 * @param {object} row The row.
 		 * @return {string} The date.
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		sent(row) {
 			return row.sentAt ? longDate(row.sentAt, readerLocale(this.locale)) : ''
+		},
+
+		/**
+		 * The second line of a request: who is asking, and since when.
+		 *
+		 * @param {object} row The requested row.
+		 * @return {string} The role, the line and the date asked, as far as known.
+		 *
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t09
+		 */
+		waitingLine(row) {
+			const who = [this.t(this.label(row.role)), row.line].filter((part) => part).join(', ')
+			const asked = this.sent(row) !== '' ? this.t('Requested on {date}', { date: this.sent(row) }) : ''
+			return [who, asked].filter((part) => part !== '').join('. ')
 		},
 
 		/**
@@ -300,7 +338,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when read.
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		async load() {
 			const overview = await this.client.fetchContacts()
@@ -317,7 +355,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when read.
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		async invited() {
 			this.inviting = false
@@ -331,7 +369,7 @@ export default {
 		 * @param {object} row The contact.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 		 */
 		openMessage(row) {
 			this.notice = ''
@@ -344,7 +382,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 		 */
 		messageSent() {
 			this.writingTo = null
@@ -360,7 +398,7 @@ export default {
 		 * @param {object} [extra] More arguments, such as `accept`.
 		 * @return {Promise<void>} Resolves when done.
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 		 */
 		async act(action, row, extra = {}) {
 			this.notice = ''
@@ -379,6 +417,14 @@ export default {
 </script>
 
 <style scoped>
+/*
+ * The page as board Contacten draws it (own-contacts-and-invitations T09):
+ * a request is a highlighted card with its answer buttons, an invitation a
+ * card with its state and two text actions, the role filter a row of chips
+ * with counts, each contact a row with initials, name, role badge, line and
+ * two text actions, and "what does a contact see" a callout. Colours come
+ * from the theme tokens, with the system colours as the last fallback.
+ */
 .pq-contacts > * + *,
 .pq-contacts section > * + * {
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
@@ -386,7 +432,8 @@ export default {
 
 .pq-contacts__head,
 .pq-contacts__chips,
-.pq-contacts__buttons {
+.pq-contacts__buttons,
+.pq-contacts__name {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -397,11 +444,59 @@ export default {
 	justify-content: space-between;
 }
 
-.pq-contacts__list > li {
-	display: flex;
-	flex-wrap: wrap;
+.pq-contacts__hint,
+.pq-contacts__line {
+	color: var(--nldesign-color-text-muted, var(--utrecht-color-grey-30, GrayText));
+	font-size: 0.875em;
+}
+
+.pq-contacts .pq-contacts__hint {
+	margin-block-start: 0.25rem;
+}
+
+.pq-contacts__cards,
+.pq-contacts__rows {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.pq-contacts__card,
+.pq-contacts__row {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr) auto auto;
 	align-items: center;
-	gap: var(--utrecht-space-inline-sm, 0.5rem);
+	gap: 0.75rem 1rem;
+}
+
+.pq-contacts__card {
+	padding: 0.75rem 1rem;
+	border: 1px solid var(--nldesign-color-border-light, var(--utrecht-color-grey-80, color-mix(in srgb, currentcolor 18%, transparent)));
+	border-radius: var(--utrecht-border-radius-md, 0.375rem);
+}
+
+.pq-contacts__card + .pq-contacts__card {
+	margin-block-start: 0.5rem;
+}
+
+.pq-contacts__card--request {
+	border-color: var(--utrecht-feedback-warning-border-color, var(--nldesign-color-warning, Mark));
+	background: var(--utrecht-feedback-warning-background-color, var(--nldesign-color-warning-light, Canvas));
+}
+
+.pq-contacts__row {
+	padding-block: 0.75rem;
+	border-block-end: 1px solid var(--nldesign-color-border-light, var(--utrecht-color-grey-80, color-mix(in srgb, currentcolor 18%, transparent)));
+}
+
+.pq-contacts__rows {
+	border-block-start: 1px solid var(--nldesign-color-border-light, var(--utrecht-color-grey-80, color-mix(in srgb, currentcolor 18%, transparent)));
+}
+
+.pq-contacts__who {
+	display: flex;
+	flex-direction: column;
+	min-inline-size: 0;
 }
 
 .pq-contacts__initials {
@@ -410,7 +505,91 @@ export default {
 	inline-size: 2.5rem;
 	block-size: 2.5rem;
 	border-radius: 50%;
-	background: var(--utrecht-color-grey-90, Canvas);
+	background: var(--nldesign-color-primary-light, var(--utrecht-color-grey-90, Canvas));
+	font-size: 0.875em;
+	font-weight: var(--utrecht-typography-weight-scale-bold-font-weight, bold);
+}
+
+.pq-contacts__badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.125rem 0.5rem;
+	border-radius: 999px;
+	background: var(--nldesign-color-primary-light, var(--utrecht-color-grey-90, Canvas));
+	font-size: 0.75em;
+}
+
+.pq-contacts__badge--waiting {
+	background: var(--utrecht-feedback-warning-background-color, var(--nldesign-color-warning-light, Canvas));
+}
+
+.pq-contacts__chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	min-block-size: 2.75rem;
+	padding-inline: 1rem;
+	border: 1px solid var(--nldesign-color-primary, LinkText);
+	border-radius: 999px;
+	background: var(--utrecht-document-background-color, Canvas);
+	color: var(--nldesign-color-primary, LinkText);
+	font: inherit;
+	cursor: pointer;
+}
+
+.pq-contacts__chip--on {
+	background: var(--nldesign-color-primary, LinkText);
+	color: var(--nldesign-color-primary-contrast, Canvas);
+}
+
+.pq-contacts__count {
+	display: inline-grid;
+	place-items: center;
+	min-inline-size: 1.5rem;
+	block-size: 1.5rem;
+	padding-inline: 0.25rem;
+	border-radius: 999px;
+	background: var(--nldesign-color-primary-light, var(--utrecht-color-grey-90, Canvas));
+	color: var(--nldesign-color-primary, LinkText);
+	font-size: 0.75em;
+}
+
+.pq-contacts__link {
+	min-block-size: 24px;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--utrecht-link-color, LinkText);
+	font: inherit;
+	text-decoration: underline;
+	cursor: pointer;
+}
+
+.pq-contacts__link--danger {
+	color: var(--utrecht-feedback-danger-color, var(--nldesign-color-error, LinkText));
+}
+
+.pq-contacts__callout {
+	padding: 1rem 1.25rem;
+	border-radius: var(--utrecht-border-radius-md, 0.375rem);
+	background: var(--nldesign-color-primary-light, var(--utrecht-color-grey-90, Canvas));
+}
+
+.pq-contacts .pq-contacts__callout h2 {
+	margin-block-start: 0;
+	font-size: 1em;
+}
+
+@media (max-width: 40rem) {
+	.pq-contacts__card,
+	.pq-contacts__row {
+		grid-template-columns: auto minmax(0, 1fr);
+	}
+
+	.pq-contacts__buttons,
+	.pq-contacts__badge--waiting {
+		grid-column: 2;
+	}
 }
 
 .pq-contacts__error {

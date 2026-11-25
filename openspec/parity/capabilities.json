@@ -12799,9 +12799,9 @@
 				"owner": "ConductionNL/portaliq",
 				"change": "own-contacts-and-invitations",
 				"requirement": [
-					"openspec/changes/own-contacts-and-invitations/specs/resident-contacts/spec.md :: A resident keeps a list of approved contacts (REQ-ROC-001)",
-					"openspec/changes/own-contacts-and-invitations/specs/resident-contacts/spec.md :: A resident can invite someone by e-mail (REQ-ROC-003)",
-					"openspec/changes/own-contacts-and-invitations/specs/resident-contacts/spec.md :: Someone becomes a contact only after both sides approve (REQ-ROC-002)"
+					"openspec/changes/archive/2026-11-25-own-contacts-and-invitations/specs/resident-contacts/spec.md :: A resident keeps a list of approved contacts (REQ-ROC-001)",
+					"openspec/changes/archive/2026-11-25-own-contacts-and-invitations/specs/resident-contacts/spec.md :: A resident can invite someone by e-mail (REQ-ROC-003)",
+					"openspec/changes/archive/2026-11-25-own-contacts-and-invitations/specs/resident-contacts/spec.md :: Someone becomes a contact only after both sides approve (REQ-ROC-002)"
 				]
 			},
 			"provider": "portaliq",

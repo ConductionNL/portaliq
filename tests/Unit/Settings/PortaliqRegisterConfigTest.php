@@ -1144,7 +1144,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t02
 	 */
 	public function testNoPortalPageDeclaresAContactWrite(): void {
 		$pages = array_filter(
