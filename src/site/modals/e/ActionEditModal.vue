@@ -19,6 +19,10 @@
 		@cancel.prevent="$emit('cancel')">
 		<form method="dialog" novalidate @submit.prevent="submit">
 			<div class="pq-action-edit__head">
+				<div>
+				<p v-if="overline" class="pq-action-edit__overline">
+					{{ overline }}
+				</p>
 				<h2
 					id="pq-action-edit-title"
 					ref="heading"
@@ -26,6 +30,7 @@
 					tabindex="-1">
 					{{ isNew ? words.newAction : words.editAction }}
 				</h2>
+				</div>
 				<button
 					type="button"
 					class="utrecht-button utrecht-button--subtle pq-action-edit__close"
@@ -294,6 +299,7 @@ import { actionsApi, plansApi } from '../../../shared/areaApi.js'
 import {
 	actionWords,
 	fileAllowed,
+	fill,
 	historyText,
 	leadText,
 	momentText,
@@ -403,6 +409,15 @@ export default {
 		 * @return {string} In which plan, and who else sees the changes.
 		 * @spec openspec/changes/personal-action-list/tasks.md#t03
 		 */
+		/**
+		 * @return {string} "Plan Schuldhulp op orde" above the title, for an action in a plan (board ActieBewerken).
+		 * @spec openspec/changes/personal-action-list/tasks.md#t07
+		 */
+		overline() {
+			const title = this.action?.planTitle || this.planTitle
+			return title ? fill(this.words.planOverline, { title }) : ''
+		},
+
 		lead() {
 			const action = this.action || { planTitle: this.planTitle }
 			return leadText(action, this.people, this.viewer, this.words)
@@ -665,6 +680,37 @@ export default {
 .pq-action-edit select,
 .pq-action-edit input[type='date'] {
 	inline-size: 100%;
+	max-inline-size: none;
+}
+
+/*
+ * Board ActieBewerken (personal-action-list T07): the plan's name above the
+ * title, the history as a divided list, and "Actie verwijderen" as a red
+ * text action rather than a box.
+ */
+.pq-action-edit__overline {
+	margin: 0;
+	font-size: 0.75em;
+}
+
+.pq-action-edit__history table {
+	inline-size: 100%;
+	border-collapse: collapse;
+	font-size: 0.875em;
+}
+
+.pq-action-edit__history td {
+	padding-block: 0.5rem;
+	padding-inline-end: 1rem;
+	border-block-end: 1px solid var(--nldesign-color-border-light, var(--utrecht-color-grey-80, color-mix(in srgb, currentcolor 18%, transparent)));
+}
+
+.pq-action-edit__buttons .pq-action-edit__danger {
+	min-block-size: 24px;
+	padding: 0;
+	border: 0;
+	background: none;
+	text-decoration: underline;
 }
 
 .pq-action-edit__choices {
@@ -717,7 +763,7 @@ export default {
 }
 
 .pq-action-edit__danger {
-	color: var(--utrecht-feedback-danger-color, currentcolor);
+	color: var(--utrecht-feedback-danger-color, var(--nldesign-color-error, currentcolor));
 }
 
 .pq-action-edit__error {
