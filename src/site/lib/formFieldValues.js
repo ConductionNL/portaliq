@@ -87,3 +87,74 @@ export function minimumErrors(fields, values) {
 	}
 	return errors
 }
+
+/**
+ * A date field's earliest or latest date as `yyyy-mm-dd`, or '' when the
+ * editor left it empty or typed something that is not a real date.
+ *
+ * @param {*} value The `earliest` or `latest` setting.
+ * @return {string} The limit, or ''.
+ *
+ * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+ */
+export function dateLimit(value) {
+	const text = typeof value === 'string' ? value.trim() : ''
+	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(text)
+	if (!match) {
+		return ''
+	}
+	const [year, month, day] = match.slice(1).map(Number)
+	const date = new Date(Date.UTC(year, month - 1, day))
+	return date.getUTCFullYear() === year
+		&& date.getUTCMonth() === month - 1
+		&& date.getUTCDate() === day
+		? text
+		: ''
+}
+
+/**
+ * `yyyy-mm-dd` as the visitor reads it: `d-m-yyyy`.
+ *
+ * @param {string} iso A real date.
+ * @return {string} The date in Dutch order.
+ */
+function readableDate(iso) {
+	const [year, month, day] = iso.split('-').map(Number)
+	return `${day}-${month}-${year}`
+}
+
+/**
+ * The message per date field whose answer lies before its earliest or after
+ * its latest date (site-nlds-widget-palette D1, Date Picker: earliest, latest).
+ *
+ * Only a whole `yyyy-mm-dd` answer is compared; an empty or half-typed date is
+ * the required and date rules' to judge. ISO dates compare as strings.
+ *
+ * @param {Array<object>} fields The declared fields.
+ * @param {object} values The values per field id.
+ * @return {Record<string, string>} The message per field id.
+ *
+ * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+ */
+export function dateRangeErrors(fields, values) {
+	const errors = {}
+	for (const field of Array.isArray(fields) ? fields : []) {
+		if (field?.type !== 'date') {
+			continue
+		}
+		const answer = dateLimit((values || {})[field.id])
+		if (answer === '') {
+			continue
+		}
+		const earliest = dateLimit(field.earliest)
+		const latest = dateLimit(field.latest)
+		if (earliest !== '' && answer < earliest) {
+			errors[field.id] =
+				`Kies bij ${field.label} een datum op of na ${readableDate(earliest)}.`
+		} else if (latest !== '' && answer > latest) {
+			errors[field.id] =
+				`Kies bij ${field.label} een datum op of voor ${readableDate(latest)}.`
+		}
+	}
+	return errors
+}

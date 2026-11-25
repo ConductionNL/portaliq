@@ -25,7 +25,7 @@
  *
  * @typedef {object} FieldSetting
  * @property {string} name The key on the field.
- * @property {('string'|'text'|'number'|'options')} kind How the inspector edits it.
+ * @property {('string'|'text'|'number'|'options'|'boolean')} kind How the inspector edits it.
  * @property {string} label The Dutch label in the inspector.
  */
 
@@ -108,8 +108,15 @@ export const FORM_FIELD_TYPES = Object.freeze([
 		type: 'date',
 		label: 'Datum',
 		nlds: 'Date Input Group',
-		synonyms: ['dag', 'geboortedatum'],
-		settings: [{ name: 'description', kind: 'text', label: 'Toelichting' }],
+		synonyms: ['dag', 'geboortedatum', 'datumkiezer', 'date picker', 'kalender'],
+		// D1 rows 22 and 23: one type, `picker` switches the day, month and
+		// year group for a calendar, and both honour the earliest and latest date.
+		settings: [
+			{ name: 'description', kind: 'text', label: 'Toelichting' },
+			{ name: 'picker', kind: 'boolean', label: 'Datumkiezer (kalender)' },
+			{ name: 'earliest', kind: 'string', label: 'Vroegste datum (jjjj-mm-dd)' },
+			{ name: 'latest', kind: 'string', label: 'Laatste datum (jjjj-mm-dd)' },
+		],
 	},
 	{
 		type: 'select',
