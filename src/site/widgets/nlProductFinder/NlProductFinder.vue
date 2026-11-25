@@ -249,7 +249,7 @@ import '@utrecht/link-css/dist/index.css'
 import '@utrecht/paragraph-css/dist/index.css'
 
 /**
- * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
  */
 export default {
 	name: 'NlProductFinder',
@@ -278,7 +278,7 @@ export default {
 	computed: {
 		/**
 		 * @return {object} Where the resident stands.
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		plan() {
 			return planFinder(this.definition, this.answers)
@@ -286,7 +286,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} The steps already answered.
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		answered() {
 			return this.plan.steps.filter((step) => step.answer !== null)
@@ -294,7 +294,7 @@ export default {
 
 		/**
 		 * @return {boolean} Whether an earlier answer is being changed.
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		editing() {
 			return (
@@ -307,7 +307,7 @@ export default {
 
 		/**
 		 * @return {object|null} The step on screen: the one being changed, else the first unanswered.
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		asking() {
 			if (this.editing) {
@@ -320,7 +320,7 @@ export default {
 
 		/**
 		 * @return {string} "Vraag 3 van 5".
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		position() {
 			const index = this.plan.steps.findIndex(
@@ -333,7 +333,7 @@ export default {
 
 		/**
 		 * @return {string} "Nog ongeveer 1 minuut".
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		timeLeft() {
 			const left = this.plan.steps.filter(
@@ -348,7 +348,7 @@ export default {
 
 		/**
 		 * @return {string} How far along the questions the resident is, as a width.
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		progressShare() {
 			const total = this.plan.steps.length
@@ -359,7 +359,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} Every product, remaining and ruled out.
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		allProducts() {
 			return [...this.plan.remaining, ...this.plan.excluded]
@@ -367,7 +367,7 @@ export default {
 
 		/**
 		 * @return {string} "Nog 4 van de 12 producten passen bij uw antwoorden".
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		countText() {
 			const total = this.plan.remaining.length + this.plan.excluded.length
@@ -378,7 +378,7 @@ export default {
 
 		/**
 		 * @return {string} "Vallen af door uw antwoorden (8)".
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		fallenText() {
 			return this.say('fallenAway').replace(
@@ -394,7 +394,7 @@ export default {
 			 * A question on screen starts from its own answer, if it has one.
 			 *
 			 * @param {object|null} step The question on screen.
-			 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+			 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 			 */
 			handler(step) {
 				this.choice = step?.answer || ''
@@ -408,7 +408,7 @@ export default {
 	 * Read the finder once the widget is on the page. The request names the
 	 * portal and the finder, never an answer.
 	 *
-	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 	 */
 	async mounted() {
 		if (this.initialFinder) {
@@ -426,7 +426,7 @@ export default {
 		/**
 		 * @param {string} key A string key.
 		 * @return {string} The words in the page language.
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		say(key) {
 			return (strings[pageLocale()] || strings.nl)[key]
@@ -435,7 +435,7 @@ export default {
 		/**
 		 * @param {string} value `yes` or `no`.
 		 * @return {string} The word on the button.
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		answerLabel(value) {
 			return this.say(value === 'yes' ? 'yes' : 'no')
@@ -447,7 +447,7 @@ export default {
 		 *
 		 * @param {string} value `yes` or `no`.
 		 * @return {void}
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		answer(value) {
 			if (!this.asking) {
@@ -462,7 +462,7 @@ export default {
 		 * Record the chosen answer and move on.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		next() {
 			if (this.choice === 'yes' || this.choice === 'no') {
@@ -475,7 +475,7 @@ export default {
 		 *
 		 * @param {string} id The question's id.
 		 * @return {void}
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		edit(id) {
 			this.editingId = id
@@ -485,7 +485,7 @@ export default {
 		 * Take back the last answer.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		previous() {
 			const last = this.answered[this.answered.length - 1]
@@ -502,7 +502,7 @@ export default {
 		 * Forget every answer.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		restart() {
 			this.answers = {}
@@ -512,7 +512,7 @@ export default {
 		/**
 		 * @param {{route: string}} product The product.
 		 * @return {object} Its link.
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		linkOf(product) {
 			return authoredLink(product.route) || { href: '#', route: '' }
@@ -522,7 +522,7 @@ export default {
 		 * @param {MouseEvent} event The click.
 		 * @param {object} link The link.
 		 * @return {void}
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 		 */
 		open(event, link) {
 			if (staysInSite(event, link)) {

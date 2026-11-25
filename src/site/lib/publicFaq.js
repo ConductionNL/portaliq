@@ -7,7 +7,7 @@
 // request carries the portal and which entries to list; never an answer of a
 // resident.
 //
-// @spec openspec/changes/public-faq-and-product-finder/tasks.md#t03
+// @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t03
 
 import { getContent, unlessMissing } from './contentRequest.js'
 

@@ -91,7 +91,7 @@ import '@utrecht/link-css/dist/index.css'
 import '@utrecht/paragraph-css/dist/index.css'
 
 /**
- * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t03
  */
 export default {
 	name: 'NlFaqList',
@@ -122,7 +122,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The element the questions use: h3, or h4 under a topic heading.
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t03
 		 */
 		entryTag() {
 			return this.all ? 'h4' : 'h3'
@@ -130,7 +130,7 @@ export default {
 
 		/**
 		 * @return {Array<{topic: string, entries: Array<object>}>} The entries, grouped by topic in the order they arrive.
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t03
 		 */
 		groups() {
 			const groups = []
@@ -152,7 +152,7 @@ export default {
 
 		/**
 		 * @return {object|null} The link to all questions.
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t03
 		 */
 		more() {
 			return this.moreLabel.trim() ? authoredLink(this.moreHref) : null
@@ -162,7 +162,7 @@ export default {
 	/**
 	 * Read the entries once the widget is on the page.
 	 *
-	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t03
 	 */
 	async mounted() {
 		try {
@@ -182,7 +182,7 @@ export default {
 		/**
 		 * @param {string} key A string key.
 		 * @return {string} The words in the page language.
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t03
 		 */
 		say(key) {
 			return (strings[pageLocale()] || strings.nl)[key]
@@ -191,7 +191,7 @@ export default {
 		/**
 		 * @param {string} key The entry's key.
 		 * @return {boolean} Whether its answer is open.
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t03
 		 */
 		isOpen(key) {
 			return this.openKeys.includes(key)
@@ -202,7 +202,7 @@ export default {
 		 *
 		 * @param {string} key The entry's key.
 		 * @return {void}
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t03
 		 */
 		toggle(key) {
 			this.openKeys = this.isOpen(key)
@@ -214,7 +214,7 @@ export default {
 		 * @param {MouseEvent} event The click.
 		 * @param {object} link The link.
 		 * @return {void}
-		 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t03
 		 */
 		open(event, link) {
 			if (staysInSite(event, link)) {

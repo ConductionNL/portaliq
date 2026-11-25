@@ -5,7 +5,7 @@
 // tests run the same code. Nothing here touches the network or storage: the
 // answers live in the caller's memory and nowhere else.
 //
-// @spec openspec/changes/public-faq-and-product-finder/tasks.md#t04
+// @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t04
 
 /**
  * The routes a question rules out for an answer.

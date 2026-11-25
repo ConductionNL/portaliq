@@ -408,7 +408,7 @@ class ContentController extends Controller {
 	 *
 	 * @return JSONResponse The entries, or 404.
 	 *
-	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t02
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -441,7 +441,7 @@ class ContentController extends Controller {
 	 *
 	 * @return JSONResponse The finder, or 404.
 	 *
-	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t02
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
