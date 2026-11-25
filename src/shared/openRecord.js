@@ -200,25 +200,37 @@ export function recordPageForRow(nav, current, page, target) {
 	if (!target?.app || !target?.collection) {
 		return null
 	}
-	const here = page || current?.page || {}
-	if ((here.record || here.records)?.collection === target.collection) {
+	if (showsRowItself(page || current?.page || {}, target.collection)) {
 		return null
 	}
-	const shownHere = (here.blocks || []).some(
-		(block) =>
-			block?.collection === target.collection
-			&& ['detail', 'citizenCase'].includes(block.type),
-	)
-	if (shownHere) {
-		return null
-	}
+	const currentKey = current?.key
 	return (
 		(nav || []).find(
 			(entry) =>
 				entry !== current
-				&& (!current || entry.key !== current.key)
+				&& (!currentKey || entry.key !== currentKey)
 				&& entry.contribution?.app === target.app
 				&& opensAsRecordPage(entry, target.collection),
 		) || null
+	)
+}
+
+/**
+ * Whether a page shows a chosen row of a collection itself: it is that
+ * collection's record page, or it carries a `detail` or `citizenCase` block
+ * on it.
+ *
+ * @param {object} page The page.
+ * @param {string} collection The collection id.
+ * @return {boolean}
+ */
+function showsRowItself(page, collection) {
+	if ((page.record || page.records)?.collection === collection) {
+		return true
+	}
+	return (page.blocks || []).some(
+		(block) =>
+			block?.collection === collection
+			&& ['detail', 'citizenCase'].includes(block.type),
 	)
 }
