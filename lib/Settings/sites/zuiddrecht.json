@@ -19,7 +19,8 @@
             "modes": [
                 "public",
                 "digid",
-                "eherkenning"
+                "eherkenning",
+                "nextcloud"
             ],
             "minTrust": "low",
             "modeLabels": {
@@ -32,11 +33,16 @@
                     "title": "Namens een bedrijf",
                     "text": "Voor vergunningen, meldingen en zaken van uw organisatie.",
                     "button": "Inloggen met eHerkenning"
+                },
+                "nextcloud": {
+                    "title": "Met een account",
+                    "text": "Voor wie publicaties volgt, dossiers bewaart of een vraag stelt. Geen DigiD nodig.",
+                    "button": "Inloggen met uw account"
                 }
             },
             "signInPage": {
                 "title": "Inloggen op Mijn Zuiddrecht",
-                "intro": "Kies hoe u inlogt. Als inwoner gebruikt u DigiD. Namens een bedrijf gebruikt u eHerkenning.",
+                "intro": "Kies hoe u inlogt. Als inwoner gebruikt u DigiD. Namens een bedrijf gebruikt u eHerkenning. Zonder wettelijke identificatie kunt u een account gebruiken.",
                 "notice": {
                     "text": "Geen DigiD? Bel 14 0999. Wij helpen u op een andere manier."
                 }
