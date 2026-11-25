@@ -200,4 +200,53 @@ class DisplayKeysTest extends TestCase {
 		$this->assertCount(expectedCount: 20, haystack: $kept);
 		$this->assertSame(expected: 's20', actual: array_key_last($kept));
 	}//end testStatusTonesAreCappedAtTwenty()
+	/**
+	 * Rows keep a note per status value: its projected name field, its
+	 * moment and its template; an entry without a projected field is dropped.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/rows-status-note-per-state/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-a-different-note-per-status
+	 */
+	public function testRowsKeepANotePerStatus(): void {
+		$notes = [
+			'submitted' => [
+				'field'    => 'who',
+				'atField'  => 'date',
+				'render'   => 'user',
+				'template' => '  Gezien door {name} om {time} uur ',
+			],
+			'approved'  => ['field' => 'who', 'atField' => 'secret', 'template' => str_repeat('x', 81)],
+			'rejected'  => ['field' => 'secret'],
+			''          => ['field' => 'who'],
+			'odd'       => 'who',
+		];
+		$this->assertSame(
+			expected: [
+				'submitted' => ['field' => 'who', 'atField' => 'date', 'template' => 'Gezien door {name} om {time} uur'],
+				'approved'  => ['field' => 'who'],
+			],
+			actual: $this->keys(block: ['display' => 'rows', 'statusNotes' => $notes])['statusNotes']
+		);
+		$this->assertArrayNotHasKey(key: 'statusNotes', array: $this->keys(block: ['display' => 'cards', 'statusNotes' => $notes]));
+		$unprojected = $this->keys(block: ['display' => 'rows', 'statusNotes' => ['rejected' => ['field' => 'secret']]]);
+		$this->assertArrayNotHasKey(key: 'statusNotes', array: $unprojected);
+		$this->assertArrayNotHasKey(key: 'statusNotes', array: $this->keys(block: ['display' => 'rows', 'statusNotes' => 'who']));
+	}//end testRowsKeepANotePerStatus()
+
+	/**
+	 * At most twenty notes are kept.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/rows-status-note-per-state/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-a-different-note-per-status
+	 */
+	public function testStatusNotesAreCappedAtTwenty(): void {
+		$notes = [];
+		foreach (range(1, 25) as $n) {
+			$notes['s'.$n] = ['field' => 'who'];
+		}
+
+		$this->assertCount(expectedCount: 20, haystack: $this->keys(block: ['display' => 'rows', 'statusNotes' => $notes])['statusNotes']);
+	}//end testStatusNotesAreCappedAtTwenty()
 }//end class

@@ -66,7 +66,7 @@ import DateTile from './DateTile.vue'
 import EmptyState from './EmptyState.vue'
 import Skeleton from './Skeleton.vue'
 import { dateRows } from './displays.js'
-import { decidedInWords, mijnTranslator } from './rows.js'
+import { mijnTranslator, statusNoteInWords } from './rows.js'
 
 let counter = 0
 
@@ -128,11 +128,15 @@ export default {
 		 *
 		 * @param {object} entry The row as drawn.
 		 * @return {string} The line, or ''.
-		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-when-its-status-was-set
+		 * @spec openspec/changes/rows-status-note-per-state/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-a-different-note-per-status
 		 */
 		noteOf(entry) {
-			return decidedInWords(
-				{ who: entry.statusNote, at: entry.statusNoteAt },
+			return statusNoteInWords(
+				{
+					who: entry.statusNote,
+					at: entry.statusNoteAt,
+					template: entry.statusNoteTemplate,
+				},
 				{ today: this.now, tr: this.tr, locale: this.locale },
 			)
 		},

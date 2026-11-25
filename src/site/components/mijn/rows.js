@@ -355,6 +355,53 @@ export function decidedInWords(note, context) {
 }
 
 /**
+ * The note under a status in the contributing app's own words, already
+ * translated by that app: "Gezien door {name} om {time} uur" becomes
+ * "Gezien door juf Esra om 8.12 uur". `{date}` is the day in words. Without
+ * a name the note says nothing (nobody has seen it yet); without a template
+ * it is decidedInWords().
+ *
+ * @param {{who: string, at: string, template?: string}} note The name, the ISO moment and the template.
+ * @param {{today: Date, tr: (key: string, vars?: object) => string, locale?: string}} context Today, the translator and the page language.
+ * @return {string}
+ * @spec openspec/changes/rows-status-note-per-state/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-a-different-note-per-status
+ */
+export function statusNoteInWords(note, context) {
+	if (!note.template) {
+		return decidedInWords(note, context)
+	}
+	if (!note.who) {
+		return ''
+	}
+	const day = localDay(note.at)
+	const at = day ? new Date(note.at) : null
+	const vars = {
+		name: note.who,
+		date: day ? dayInWords(day, localDay(context.today || new Date()), context.locale) : '',
+		time: at ? shortClockTime(at, context.locale) : '',
+	}
+	let text = note.template
+	for (const [name, value] of Object.entries(vars)) {
+		text = text.split(`{${name}}`).join(value)
+	}
+	return text.replace(/\s+/g, ' ').trim()
+}
+
+/**
+ * A time of day without a leading zero: "8.12" in Dutch, "8:12" in English.
+ *
+ * @param {Date} at The moment.
+ * @param {string} locale The page language.
+ * @return {string}
+ */
+function shortClockTime(at, locale) {
+	const english = pageLanguage(locale) === 'en'
+	return at
+		.toLocaleTimeString(english ? 'en-GB' : 'nl-NL', { hour: 'numeric', minute: '2-digit' })
+		.replace(':', english ? ':' : '.')
+}
+
+/**
  * A moment in words, lower case: "vandaag 8:12 uur", "1 oktober 8:20 uur".
  *
  * @param {string} value An ISO date-time.
