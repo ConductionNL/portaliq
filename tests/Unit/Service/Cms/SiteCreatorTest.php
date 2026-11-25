@@ -43,15 +43,15 @@ final class SiteCreatorTest extends TestCase {
 	public function testTheFooterLineNamesTheKindWithItsArticle(): void {
 		self::assertSame(
 			expected: 'Een website van het waterschap',
-			actual: SiteCreator::kindLine(portal: ['organisationTypeLabel' => ' Waterschap '], locale: 'nl')
+			actual: (new SiteCreator())->kindLine(portal: ['organisationTypeLabel' => ' Waterschap '], locale: 'nl')
 		);
 		self::assertSame(
 			expected: 'Een website van het ministerie',
-			actual: SiteCreator::kindLine(portal: ['organisationTypeLabel' => 'ministerie'], locale: 'nl-NL')
+			actual: (new SiteCreator())->kindLine(portal: ['organisationTypeLabel' => 'ministerie'], locale: 'nl-NL')
 		);
 		self::assertSame(
 			expected: 'Een website van de provincie',
-			actual: SiteCreator::kindLine(portal: ['organisationTypeLabel' => 'provincie'], locale: 'nl')
+			actual: (new SiteCreator())->kindLine(portal: ['organisationTypeLabel' => 'provincie'], locale: 'nl')
 		);
 	}//end testTheFooterLineNamesTheKindWithItsArticle()
 
@@ -63,15 +63,15 @@ final class SiteCreatorTest extends TestCase {
 	public function testNoTypeOrAnotherLanguageHasNoFooterLine(): void {
 		self::assertSame(
 			expected: '',
-			actual: SiteCreator::kindLine(portal: ['title' => 'Open Tilburg'], locale: 'nl')
+			actual: (new SiteCreator())->kindLine(portal: ['title' => 'Open Tilburg'], locale: 'nl')
 		);
 		self::assertSame(
 			expected: '',
-			actual: SiteCreator::kindLine(portal: ['organisationTypeLabel' => '  '], locale: 'nl')
+			actual: (new SiteCreator())->kindLine(portal: ['organisationTypeLabel' => '  '], locale: 'nl')
 		);
 		self::assertSame(
 			expected: '',
-			actual: SiteCreator::kindLine(portal: ['organisationTypeLabel' => 'waterschap'], locale: 'en')
+			actual: (new SiteCreator())->kindLine(portal: ['organisationTypeLabel' => 'waterschap'], locale: 'en')
 		);
 	}//end testNoTypeOrAnotherLanguageHasNoFooterLine()
 }//end class

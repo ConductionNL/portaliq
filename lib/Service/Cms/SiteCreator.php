@@ -77,7 +77,7 @@ final class SiteCreator {
 	 *
 	 * @spec openspec/changes/portal-identity-from-the-admin/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
 	 */
-	public static function kindLine(array $portal, string $locale): string {
+	public function kindLine(array $portal, string $locale): string {
 		$kind = mb_strtolower(trim((string)($portal['organisationTypeLabel'] ?? '')));
 		if ($kind === '' || str_starts_with(strtolower($locale), 'nl') === false) {
 			return '';

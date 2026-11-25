@@ -197,7 +197,7 @@ class ContentController extends Controller {
 				// "de organisatie" without it (REQ-PIA-003).
 				'organisationTypeLabel' => (string)($portal['organisationTypeLabel'] ?? ''),
 				// The footer's "Een website van het waterschap", in the page language.
-				'organisationKindLine' => SiteCreator::kindLine(portal: $portal, locale: $this->locale(portal: $portal, requested: $locale)),
+				'organisationKindLine' => (new SiteCreator())->kindLine(portal: $portal, locale: $this->locale(portal: $portal, requested: $locale)),
 				// The line under the name in the footer's logo block. The
 				// reference carries one ("Één plek voor alle publicaties van
 				// Gemeente Tilburg") and this app had no field for it at all,

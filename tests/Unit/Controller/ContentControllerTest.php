@@ -381,8 +381,11 @@ class ContentControllerTest extends TestCase {
 			$this->portal()
 		);
 
-		$this->assertSame('Een website van het waterschap', $this->controller()->site(locale: 'nl')->getData()['organisationKindLine']);
-		$this->assertSame('', $this->controller()->site(locale: 'nl')->getData()['organisationKindLine']);
+		$this->assertSame(
+			expected: 'Een website van het waterschap',
+			actual: $this->controller()->site(locale: 'nl')->getData()['organisationKindLine']
+		);
+		$this->assertSame(expected: '', actual: $this->controller()->site(locale: 'nl')->getData()['organisationKindLine']);
 	}//end testSiteSendsTheFooterKindLine()
 
 
