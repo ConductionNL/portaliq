@@ -70,7 +70,7 @@ test marked **fails today** must be run on `origin/development` first and seen r
     for `/publicatie/<id>` when the anonymous read answers 410 and the portal shows withheld notices
     (`PortalPageControllerHostRootTest::testATombstoneAnswers410`). Until opencatalogi's
     `publication-withdrawal-aftercare` answers 410, the read answers 404 and the page stays not found.
-- [ ] 3.2 The "Niet openbaar gemaakt" list (REQ-PER-005). If no opencatalogi change exposes withheld
+- [x] 3.2 The "Niet openbaar gemaakt" list (REQ-PER-005). If no opencatalogi change exposes withheld
   documents with grounds on the public read, build the rendering against a fixture whose keys are
   written in the PR body as the proposed contract, leave this box open, and say in the PR body that
   6.16's second half waits on opencatalogi.
@@ -81,6 +81,12 @@ test marked **fails today** must be run on `origin/development` first and seen r
     read (opencatalogi `publication-detail-for-the-portal` REQ-PDP-004, `woo-decision-shows-what-was-withheld`
     REQ-WDW-003). Left open: neither change is merged on opencatalogi `development`, so 6.16's second half waits on
     opencatalogi.
+  - 25 Nov 2026: opencatalogi archived `publication-detail-for-the-portal` on 24 Nov, and its development answers
+    `withheld: [{position, grounds, groundDetails: [{code, article, label}], title?}]`
+    (`WithheldFromPublication`), the shape this rendering reads. Labels are empty until opencatalogi's refusal
+    grounds resolve (`woo-decision-shows-what-was-withheld` 3.2); the code then reads alone, never a guessed label.
+    Test `the shipped list with unresolved labels reads the codes alone` in `tests/publication-withdrawal.spec.mjs`.
+    The live read stays 4.1.
 
 ## 4. Live
 

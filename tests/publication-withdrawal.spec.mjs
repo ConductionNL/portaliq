@@ -174,9 +174,9 @@ test('a tombstone without a title shows none', async () => {
 	)
 })
 
-// REQ-PER-005 against opencatalogi's planned `withheld` on the public read
-// (publication-detail-for-the-portal REQ-PDP-004, woo-decision-shows-what-was-withheld
-// REQ-WDW-003), not shipped yet.
+// REQ-PER-005 against opencatalogi's `withheld` on the public read
+// (publication-detail-for-the-portal REQ-PDP-004, archived 24 Nov 2026;
+// labels arrive with woo-decision-shows-what-was-withheld REQ-WDW-003).
 const WITH_WITHHELD = {
 	id: 'pub-1',
 	title: 'Besluit op Woo-verzoek',
@@ -269,6 +269,33 @@ test('two withheld documents list their grounds', async () => {
 	)
 	assert.match(html, /5\.1\.2\.e: Eerbiediging van de persoonlijke levenssfeer/)
 	assert.match(html, /5\.2\.1: Persoonlijke beleidsopvattingen/)
+})
+
+// What opencatalogi's development answers today (WithheldFromPublication):
+// `groundDetails` per code with an empty `article` and `label`, until its
+// refusal grounds resolve. The code then reads alone.
+test('the shipped list with unresolved labels reads the codes alone', () => {
+	const shipped = {
+		withheld: [
+			{
+				position: 1,
+				grounds: ['5.1.2.e', '5.2.1'],
+				groundDetails: [
+					{ code: '5.1.2.e', article: '', label: '' },
+					{ code: '5.2.1', article: '', label: '' },
+				],
+			},
+		],
+	}
+	assert.deepEqual(withheldDocumentsOf(shipped, { withheldNotices: true }), [
+		{
+			reference: 'Document 1',
+			grounds: [
+				{ code: '5.1.2.e', label: '' },
+				{ code: '5.2.1', label: '' },
+			],
+		},
+	])
 })
 
 test('notices off lists nothing', async () => {
