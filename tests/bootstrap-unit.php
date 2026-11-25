@@ -147,6 +147,8 @@ foreach ([
 	'Service\\Object\\DiscardDraftRequest' => 'Service/Object/DiscardDraftRequest.php',
 	'Service\\Form\\FormSubmitter' => 'Service/Form/FormSubmitter.php',
 	'Service\\Form\\FormSubmission' => 'Service/Form/FormSubmission.php',
+	// What FormDestinationValidator::validate() takes (openregister main, 25 Nov 2026).
+	'Service\\Form\\FormDestination' => 'Service/Form/FormDestination.php',
 	// The concept register's reader (portal-identity-from-the-admin 3.1).
 	'Service\\Vocabulary\\ConceptRepository' => 'Service/Vocabulary/ConceptRepository.php',
 	// What ObjectService::saveObjects() takes (openregister #9108): the defaults first.

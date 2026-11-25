@@ -62,22 +62,26 @@ const NEIGHBOURS = [
 	{ naam: 'Sanne de Vries', huisnummer: '16' },
 ]
 
-/** What this run created, as `schema/id`, to delete afterwards. */
+/** What this run created, as `register/schema/id`, to delete afterwards. */
 const created: string[] = []
 
 /**
- * Create one portaliq object through OpenRegister's own object API, as the admin.
+ * Create one object through OpenRegister's own object API, as the admin.
  *
  * @param request The request fixture.
- * @param schema The portaliq schema.
+ * @param schema The schema.
  * @param data The object.
+ * @param register The register: portaliq, or buildiq for the published form
+ *   (the binding resolver's default form register; portaliq declares no
+ *   `registrationForm` schema).
  */
 async function seed(
 	request: APIRequestContext,
 	schema: string,
 	data: Record<string, unknown>,
+	register = 'portaliq',
 ): Promise<void> {
-	const res = await request.post(`${OR_OBJECTS_BASE}/portaliq/${schema}`, {
+	const res = await request.post(`${OR_OBJECTS_BASE}/${register}/${schema}`, {
 		headers: ADMIN_HEADERS,
 		data,
 	})
@@ -88,7 +92,7 @@ async function seed(
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
-	created.push(`${schema}/${id}`)
+	created.push(`${register}/${schema}/${id}`)
 }
 
 /**
@@ -100,6 +104,11 @@ async function seedStreetParty(request: APIRequestContext): Promise<void> {
 	const caseType = `straatfeest-${STAMP}`
 	await seed(request, 'registrationForm', {
 		caseType,
+		targetApp: 'portaliq',
+		register: 'portaliq',
+		schema: 'portalCase',
+		typeProperty: 'caseType',
+		typeValue: caseType,
 		audience: 'client',
 		name: `${caseType}-client`,
 		status: 'published',
@@ -129,7 +138,7 @@ async function seedStreetParty(request: APIRequestContext): Promise<void> {
 			{ id: 'aanvrager', title: 'Uw gegevens', fields: ['aanvrager'] },
 			{ id: 'controleren', title: 'Controleren', review: true },
 		],
-	})
+	}, 'buildiq')
 	await seed(request, 'portalFormBinding', {
 		portal: SITE_PORTAL,
 		route: ROUTE,
@@ -137,7 +146,7 @@ async function seedStreetParty(request: APIRequestContext): Promise<void> {
 		typeSchema: 'portalCaseType',
 		typeId: caseType,
 		audience: 'client',
-		formRegister: 'portaliq',
+		formRegister: 'buildiq',
 		formSchema: 'registrationForm',
 		destination: { register: 'portaliq', schema: 'portalCase' },
 		intakeKind: 'hosted',
@@ -244,7 +253,7 @@ test.describe('form-flow-repeating-groups-calculations-and-decisions', () => {
 
 	test.afterAll(async ({ request }) => {
 		for (const ref of created.splice(0).reverse()) {
-			await request.delete(`${OR_OBJECTS_BASE}/portaliq/${ref}`, {
+			await request.delete(`${OR_OBJECTS_BASE}/${ref}`, {
 				headers: ADMIN_HEADERS,
 			})
 		}

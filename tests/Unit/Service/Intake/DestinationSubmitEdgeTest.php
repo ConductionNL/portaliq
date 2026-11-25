@@ -99,7 +99,10 @@ class DestinationSubmitEdgeTest extends TestCase {
 			public function __construct(private mixed $result) {
 			}
 
-			public function validate(array $mapping, object $schema, array $options=[]): mixed {
+			public ?object $destination = null;
+
+			public function validate(array $mapping, object $destination): mixed {
+				$this->destination = $destination;
 				if ($this->result instanceof \Throwable) {
 					throw $this->result;
 				}
@@ -224,4 +227,21 @@ class DestinationSubmitEdgeTest extends TestCase {
 
 		$this->assertSame([], (new DestinationSubmit($container, $this->createMock(LoggerInterface::class)))->findings(destination: ['register' => 'a', 'schema' => 'case'], mapping: [], audience: 'public'));
 	}//end testAValidMappingHasNoFindings()
+
+	/**
+	 * OpenRegister's validator takes one FormDestination with the schema and
+	 * the audience; the older named arguments threw "Unknown named parameter".
+	 *
+	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md
+	 */
+	public function testTheValidatorIsHandedTheSchemaAndTheAudienceAsOneDestination(): void {
+		$schema    = new \stdClass();
+		$validator = self::validator([]);
+		$container = self::container([self::VALIDATOR => $validator, self::MAPPER => self::mapper([$schema])]);
+
+		$this->assertSame([], (new DestinationSubmit($container, $this->createMock(LoggerInterface::class)))->findings(destination: ['register' => 'a', 'schema' => 'case'], mapping: [], audience: 'public'));
+		$this->assertInstanceOf(\OCA\OpenRegister\Service\Form\FormDestination::class, $validator->destination);
+		$this->assertSame($schema, $validator->destination->schema);
+		$this->assertSame('public', $validator->destination->audience);
+	}//end testTheValidatorIsHandedTheSchemaAndTheAudienceAsOneDestination()
 }//end class
