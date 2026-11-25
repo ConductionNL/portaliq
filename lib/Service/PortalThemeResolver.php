@@ -131,11 +131,29 @@ class PortalThemeResolver implements PortalThemeResolverInterface {
 		// (ADR-086 section 6): the page then renders unthemed, and without this
 		// line nothing would say why.
 		if ($sheet === null && trim($theme) !== '') {
-			$this->logger?->warning('Portaliq: theme does not resolve, the portal renders unthemed', ['theme' => mb_substr($theme, 0, 64)]);
+			$this->logger?->warning($this->unresolvedMessage(), ['theme' => mb_substr($theme, 0, 64)]);
 		}
 
 		return $sheet;
 	}//end stylesheetFor()
+
+	/**
+	 * Why a named theme renders unthemed, in words an operator can act on.
+	 *
+	 * A missing theme app is named as the cause, so an installation without it
+	 * reports the dependency instead of only the theme it could not find.
+	 *
+	 * @return string The log message.
+	 *
+	 * @spec openspec/changes/archive/2026-11-25-portal-theme-application/specs/portaliq-cms/spec.md#requirement-portaliq-must-declare-its-dependency-on-themiq
+	 */
+	private function unresolvedMessage(): string {
+		if ($this->themeAppPath() === null) {
+			return 'Portaliq: theme does not resolve, the theme app ('.implode(' or ', self::THEME_APP_IDS).') is not installed; the portal renders unthemed';
+		}
+
+		return 'Portaliq: theme does not resolve, the portal renders unthemed';
+	}//end unresolvedMessage()
 
 	/**
 	 * The stylesheet a theme reference resolves to, or null.

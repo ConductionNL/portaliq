@@ -14,7 +14,8 @@
  * published form with a name and an e-mail field, its binding (introduction,
  * both statements required, the confirmation page and mail) and a site page
  * with the intake widget on that binding. Everything is deleted afterwards.
- * The visitor is anonymous, in an empty-state context, and uses the keyboard
+ * The visitor is a dev-login resident (today's intake form renders only for a
+ * signed-in resident), in an otherwise empty-state context, and uses the keyboard
  * only: focus moves by Tab and controls are used with Enter and Space.
  *
  * WHAT IS LEFT TO OTHER TESTS, AND WHY.
@@ -49,7 +50,7 @@ import type {
 
 import { expect, test } from '@playwright/test'
 import { BASE_URL } from './base-url.ts'
-import { SITE_PATH } from './portal-nav.ts'
+import { devLogin, seedSiteSession, SITE_PATH } from './portal-nav.ts'
 
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 const ADMIN = Buffer.from(process.env.PORTALIQ_E2E_ADMIN || 'admin:admin').toString(
@@ -101,8 +102,82 @@ async function seed(
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
-	created.push(`${schema}/${id}`)
+	created.push(`portaliq/${schema}/${id}`)
 	return id
+}
+
+/**
+ * The register and schema the answers go to: a portal submit is an anonymous
+ * write, so the form points at a schema that lets a public visitor create.
+ * The spec makes its own and removes it afterwards.
+ */
+const DESTINATION = `e2e-verklaringen-${STAMP}`
+const destinationIds: { schema?: number, register?: number } = {}
+
+/** The resident's bearer: today's intake form renders only for a signed-in resident. */
+let residentToken = ''
+
+/**
+ * Create the destination register and schema, once for the run.
+ *
+ * @param request The request fixture.
+ */
+async function seedDestination(request: APIRequestContext): Promise<void> {
+	if (destinationIds.register) {
+		return
+	}
+	const schema = await request.post('/apps/openregister/api/schemas', {
+		headers: ADMIN_HEADERS,
+		data: {
+			title: `E2E ${DESTINATION}`,
+			slug: DESTINATION,
+			properties: {
+				caseType: { type: 'string' },
+				naam: { type: 'string' },
+				email: { type: 'string' },
+				statements: { type: 'array' },
+				reference: { type: 'string', 'x-openregister': { reference: true } },
+				subjectRef: { type: 'string' },
+			},
+			authorization: { create: ['public'], read: ['admin'] },
+		},
+	})
+	expect(schema.ok(), `the destination schema must be created: ${await schema.text()}`).toBeTruthy()
+	destinationIds.schema = (await schema.json()).id
+	const register = await request.post('/apps/openregister/api/registers', {
+		headers: ADMIN_HEADERS,
+		data: { title: `E2E ${DESTINATION}`, slug: DESTINATION, schemas: [destinationIds.schema] },
+	})
+	expect(register.ok(), `the destination register must be created: ${await register.text()}`).toBeTruthy()
+	destinationIds.register = (await register.json()).id
+}
+
+/**
+ * Store a published form through buildiq's own form API and remember its id.
+ * Not through OpenRegister's objects route: a JSON body's `register` and
+ * `schema` replace the route's own parameters in Nextcloud's request, so the
+ * form row would land in the destination register.
+ *
+ * @param request The request fixture.
+ * @param form The form.
+ */
+async function seedRegistrationForm(
+	request: APIRequestContext,
+	form: Record<string, unknown>,
+): Promise<void> {
+	const saved = await request.put('/apps/buildiq/api/registration-forms', {
+		headers: ADMIN_HEADERS,
+		data: form,
+	})
+	expect(saved.ok(), `buildiq must store the form: ${await saved.text()}`).toBeTruthy()
+	const found = await request.get(`${OR_OBJECTS_BASE}/buildiq/registrationForm`, {
+		headers: ADMIN_HEADERS,
+		params: { name: String(form.name), _limit: '1' },
+	})
+	const rows = ((await found.json()).results ?? []) as Array<Record<string, unknown>>
+	const id = String(rows[0]?.id ?? '')
+	expect(id, `the stored form ${String(form.name)} is listed`).not.toBe('')
+	created.push(`buildiq/registrationForm/${id}`)
 }
 
 /**
@@ -125,8 +200,14 @@ async function seedForm(request: APIRequestContext): Promise<void> {
 			privacy: { text: PRIVACY, version: '2026-2' },
 		},
 	})
-	await seed(request, 'registrationForm', {
-		caseType,
+	await seedDestination(request)
+	await seedRegistrationForm(request, {
+		targetApp: 'portaliq',
+		register: DESTINATION,
+		schema: DESTINATION,
+		typeProperty: 'caseType',
+		typeValue: caseType,
+		isPublic: true,
 		audience: 'client',
 		name: `${caseType}-client`,
 		status: 'published',
@@ -148,9 +229,9 @@ async function seedForm(request: APIRequestContext): Promise<void> {
 		typeSchema: 'portalCaseType',
 		typeId: caseType,
 		audience: 'client',
-		formRegister: 'portaliq',
+		formRegister: 'buildiq',
 		formSchema: 'registrationForm',
-		destination: { register: 'portaliq', schema: 'portalCase' },
+		destination: { register: DESTINATION, schema: DESTINATION, subjectField: 'subjectRef' },
 		intakeKind: 'hosted',
 		status: 'published',
 		intro: {
@@ -214,6 +295,7 @@ async function openForm(browser: Browser): Promise<Page> {
 		storageState: EMPTY_STATE,
 	})
 	const page = await context.newPage()
+	await seedSiteSession(page, residentToken)
 	const params = new URLSearchParams({ portal: PORTAL, route: PAGE_ROUTE })
 	await page.goto(`${SITE_PATH}?${params.toString()}`)
 	await expect(page.getByTestId('intake-form')).toBeVisible({ timeout: 60_000 })
@@ -254,13 +336,20 @@ async function startAndAnswer(page: Page): Promise<void> {
 test.describe('form-statements-intro-and-confirmation-mail', () => {
 	test.beforeAll(async ({ request }) => {
 		await seedForm(request)
+		residentToken = await devLogin(request, `e2e-verklaringen-${STAMP}`, 'client', 'dev-org')
 	})
 
 	test.afterAll(async ({ request }) => {
 		for (const ref of created.splice(0).reverse()) {
-			await request.delete(`${OR_OBJECTS_BASE}/portaliq/${ref}`, {
+			await request.delete(`${OR_OBJECTS_BASE}/${ref}`, {
 				headers: ADMIN_HEADERS,
 			})
+		}
+		if (destinationIds.register) {
+			await request.delete(`/apps/openregister/api/registers/${destinationIds.register}`, { headers: ADMIN_HEADERS })
+		}
+		if (destinationIds.schema) {
+			await request.delete(`/apps/openregister/api/schemas/${destinationIds.schema}`, { headers: ADMIN_HEADERS })
 		}
 	})
 

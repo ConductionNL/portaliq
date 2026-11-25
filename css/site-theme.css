@@ -3655,3 +3655,18 @@ body:has(.pq-site__header--designed) .pq-site__skip {
 	gap: 0.75rem;
 	margin-block-start: 1.5rem;
 }
+
+/*
+ * The plain (no-JavaScript) page, /site/plain: its skip link, the portal link
+ * and the menu links stack as bare text links, 19px high with 19px between
+ * them. WCAG 2.2 SC 2.5.8 (target size, minimum) asks 24 by 24 CSS pixels or
+ * that much space; axe flagged every one of them (site-accessibility S13f,
+ * S13g). Each takes a 24px line of its own instead.
+ * @spec openspec/changes/site-honest-without-javascript/tasks.md#4.1
+ */
+.pq-plain__header .utrecht-link,
+body:has(.pq-plain__header) .pq-site__skip {
+	display: inline-block;
+	min-block-size: 24px;
+	line-height: 24px;
+}

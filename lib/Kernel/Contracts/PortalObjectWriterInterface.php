@@ -140,6 +140,16 @@ interface PortalObjectWriterInterface {
 	public function lastFailure(): string;
 
 	/**
+	 * Whether the last create or update failed because the app that owns the
+	 * record refused it before it was stored.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
+	 */
+	public function lastRefusedByOwner(): bool;
+
+	/**
 	 * The server-side ownership stamps a create writes over the client's data.
 	 *
 	 * The stamps ALWAYS win over any client-supplied value. An `array` scope
