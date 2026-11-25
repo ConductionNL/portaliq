@@ -3298,6 +3298,37 @@
                 }
             }
         },
+        "/mail-templates/rows": {
+            "get": {
+                "operationId": "mail-template-rows-index",
+                "summary": "The rows of the Mail templates screen",
+                "description": "One row per kind of mail, or one per stored text of that kind, with its subject, variable count and change date. Needs an administrator, or a user the matching admin setting is delegated to.",
+                "tags": [
+                    "mail-template-admin"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The request succeeded.",
+                        "headers": {
+                            "API-Version": {
+                                "$ref": "#/components/headers/API-Version"
+                            }
+                        },
+                        "content": {
+                            "application/json": {
+                                "schema": {}
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Problem401"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Problem403"
+                    }
+                }
+            }
+        },
         "/mail-templates/preview": {
             "post": {
                 "operationId": "mail-template-admin-preview",
