@@ -206,7 +206,7 @@ class DestinationMapping implements DestinationMappingInterface {
 	 *
 	 * @return array<string, array{computed: bool}>
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t07
 	 */
 	public function fieldMeta(array $computed): array {
 		$meta = [];

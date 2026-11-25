@@ -322,7 +322,7 @@ class PortalFormValidatorTest extends TestCase {
 	 * form-flow-repeating-groups-calculations-and-decisions REQ-FFL-001: a group
 	 * is a list whose count fits repeat.min and repeat.max.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
 	 */
 	public function testAGroupMustHoldBetweenMinAndMaxItems(): void {
 		$group = ['name' => 'bewoners', 'type' => 'group', 'repeat' => ['min' => 2, 'max' => 3], 'fields' => [['name' => 'naam', 'required' => true]]];
@@ -348,7 +348,7 @@ class PortalFormValidatorTest extends TestCase {
 	 * REQ-FFL-001: the server names the item and the field, and keeps only the
 	 * sub-fields the group declares.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
 	 */
 	public function testTheServerChecksEachItemAndNamesItAndTheField(): void {
 		$group = ['name' => 'bewoners', 'type' => 'group', 'repeat' => ['min' => 1], 'fields' => [['name' => 'naam', 'required' => true], ['name' => 'huisnummer']]];
@@ -376,7 +376,7 @@ class PortalFormValidatorTest extends TestCase {
 	 * REQ-FFL-002: a calculated or decided field is never taken from the browser,
 	 * and being absent from the submission is not a missing answer.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
 	public function testACalculatedFieldIsNeverTakenFromTheBrowser(): void {
 		$fields = [

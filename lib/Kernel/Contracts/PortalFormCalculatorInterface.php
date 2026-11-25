@@ -49,7 +49,7 @@ interface PortalFormCalculatorInterface {
 	 *
 	 * @return array{answers: array<string, mixed>, computed: array<int, string>} The answers and the names that were calculated.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
 	public function apply(array $fields, array $answers): array;
 }//end interface

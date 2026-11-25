@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
  */
 
 declare(strict_types=1);
@@ -33,7 +33,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalFormCalculatorInterface;
  * `group[].field`, or a number. Fields are worked out in the order the form
  * declares them, so a later field can read an earlier calculated one.
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
  */
 class PortalFormCalculator implements PortalFormCalculatorInterface {
 	/**
@@ -62,7 +62,7 @@ class PortalFormCalculator implements PortalFormCalculatorInterface {
 	 *
 	 * @return bool True when every operation is known and well formed.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
 	public function knowsEveryOperation(array $fields): bool {
 		return $this->unknownOperations(fields: $fields) === [];
@@ -76,7 +76,7 @@ class PortalFormCalculator implements PortalFormCalculatorInterface {
 	 *
 	 * @return array<int, string> The unknown operation names (a malformed declaration reads as `?`).
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
 	public function unknownOperations(array $fields): array {
 		$unknown = [];
@@ -138,7 +138,7 @@ class PortalFormCalculator implements PortalFormCalculatorInterface {
 	 *
 	 * @return array{answers: array<string, mixed>, computed: array<int, string>} The answers and the names that were calculated.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
 	public function apply(array $fields, array $answers): array {
 		$computed = [];
@@ -167,7 +167,7 @@ class PortalFormCalculator implements PortalFormCalculatorInterface {
 	 *
 	 * @return int|float|string|null The result, or null when it cannot be worked out.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
 	public function evaluate(array $calculate, array $answers): int|float|string|null {
 		$op   = (string)($calculate['op'] ?? '');
@@ -192,7 +192,7 @@ class PortalFormCalculator implements PortalFormCalculatorInterface {
 	 *
 	 * @return int|string|null
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
 	private function operandResult(string $op, array $args, array $answers): int|string|null {
 		if ($op === 'count') {
@@ -215,7 +215,7 @@ class PortalFormCalculator implements PortalFormCalculatorInterface {
 	 *
 	 * @return int|float|null
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
 	private function numericResult(string $op, array $args, array $answers): int|float|null {
 		$numbers = $this->numbersOf(args: $args, answers: $answers);

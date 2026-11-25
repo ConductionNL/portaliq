@@ -52,7 +52,7 @@ class FakeRuleEngine {
  * engine is asked on the server with the declared inputs, and being down is a
  * state of its own.
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
  */
 class PortalFormDecisionTest extends TestCase {
 

@@ -204,7 +204,7 @@ class PortalSubmissionChecks implements PortalSubmissionChecksInterface {
 	 *
 	 * @return JSONResponse `{outcome, output, nextStep}`, 503 when the engine does not answer, or 404.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
 	 */
 	public function decideStep(array $render, string $step, array $answers): JSONResponse {
 		$declared = $this->decisions()->declaredDecision(steps: (array)($render['steps'] ?? []), step: $step);
@@ -284,7 +284,7 @@ class PortalSubmissionChecks implements PortalSubmissionChecksInterface {
 	 *
 	 * @return array<int, array<string, mixed>> The steps for the browser.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
 	 */
 	public function stepsForTheBrowser(array $steps): array {
 		foreach ($steps as $index => $step) {

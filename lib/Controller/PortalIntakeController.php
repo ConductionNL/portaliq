@@ -819,7 +819,7 @@ class PortalIntakeController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{outcome, output, nextStep}`, 503 when the engine does not answer, or 404.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
