@@ -391,8 +391,9 @@ test.describe('data-lookups-and-checks-in-forms', () => {
 		await expect(page.getByTestId('intake-field-adres-town')).toHaveValue(
 			'Zuiddrecht',
 		)
+		// The note speaks the reader's language.
 		await expect(page.getByTestId('address-found')).toContainText(
-			'Wij vonden dit adres bij uw postcode en huisnummer.',
+			/(Wij vonden dit adres bij uw postcode en huisnummer\.|We found this address for your postcode and house number\.)/,
 		)
 
 		await page.getByTestId('intake-field-adres-street').fill('Lindelaan-Oost')
