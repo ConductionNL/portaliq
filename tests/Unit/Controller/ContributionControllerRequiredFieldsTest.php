@@ -201,7 +201,7 @@ class ContributionControllerRequiredFieldsTest extends TestCase {
 	 * @spec openspec/changes/the-owning-apps-refusal-reads-as-no-longer-possible/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
 	 */
 	public function testARefusalByTheOwningAppIsNoLongerPossible(): void {
-		$writer = $this->createMock(type: PortalObjectWriter::class);
+		$writer = $this->createMock(originalClassName: PortalObjectWriter::class);
 		$writer->expects($this->once())->method('createObject')->willReturn(null);
 		$writer->method('lastRefusedByOwner')->willReturn(true);
 		$writer->method('lastFailure')->willReturn("Property 'notes' is closed for reactions");

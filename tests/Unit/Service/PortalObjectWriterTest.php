@@ -54,7 +54,16 @@ class PortalObjectWriterTest extends TestCase {
 	public function testAWriteTheOwningAppRefusedIsMarkedAsSuch(): void {
 		$writer = $this->writerThrowing(failure: new \OCA\OpenRegister\Exception\HookStoppedException(message: 'Could not verify the parent is open'));
 
-		$this->assertNull(actual: $writer->createObject(register: 'decidiq', schema: 'consultation-reaction', scopeField: 'submitterId', subjectRef: 's1', organisation: 'org-1', data: ['body' => 'Te laat']));
+		$created = $writer->createObject(
+			register: 'decidiq',
+			schema: 'consultation-reaction',
+			scopeField: 'submitterId',
+			subjectRef: 's1',
+			organisation: 'org-1',
+			data: ['body' => 'Te laat']
+		);
+
+		$this->assertNull(actual: $created);
 		$this->assertTrue(condition: $writer->lastRefusedByOwner());
 		$this->assertSame(expected: 'Could not verify the parent is open', actual: $writer->lastFailure());
 	}//end testAWriteTheOwningAppRefusedIsMarkedAsSuch()
@@ -69,7 +78,16 @@ class PortalObjectWriterTest extends TestCase {
 	public function testAStoreFailureIsNotAnOwnersRefusal(): void {
 		$writer = $this->writerThrowing(failure: new RuntimeException(message: 'database is down'));
 
-		$this->assertNull(actual: $writer->createObject(register: 'decidiq', schema: 'consultation-reaction', scopeField: 'submitterId', subjectRef: 's1', organisation: 'org-1', data: ['body' => 'Nu']));
+		$created = $writer->createObject(
+			register: 'decidiq',
+			schema: 'consultation-reaction',
+			scopeField: 'submitterId',
+			subjectRef: 's1',
+			organisation: 'org-1',
+			data: ['body' => 'Nu']
+		);
+
+		$this->assertNull(actual: $created);
 		$this->assertFalse(condition: $writer->lastRefusedByOwner());
 	}//end testAStoreFailureIsNotAnOwnersRefusal()
 
@@ -110,7 +128,7 @@ class PortalObjectWriterTest extends TestCase {
 			}
 		};
 
-		$container = $this->createMock(type: ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
 			function (string $id) use ($objectService) {
 				if ($id === self::OS) {
@@ -121,7 +139,7 @@ class PortalObjectWriterTest extends TestCase {
 			}
 		);
 
-		return new PortalObjectWriter(container: $container, logger: $this->createMock(type: LoggerInterface::class));
+		return new PortalObjectWriter(container: $container, logger: $this->createMock(originalClassName: LoggerInterface::class));
 	}//end writerThrowing()
 
 	public function testStampsOwnershipOverClientInputAndBypassesRbac(): void {
