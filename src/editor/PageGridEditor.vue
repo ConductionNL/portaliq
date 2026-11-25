@@ -245,7 +245,7 @@
 									:fields="formFieldsShown"
 									:readonly="!formRowWritable"
 									@update:fields="writeFormFields"
-									@add="$emit('update:paletteOpen', true)" />
+									@add="openFieldPalette" />
 							</template>
 							<label v-else :for="`field-${field.name}`">{{
 								field.label
@@ -498,6 +498,8 @@ export default {
 			 * @type {object|null}
 			 */
 			formRow: null,
+			// The group the palette's next field goes into; '' for the form.
+			formFieldInto: '',
 
 			/**
 			 * Whether a palette drag is over the canvas right now, so the drop
@@ -693,6 +695,7 @@ export default {
 	watch: {
 		'state.selectedId': function () {
 			this.jsonError = ''
+			this.formFieldInto = ''
 		},
 
 		boundForm: {
@@ -1013,7 +1016,21 @@ export default {
 			if (!this.formSelected) {
 				return
 			}
-			this.writeFormFields(addField(this.formFieldsShown, type))
+			this.writeFormFields(addField(this.formFieldsShown, type, this.formFieldInto))
+		},
+
+		/**
+		 * Open the palette to add a field: to the group INTO, or to the form
+		 * itself for ''. The palette's next field goes there.
+		 *
+		 * @param {string} into The group's name, or ''.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		openFieldPalette(into) {
+			this.formFieldInto = typeof into === 'string' ? into : ''
+			this.$emit('update:paletteOpen', true)
 		},
 
 		/**

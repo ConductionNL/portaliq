@@ -169,7 +169,22 @@ export const FORM_FIELD_TYPES = Object.freeze([
 		synonyms: ['schuif', 'slider'],
 		settings: LIMITS,
 	},
+	{
+		// D1 row 28, Fieldset: a legend and a description over fields of its
+		// own. It holds fields, not a value: its fields submit under their own
+		// names, and a group never sits inside a group.
+		type: 'group',
+		label: 'Groep van velden',
+		nlds: 'Fieldset',
+		synonyms: ['fieldset', 'groep', 'onderdeel', 'sectie'],
+		settings: [{ name: 'description', kind: 'text', label: 'Toelichting' }],
+	},
 ])
+
+/**
+ * The type of a field that holds fields instead of a value.
+ */
+export const GROUP_TYPE = 'group'
 
 /**
  * The declared type, or null for one this list does not know.
@@ -193,12 +208,145 @@ export function fieldType(type) {
  * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
  */
 export function fieldSettings(type) {
+	if (type === GROUP_TYPE) {
+		// A group answers nothing itself, so "required" means nothing on it;
+		// its legend is its label.
+		return [
+			{ name: 'label', kind: 'string', label: 'Legenda' },
+			{ name: 'id', kind: 'string', label: 'Naam' },
+			...(fieldType(type)?.settings || []),
+		]
+	}
 	return [
 		{ name: 'label', kind: 'string', label: 'Label' },
 		{ name: 'id', kind: 'string', label: 'Naam (in de inzending)' },
 		{ name: 'required', kind: 'boolean', label: 'Verplicht' },
 		...(fieldType(type)?.settings || []),
 	]
+}
+
+/**
+ * Whether a field is a group (fieldset) of fields.
+ *
+ * @param {*} field A field.
+ * @return {boolean} True for a `group`.
+ *
+ * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+ */
+export function isFieldGroup(field) {
+	return !!field && field.type === GROUP_TYPE
+}
+
+/**
+ * The fields inside a group: those that are objects with an id, and never a
+ * group (one level deep, design D1 row 28).
+ *
+ * @param {object} group A `group` field.
+ * @return {Array<object>} Its fields.
+ *
+ * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+ */
+export function groupFields(group) {
+	return fieldList(group?.fields).filter((field) => !isFieldGroup(field))
+}
+
+/**
+ * The fields that take an answer, in the order the form shows them: a
+ * group's fields in its place, the group itself left out. This is the list a
+ * form validates and submits, so a field in a group is checked and sent like
+ * any other, under its own name.
+ *
+ * @param {*} fields The `fields` prop.
+ * @return {Array<object>} The answering fields.
+ *
+ * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+ */
+export function answerFields(fields) {
+	return fieldList(fields).flatMap((field) =>
+		isFieldGroup(field) ? groupFields(field) : [field],
+	)
+}
+
+/**
+ * The form in the parts it draws: runs of loose fields, and each group with
+ * its legend, description and fields. Neighbouring loose fields share one
+ * part, so a form without groups is one part, drawn as before.
+ *
+ * @param {*} fields The `fields` prop.
+ * @return {Array<{group: object|null, fields: Array<object>}>} The parts.
+ *
+ * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+ */
+export function fieldSections(fields) {
+	const sections = []
+	for (const field of fieldList(fields)) {
+		if (isFieldGroup(field)) {
+			sections.push({ group: field, fields: groupFields(field) })
+			continue
+		}
+		const last = sections[sections.length - 1]
+		if (last && last.group === null) {
+			last.fields.push(field)
+		} else {
+			sections.push({ group: null, fields: [field] })
+		}
+	}
+	return sections
+}
+
+/**
+ * Every name in the form, a group's and its fields' included.
+ *
+ * @param {Array<object>} list The field list.
+ * @return {Array<string>} The names.
+ */
+function allIds(list) {
+	return list.flatMap((field) =>
+		isFieldGroup(field)
+			? [field.id, ...groupFields(field).map((child) => child.id)]
+			: [field.id],
+	)
+}
+
+/**
+ * Where the field ID sits: the list it is in and, for a field in a group,
+ * that group.
+ *
+ * @param {Array<object>} list The top-level field list.
+ * @param {string} id The field.
+ * @return {{field: object, siblings: Array<object>, group: object|null}|null} Its place, or null.
+ */
+function placeOf(list, id) {
+	const top = list.find((field) => field.id === id)
+	if (top) {
+		return { field: top, siblings: list, group: null }
+	}
+	for (const group of list.filter(isFieldGroup)) {
+		const children = groupFields(group)
+		const child = children.find((field) => field.id === id)
+		if (child) {
+			return { field: child, siblings: children, group }
+		}
+	}
+	return null
+}
+
+/**
+ * The list with the siblings of a place replaced: the top level, or one
+ * group's fields.
+ *
+ * @param {Array<object>} list The top-level field list.
+ * @param {object|null} group The group whose fields change, or null for the top level.
+ * @param {Array<object>} siblings The new siblings.
+ * @return {Array<object>} The new list.
+ */
+function withSiblings(list, group, siblings) {
+	if (!group) {
+		return siblings
+	}
+	return list.map((field) =>
+		field === group ? { ...field, fields: siblings } : field,
+	)
 }
 
 /**
@@ -229,7 +377,7 @@ export function fieldList(fields) {
  * @return {string} The name.
  */
 function freeId(fields, type) {
-	const taken = new Set(fields.map((field) => field.id))
+	const taken = new Set(allIds(fields))
 	if (!taken.has(type)) {
 		return type
 	}
@@ -246,13 +394,18 @@ function freeId(fields, type) {
  * The label starts as the type's own Dutch name, so the form shows a labelled
  * field the moment it is added; an unknown type adds nothing.
  *
+ * With INTO naming a group of the form the field goes at the end of that
+ * group; a group itself, or an INTO that names no group, goes at the end of
+ * the form, since a group never sits inside a group.
+ *
  * @param {*} fields The current `fields` prop.
  * @param {string} type The field type to add.
+ * @param {string} [into] The group to add it to; '' for the form itself.
  * @return {Array<object>} The new list.
  *
  * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
  */
-export function addField(fields, type) {
+export function addField(fields, type, into = '') {
 	const list = fieldList(fields)
 	const declared = fieldType(type)
 	if (!declared) {
@@ -262,10 +415,20 @@ export function addField(fields, type) {
 		id: freeId(list, type),
 		type,
 		label: declared.label,
-		required: false,
+	}
+	if (type === GROUP_TYPE) {
+		field.fields = []
+	} else {
+		field.required = false
 	}
 	if (declared.settings.some((setting) => setting.kind === 'options')) {
 		field.options = []
+	}
+	const group = type === GROUP_TYPE
+		? null
+		: list.find((candidate) => isFieldGroup(candidate) && candidate.id === into)
+	if (group) {
+		return withSiblings(list, group, [...groupFields(group), field])
 	}
 	return [...list, field]
 }
@@ -312,10 +475,11 @@ function settingValue(kind, value) {
  */
 export function updateField(fields, id, name, value) {
 	const list = fieldList(fields)
-	const field = list.find((candidate) => candidate.id === id)
-	if (!field) {
+	const place = placeOf(list, id)
+	if (!place) {
 		return list
 	}
+	const { field, siblings, group } = place
 	const setting = fieldSettings(field.type).find(
 		(candidate) => candidate.name === name,
 	)
@@ -323,30 +487,25 @@ export function updateField(fields, id, name, value) {
 		return list
 	}
 	const stored = settingValue(setting.kind, value)
+	let next = { ...field }
 	if (name === 'id') {
+		// Unique over the whole form: a field in a group submits under its
+		// own name, next to the fields outside it.
 		const wanted = String(stored).trim()
 		if (
 			wanted === ''
-			|| list.some((other) => other !== field && other.id === wanted)
+			|| (wanted !== field.id && allIds(list).includes(wanted))
 		) {
 			return list
 		}
-		return list.map((other) =>
-			other === field ? { ...other, id: wanted } : other,
-		)
+		next = { ...field, id: wanted }
+	} else if (stored === undefined) {
+		delete next[name]
+	} else {
+		next[name] = stored
 	}
-	return list.map((other) => {
-		if (other !== field) {
-			return other
-		}
-		const next = { ...other }
-		if (stored === undefined) {
-			delete next[name]
-		} else {
-			next[name] = stored
-		}
-		return next
-	})
+	const changed = siblings.map((other) => (other === field ? next : other))
+	return withSiblings(list, group, changed)
 }
 
 /**
@@ -359,12 +518,22 @@ export function updateField(fields, id, name, value) {
  * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
  */
 export function removeField(fields, id) {
-	return fieldList(fields).filter((field) => field.id !== id)
+	const list = fieldList(fields)
+	const place = placeOf(list, id)
+	if (!place) {
+		return list
+	}
+	// Removing a group removes the fields in it with it.
+	return withSiblings(
+		list,
+		place.group,
+		place.siblings.filter((field) => field !== place.field),
+	)
 }
 
 /**
- * The list with the field ID moved one place up (-1) or down (+1). Moving past
- * either end changes nothing.
+ * The list with the field ID moved one place up (-1) or down (+1) among its
+ * siblings. Moving past either end changes nothing.
  *
  * @param {*} fields The current `fields` prop.
  * @param {string} id The field to move.
@@ -375,15 +544,21 @@ export function removeField(fields, id) {
  */
 export function moveField(fields, id, by) {
 	const list = fieldList(fields)
-	const from = list.findIndex((field) => field.id === id)
-	const to = from + (by < 0 ? -1 : 1)
-	if (from < 0 || to < 0 || to >= list.length) {
+	const place = placeOf(list, id)
+	if (!place) {
 		return list
 	}
-	const next = [...list]
+	// A field moves among its own siblings: inside its group, or between the
+	// form's own fields and groups.
+	const from = place.siblings.indexOf(place.field)
+	const to = from + (by < 0 ? -1 : 1)
+	if (to < 0 || to >= place.siblings.length) {
+		return list
+	}
+	const next = [...place.siblings]
 	const [moved] = next.splice(from, 1)
 	next.splice(to, 0, moved)
-	return next
+	return withSiblings(list, place.group, next)
 }
 
 /**

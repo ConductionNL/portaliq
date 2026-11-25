@@ -166,7 +166,7 @@ test('the inspector lists and writes the bound row, and both hosts hand the clie
 	assert.match(grid, /this\.formRows\.save\(this\.formRow, list\)/)
 	// The widget takes the list only once the row stored it.
 	assert.match(grid, /if \(next\.state === 'ready'\) \{\s*this\.editor\.setProp\('fields', next\.fields\)/)
-	assert.match(grid, /this\.writeFormFields\(addField\(this\.formFieldsShown, type\)\)/)
+	assert.match(grid, /this\.writeFormFields\(addField\(this\.formFieldsShown, type, this\.formFieldInto\)\)/)
 	const list = read('src/editor/FormFieldList.vue')
 	assert.match(list, /readonly: \{\s*type: Boolean/)
 	assert.match(list, /class="form-field-list__add"\s*:disabled="readonly"/)

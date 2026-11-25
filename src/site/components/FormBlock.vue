@@ -16,7 +16,7 @@
 			:portalHelp="portalHelp"
 			:formHelp="formHelp"
 			:title="title" />
-		<p v-if="!fields.length" class="utrecht-paragraph pq-form__empty">
+		<p v-if="!answering.length" class="utrecht-paragraph pq-form__empty">
 			{{ emptyLabel }}
 		</p>
 
@@ -36,202 +36,236 @@
 				:intro="text.summaryIntro"
 				:titlePrefix="text.titlePrefix" />
 
-			<FieldShell
-				v-for="field in fields"
-				:id="fieldElementId(field)"
-				:key="field.id"
-				v-slot="{ describedBy }"
-				class="pq-form__field"
-				:label="field.label"
-				:required="!!field.required"
-				:optionalLabel="text.optional"
-				:help="helpOf(field)"
-				:error="errors[field.id] || ''"
-				:group="isGroup(field)"
-				:errorTestid="`form-field-error-${field.id}`">
-				<!--
-					A DATE WITH `picker` IS ONE CALENDAR CONTROL (design D1, Date
-					Picker): the browser's own date input, bounded by the field's
-					earliest and latest date, sending the same `yyyy-mm-dd` the
-					day, month and year group sends.
-					@spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
-				-->
-				<input
-					v-if="isDatePicker(field)"
+			<!--
+				A GROUP OF FIELDS IS A FIELDSET (design D1 row 28): its legend and
+				description name what the fields inside have in common, and
+				those fields are drawn, checked and sent exactly as loose ones,
+				under their own names. Loose fields between groups share one part.
+				@spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+			-->
+			<component
+				:is="section.group ? 'fieldset' : 'div'"
+				v-for="(section, sectionIndex) in sections"
+				:key="section.group ? `group-${section.group.id}` : `part-${sectionIndex}`"
+				:class="
+					section.group
+						? 'utrecht-form-fieldset utrecht-form-fieldset--html-fieldset pq-form__part pq-form__group'
+						: 'pq-form__part'
+				"
+				:aria-describedby="
+					section.group && groupHelp(section.group)
+						? `${fieldElementId(section.group)}-help`
+						: undefined
+				"
+				:data-testid="section.group ? `form-group-${section.group.id}` : undefined">
+				<legend
+					v-if="section.group"
+					class="utrecht-form-fieldset__legend utrecht-form-fieldset__legend--html-legend pq-form__group-legend">
+					{{ section.group.label }}
+				</legend>
+				<p
+					v-if="section.group && groupHelp(section.group)"
+					:id="`${fieldElementId(section.group)}-help`"
+					class="utrecht-form-field-description pq-form__group-help">
+					{{ groupHelp(section.group) }}
+				</p>
+				<FieldShell
+					v-for="field in section.fields"
 					:id="fieldElementId(field)"
-					v-model="values[field.id]"
-					type="date"
-					class="utrecht-textbox utrecht-textbox--html-input pq-form__date-picker"
-					:min="dateLimit(field.earliest) || undefined"
-					:max="dateLimit(field.latest) || undefined"
-					:aria-labelledby="`${fieldElementId(field)}-label`"
+					:key="field.id"
+					v-slot="{ describedBy }"
+					class="pq-form__field"
+					:label="field.label"
 					:required="!!field.required"
-					:aria-invalid="errors[field.id] ? 'true' : undefined"
-					:aria-describedby="describedBy"
-					:data-testid="`form-field-${field.id}`" />
-
-				<DateInputGroup
-					v-else-if="field.type === 'date'"
-					:id="fieldElementId(field)"
-					v-model="values[field.id]"
-					:required="!!field.required"
-					:invalid="!!errors[field.id]"
-					:testid="`form-field-${field.id}`" />
-
-				<SelectCombobox
-					v-else-if="field.type === 'select' && field.searchable === true"
-					:id="fieldElementId(field)"
-					v-model="values[field.id]"
-					:options="field.options || []"
-					:labelOf="(option) => optionLabel(field, option)"
-					:required="!!field.required"
-					:invalid="!!errors[field.id]"
-					:labelledby="`${fieldElementId(field)}-label`"
-					:describedby="describedBy"
-					:testid="`form-field-${field.id}`" />
-
-				<select
-					v-else-if="field.type === 'select'"
-					:id="fieldElementId(field)"
-					v-model="values[field.id]"
-					class="utrecht-select"
-					:aria-required="field.required ? 'true' : undefined"
-					:aria-invalid="errors[field.id] ? 'true' : undefined"
-					:aria-labelledby="`${fieldElementId(field)}-label`"
-					:aria-describedby="describedBy"
-					:data-testid="`form-field-${field.id}`">
-					<option value="" disabled>{{ selectPlaceholder }}</option>
-					<option
-						v-for="option in field.options || []"
-						:key="option"
-						:value="option">
-						{{ optionLabel(field, option) }}
-					</option>
-				</select>
-
-				<!--
-					A GROUP OF CHOICES IS A FIELDSET (FieldShell's group): the
-					legend names the question and each option is its own
-					labelled control, so a screen reader reads "Keuze A, 1 of 3"
-					rather than a row of unnamed boxes. Radio is one answer,
-					checkboxes are a list of answers.
-					@spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
-				-->
-				<div
-					v-else-if="field.type === 'radio' || field.type === 'checkboxes'"
-					class="pq-form__choices"
-					:data-testid="`form-field-${field.id}`">
-					<div
-						v-for="(option, index) in field.options || []"
-						:key="option"
-						class="utrecht-form-field pq-form__choice"
-						:class="
-							field.type === 'radio'
-								? 'utrecht-form-field--radio'
-								: 'utrecht-form-field--checkbox'
-						">
-						<input
-							:id="`${fieldElementId(field)}-${index}`"
-							:type="field.type === 'radio' ? 'radio' : 'checkbox'"
-							:class="
-								field.type === 'radio'
-									? 'utrecht-radio-button'
-									: 'utrecht-checkbox utrecht-checkbox--html-input'
-							"
-							:name="fieldElementId(field)"
-							:value="option"
-							:checked="isChosen(field, option)"
-							:aria-invalid="errors[field.id] ? 'true' : undefined"
-							:aria-describedby="describedBy"
-							:data-testid="`form-field-${field.id}-${index}`"
-							@change="choose(field, option, $event.target.checked)" />
-						<label
-							:for="`${fieldElementId(field)}-${index}`"
-							class="utrecht-form-label pq-form__choice-label">
-							{{ optionLabel(field, option) }}
-						</label>
-					</div>
-				</div>
-
-				<!-- One box, one statement: "ja" when ticked, nothing when not, so "required" means "must be ticked". -->
-				<input
-					v-else-if="field.type === 'checkbox' || field.type === 'switch'"
-					:id="fieldElementId(field)"
-					type="checkbox"
-					:role="field.type === 'switch' ? 'switch' : undefined"
-					:class="
-						field.type === 'switch'
-							? 'pq-form__switch'
-							: 'utrecht-checkbox utrecht-checkbox--html-input'
-					"
-					:checked="values[field.id] === 'ja'"
-					:aria-required="field.required ? 'true' : undefined"
-					:aria-labelledby="`${fieldElementId(field)}-label`"
-					:aria-invalid="errors[field.id] ? 'true' : undefined"
-					:aria-describedby="describedBy"
-					:data-testid="`form-field-${field.id}`"
-					@change="values[field.id] = $event.target.checked ? 'ja' : ''" />
-
-				<!-- A prefix or suffix ("€", "m²") reads with the input: it is in the label's description, not only beside the box. -->
-				<div
-					v-else-if="field.type === 'textAffixed'"
-					class="pq-form__affixed">
-					<span v-if="field.prefix" class="pq-form__affix" aria-hidden="true">{{ field.prefix }}</span>
+					:optionalLabel="text.optional"
+					:help="helpOf(field)"
+					:error="errors[field.id] || ''"
+					:group="isGroup(field)"
+					:errorTestid="`form-field-error-${field.id}`">
+					<!--
+						A DATE WITH `picker` IS ONE CALENDAR CONTROL (design D1, Date
+						Picker): the browser's own date input, bounded by the field's
+						earliest and latest date, sending the same `yyyy-mm-dd` the
+						day, month and year group sends.
+						@spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+					-->
 					<input
+						v-if="isDatePicker(field)"
 						:id="fieldElementId(field)"
 						v-model="values[field.id]"
-						class="utrecht-textbox"
-						type="text"
+						type="date"
+						class="utrecht-textbox utrecht-textbox--html-input pq-form__date-picker"
+						:min="dateLimit(field.earliest) || undefined"
+						:max="dateLimit(field.latest) || undefined"
+						:aria-labelledby="`${fieldElementId(field)}-label`"
+						:required="!!field.required"
+						:aria-invalid="errors[field.id] ? 'true' : undefined"
+						:aria-describedby="describedBy"
+						:data-testid="`form-field-${field.id}`" />
+
+					<DateInputGroup
+						v-else-if="field.type === 'date'"
+						:id="fieldElementId(field)"
+						v-model="values[field.id]"
+						:required="!!field.required"
+						:invalid="!!errors[field.id]"
+						:testid="`form-field-${field.id}`" />
+
+					<SelectCombobox
+						v-else-if="field.type === 'select' && field.searchable === true"
+						:id="fieldElementId(field)"
+						v-model="values[field.id]"
+						:options="field.options || []"
+						:labelOf="(option) => optionLabel(field, option)"
+						:required="!!field.required"
+						:invalid="!!errors[field.id]"
+						:labelledby="`${fieldElementId(field)}-label`"
+						:describedby="describedBy"
+						:testid="`form-field-${field.id}`" />
+
+					<select
+						v-else-if="field.type === 'select'"
+						:id="fieldElementId(field)"
+						v-model="values[field.id]"
+						class="utrecht-select"
+						:aria-required="field.required ? 'true' : undefined"
+						:aria-invalid="errors[field.id] ? 'true' : undefined"
+						:aria-labelledby="`${fieldElementId(field)}-label`"
+						:aria-describedby="describedBy"
+						:data-testid="`form-field-${field.id}`">
+						<option value="" disabled>{{ selectPlaceholder }}</option>
+						<option
+							v-for="option in field.options || []"
+							:key="option"
+							:value="option">
+							{{ optionLabel(field, option) }}
+						</option>
+					</select>
+
+					<!--
+						A GROUP OF CHOICES IS A FIELDSET (FieldShell's group): the
+						legend names the question and each option is its own
+						labelled control, so a screen reader reads "Keuze A, 1 of 3"
+						rather than a row of unnamed boxes. Radio is one answer,
+						checkboxes are a list of answers.
+						@spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+					-->
+					<div
+						v-else-if="field.type === 'radio' || field.type === 'checkboxes'"
+						class="pq-form__choices"
+						:data-testid="`form-field-${field.id}`">
+						<div
+							v-for="(option, index) in field.options || []"
+							:key="option"
+							class="utrecht-form-field pq-form__choice"
+							:class="
+								field.type === 'radio'
+									? 'utrecht-form-field--radio'
+									: 'utrecht-form-field--checkbox'
+							">
+							<input
+								:id="`${fieldElementId(field)}-${index}`"
+								:type="field.type === 'radio' ? 'radio' : 'checkbox'"
+								:class="
+									field.type === 'radio'
+										? 'utrecht-radio-button'
+										: 'utrecht-checkbox utrecht-checkbox--html-input'
+								"
+								:name="fieldElementId(field)"
+								:value="option"
+								:checked="isChosen(field, option)"
+								:aria-invalid="errors[field.id] ? 'true' : undefined"
+								:aria-describedby="describedBy"
+								:data-testid="`form-field-${field.id}-${index}`"
+								@change="choose(field, option, $event.target.checked)" />
+							<label
+								:for="`${fieldElementId(field)}-${index}`"
+								class="utrecht-form-label pq-form__choice-label">
+								{{ optionLabel(field, option) }}
+							</label>
+						</div>
+					</div>
+
+					<!-- One box, one statement: "ja" when ticked, nothing when not, so "required" means "must be ticked". -->
+					<input
+						v-else-if="field.type === 'checkbox' || field.type === 'switch'"
+						:id="fieldElementId(field)"
+						type="checkbox"
+						:role="field.type === 'switch' ? 'switch' : undefined"
+						:class="
+							field.type === 'switch'
+								? 'pq-form__switch'
+								: 'utrecht-checkbox utrecht-checkbox--html-input'
+						"
+						:checked="values[field.id] === 'ja'"
+						:aria-required="field.required ? 'true' : undefined"
+						:aria-labelledby="`${fieldElementId(field)}-label`"
+						:aria-invalid="errors[field.id] ? 'true' : undefined"
+						:aria-describedby="describedBy"
+						:data-testid="`form-field-${field.id}`"
+						@change="values[field.id] = $event.target.checked ? 'ja' : ''" />
+
+					<!-- A prefix or suffix ("€", "m²") reads with the input: it is in the label's description, not only beside the box. -->
+					<div
+						v-else-if="field.type === 'textAffixed'"
+						class="pq-form__affixed">
+						<span v-if="field.prefix" class="pq-form__affix" aria-hidden="true">{{ field.prefix }}</span>
+						<input
+							:id="fieldElementId(field)"
+							v-model="values[field.id]"
+							class="utrecht-textbox"
+							type="text"
+							:aria-required="field.required ? 'true' : undefined"
+							:aria-invalid="errors[field.id] ? 'true' : undefined"
+							:aria-labelledby="`${fieldElementId(field)}-label`"
+							:aria-describedby="describedBy"
+							:data-testid="`form-field-${field.id}`" />
+						<span v-if="field.suffix" class="pq-form__affix" aria-hidden="true">{{ field.suffix }}</span>
+					</div>
+
+					<input
+						v-else-if="field.type === 'range'"
+						:id="fieldElementId(field)"
+						v-model="values[field.id]"
+						type="range"
+						class="pq-form__range"
+						:min="numberOr(field.min, 0)"
+						:max="numberOr(field.max, 100)"
+						:step="numberOr(field.step, 1)"
+						:aria-required="field.required ? 'true' : undefined"
+						:aria-labelledby="`${fieldElementId(field)}-label`"
+						:aria-describedby="describedBy"
+						:data-testid="`form-field-${field.id}`" />
+
+					<textarea
+						v-else-if="field.type === 'textarea'"
+						:id="fieldElementId(field)"
+						v-model="values[field.id]"
+						:rows="numberOr(field.rows, undefined)"
+						class="utrecht-textarea"
 						:aria-required="field.required ? 'true' : undefined"
 						:aria-invalid="errors[field.id] ? 'true' : undefined"
 						:aria-labelledby="`${fieldElementId(field)}-label`"
 						:aria-describedby="describedBy"
 						:data-testid="`form-field-${field.id}`" />
-					<span v-if="field.suffix" class="pq-form__affix" aria-hidden="true">{{ field.suffix }}</span>
-				</div>
 
-				<input
-					v-else-if="field.type === 'range'"
-					:id="fieldElementId(field)"
-					v-model="values[field.id]"
-					type="range"
-					class="pq-form__range"
-					:min="numberOr(field.min, 0)"
-					:max="numberOr(field.max, 100)"
-					:step="numberOr(field.step, 1)"
-					:aria-required="field.required ? 'true' : undefined"
-					:aria-labelledby="`${fieldElementId(field)}-label`"
-					:aria-describedby="describedBy"
-					:data-testid="`form-field-${field.id}`" />
-
-				<textarea
-					v-else-if="field.type === 'textarea'"
-					:id="fieldElementId(field)"
-					v-model="values[field.id]"
-					:rows="numberOr(field.rows, undefined)"
-					class="utrecht-textarea"
-					:aria-required="field.required ? 'true' : undefined"
-					:aria-invalid="errors[field.id] ? 'true' : undefined"
-					:aria-labelledby="`${fieldElementId(field)}-label`"
-					:aria-describedby="describedBy"
-					:data-testid="`form-field-${field.id}`" />
-
-				<input
-					v-else
-					:id="fieldElementId(field)"
-					v-model="values[field.id]"
-					class="utrecht-textbox"
-					:type="inputType(field)"
-					:min="field.type === 'number' ? numberOr(field.min, undefined) : undefined"
-					:max="field.type === 'number' ? numberOr(field.max, undefined) : undefined"
-					:step="field.type === 'number' ? numberOr(field.step, undefined) : undefined"
-					:autocomplete="field.autocomplete || undefined"
-					:aria-required="field.required ? 'true' : undefined"
-					:aria-invalid="errors[field.id] ? 'true' : undefined"
-					:aria-labelledby="`${fieldElementId(field)}-label`"
-					:aria-describedby="describedBy"
-					:data-testid="`form-field-${field.id}`" />
-			</FieldShell>
+					<input
+						v-else
+						:id="fieldElementId(field)"
+						v-model="values[field.id]"
+						class="utrecht-textbox"
+						:type="inputType(field)"
+						:min="field.type === 'number' ? numberOr(field.min, undefined) : undefined"
+						:max="field.type === 'number' ? numberOr(field.max, undefined) : undefined"
+						:step="field.type === 'number' ? numberOr(field.step, undefined) : undefined"
+						:autocomplete="field.autocomplete || undefined"
+						:aria-required="field.required ? 'true' : undefined"
+						:aria-invalid="errors[field.id] ? 'true' : undefined"
+						:aria-labelledby="`${fieldElementId(field)}-label`"
+						:aria-describedby="describedBy"
+						:data-testid="`form-field-${field.id}`" />
+				</FieldShell>
+			</component>
 
 			<p v-if="consentText" class="utrecht-paragraph pq-form__consent">
 				{{ consentText }}
@@ -269,6 +303,7 @@ import DateInputGroup from './forms/DateInputGroup.vue'
 import ErrorSummary from './forms/ErrorSummary.vue'
 import FieldShell from './forms/FieldShell.vue'
 import SelectCombobox from './forms/SelectCombobox.vue'
+import { answerFields, fieldSections } from '../../lib/formFieldTypes.js'
 import {
 	capturedReferrer,
 	captureLanding,
@@ -455,6 +490,30 @@ export default {
 
 	computed: {
 		/**
+		 * The fields that take an answer: a group's fields in its place, the
+		 * group left out. Validation, the error summary and "(niet verplicht)"
+		 * all read this list, so a field in a group counts like any other.
+		 *
+		 * @return {Array<object>} The fields.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		answering() {
+			return answerFields(this.fields)
+		},
+
+		/**
+		 * The parts the form draws: runs of loose fields and each group.
+		 *
+		 * @return {Array<{group: object|null, fields: Array<object>}>} The parts.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		sections() {
+			return fieldSections(this.fields)
+		},
+
+		/**
 		 * @return {boolean} Whether the portal or the form has help details to offer.
 		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
 		 */
@@ -482,7 +541,7 @@ export default {
 		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
 		 */
 		explainOptional() {
-			return explainsOptional(this.fields.map((field) => !!field.required))
+			return explainsOptional(this.answering.map((field) => !!field.required))
 		},
 
 		/**
@@ -494,7 +553,7 @@ export default {
 		 */
 		summary() {
 			return summaryEntries(
-				this.fields.map((field) => field.id),
+				this.answering.map((field) => field.id),
 				this.errors,
 				(id) => this.fieldElementId({ id }),
 			)
@@ -541,6 +600,18 @@ export default {
 		},
 
 		dateLimit,
+
+		/**
+		 * A group's description, trimmed.
+		 *
+		 * @param {object} group A `group` field.
+		 * @return {string} The description, or ''.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		groupHelp(group) {
+			return typeof group.description === 'string' ? group.description.trim() : ''
+		},
 
 		/**
 		 * Whether a date field is drawn as one calendar control.
@@ -630,7 +701,7 @@ export default {
 		 */
 		async submit() {
 			this.status = null
-			this.errors = formErrors(this.fields, this.values)
+			this.errors = formErrors(answerFields(this.fields), this.values)
 			if (Object.keys(this.errors).length > 0) {
 				this.$nextTick(() => {
 					if (this.$refs.summary) {
@@ -661,8 +732,25 @@ export default {
 	margin-block-end: var(--utrecht-space-block-md, 1rem);
 }
 
-.pq-form__field + .pq-form__field {
+.pq-form__field + .pq-form__field,
+.pq-form__part + .pq-form__part {
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-form__group {
+	border: 0;
+	margin-inline: 0;
+	padding: 0;
+}
+
+.pq-form__group-legend {
+	font-weight: var(--utrecht-form-fieldset-legend-font-weight, bold);
+	margin-block-end: var(--utrecht-space-block-sm, 0.5rem);
+	padding: 0;
+}
+
+.pq-form__group-help {
+	margin-block: 0 var(--utrecht-space-block-sm, 0.5rem);
 }
 
 .pq-form__choices {

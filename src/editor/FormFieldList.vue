@@ -17,6 +17,8 @@
 
   "Veld toevoegen" opens the palette, whose Formulieren group adds the field:
   one place to choose a field type, the same place an editor finds widgets.
+  A `group` (fieldset) lists its own fields right after it, indented, with
+  its own "add field" button: `add` carries the group's name, '' for the form.
 
   @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
 -->
@@ -28,9 +30,10 @@
 
 		<ol v-else class="form-field-list__items">
 			<li
-				v-for="(field, index) in list"
+				v-for="(field, index) in rows"
 				:key="`${index}-${field.id}`"
 				class="form-field-list__item"
+				:class="{ 'form-field-list__item--in-group': field.$inGroup }"
 				:data-testid="`designer-form-field-${field.id}`">
 				<fieldset class="form-field-list__fieldset">
 					<legend class="form-field-list__legend">
@@ -89,14 +92,14 @@
 					<div class="form-field-list__actions">
 						<button
 							type="button"
-							:disabled="readonly || index === 0"
+							:disabled="readonly || field.$first"
 							:data-testid="`designer-form-field-${field.id}-up`"
 							@click="emitList(moveField(list, field.id, -1))">
 							{{ t('portaliq', 'Move up') }}
 						</button>
 						<button
 							type="button"
-							:disabled="readonly || index === list.length - 1"
+							:disabled="readonly || field.$last"
 							:data-testid="`designer-form-field-${field.id}-down`"
 							@click="emitList(moveField(list, field.id, 1))">
 							{{ t('portaliq', 'Move down') }}
@@ -108,6 +111,14 @@
 							@click="emitList(removeField(list, field.id))">
 							{{ t('portaliq', 'Remove field') }}
 						</button>
+						<button
+							v-if="isFieldGroup(field)"
+							type="button"
+							:disabled="readonly"
+							:data-testid="`designer-form-field-${field.id}-add`"
+							@click="$emit('add', field.id)">
+							{{ t('portaliq', 'Add field to this group') }}
+						</button>
 					</div>
 				</fieldset>
 			</li>
@@ -118,7 +129,7 @@
 			class="form-field-list__add"
 			:disabled="readonly"
 			data-testid="designer-form-field-add"
-			@click="$emit('add')">
+			@click="$emit('add', '')">
 			{{ t('portaliq', 'Add field') }}
 		</button>
 	</div>
@@ -130,6 +141,8 @@ import {
 	fieldList,
 	fieldSettings,
 	fieldType,
+	groupFields,
+	isFieldGroup,
 	moveField,
 	removeField,
 	updateField,
@@ -172,9 +185,39 @@ export default {
 		list() {
 			return fieldList(this.fields)
 		},
+
+		/**
+		 * The list as the inspector shows it: each field, and after a group
+		 * the fields in it, marked as in the group. `$first` and `$last` say
+		 * whether it can move up or down among its siblings.
+		 *
+		 * @return {Array<object>} The rows.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		rows() {
+			const mark = (field, index, siblings, inGroup) => ({
+				...field,
+				$inGroup: inGroup,
+				$first: index === 0,
+				$last: index === siblings.length - 1,
+			})
+			return this.list.flatMap((field, index, top) => {
+				const row = mark(field, index, top, false)
+				if (!isFieldGroup(field)) {
+					return [row]
+				}
+				const children = groupFields(field)
+				return [
+					row,
+					...children.map((child, at) => mark(child, at, children, true)),
+				]
+			})
+		},
 	},
 
 	methods: {
+		isFieldGroup,
 		moveField,
 		removeField,
 
@@ -272,6 +315,10 @@ export default {
 
 .form-field-list__item + .form-field-list__item {
 	margin-block-start: 8px;
+}
+
+.form-field-list__item--in-group {
+	margin-inline-start: 16px;
 }
 
 .form-field-list__fieldset {

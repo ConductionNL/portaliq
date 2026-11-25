@@ -155,25 +155,52 @@ final class FormSubmitActions {
 	}//end serverValues()
 
 	/**
-	 * A form's declared field ids, in order.
+	 * A form's declared field ids, in order. A `group` (fieldset) answers
+	 * nothing itself: its fields stand in its place, each under its own id,
+	 * one level deep.
 	 *
 	 * @param array<string, mixed> $row The `form` row.
 	 *
 	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
 	 */
 	private function fieldIdsOf(array $row): array {
+		return $this->idsIn(fields: (array)($row['fields'] ?? []), inGroup: false);
+	}//end fieldIdsOf()
+
+	/**
+	 * The ids of a field list. A group outside a group gives the ids of its
+	 * own fields; a group inside a group is not a field and gives nothing.
+	 *
+	 * @param array<int|string, mixed> $fields  The field list.
+	 * @param bool                     $inGroup Whether the list is a group's own.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+	 */
+	private function idsIn(array $fields, bool $inGroup): array {
 		$fieldIds = [];
-		foreach ((array)($row['fields'] ?? []) as $field) {
-			$fieldId = null;
-			if (is_array($field) === true) {
-				$fieldId = ($field['id'] ?? null);
+		foreach ($fields as $field) {
+			if (is_array($field) === false) {
+				continue;
 			}
 
+			if (($field['type'] ?? null) === 'group') {
+				if ($inGroup === false) {
+					$fieldIds = array_merge($fieldIds, $this->idsIn(fields: (array)($field['fields'] ?? []), inGroup: true));
+				}
+
+				continue;
+			}
+
+			$fieldId = ($field['id'] ?? null);
 			if (is_string($fieldId) === true && $fieldId !== '') {
 				$fieldIds[] = $fieldId;
 			}
-		}
+		}//end foreach
 
 		return $fieldIds;
-	}//end fieldIdsOf()
+	}//end idsIn()
 }//end class
