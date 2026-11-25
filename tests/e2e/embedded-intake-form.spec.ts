@@ -36,23 +36,46 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
+import { SITE_PORTAL } from './portal-nav.ts'
 
 const EMBED_PATH = '/apps/portaliq/portal/embed'
 const EMBED_SUBMIT = '/apps/portaliq/portal/api/embed/submit'
-const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
+const OR_API = '/apps/openregister/api'
+const OR_OBJECTS_BASE = `${OR_API}/objects`
 
 const ADMIN = Buffer.from('admin:admin').toString('base64')
 const ALLOWED_ORIGIN = 'https://www.gemeente.nl'
 const OTHER_ORIGIN = 'https://www.elders.nl'
+const ADMIN_HEADERS = { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' }
 
-/** Create one object through OpenRegister's own object API, as the dev admin. */
+/** The organisation a resident's session belongs to: CI seeds `dev-org`. */
+const ORGANISATION = process.env.PORTALIQ_E2E_ORGANISATION || 'dev-org'
+
+/**
+ * The register and schema the answers go to. An embedded submit is an
+ * anonymous write, so the binding only publishes against a schema that lets a
+ * public visitor create; the spec makes its own (and removes it afterwards)
+ * rather than opening a product schema to anonymous writes.
+ */
+const DESTINATION = `e2e-embed-${Date.now()}`
+
+/** What this run created, to remove afterwards. */
+const created: string[] = []
+const destinationIds: { schema?: number, register?: number } = {}
+
+/**
+ * Create one object through OpenRegister's own object API, as the dev admin.
+ * The published form lives in buildiq, the binding resolver's default form
+ * register; portaliq declares no `registrationForm` schema.
+ */
 async function seed(
 	request: APIRequestContext,
 	schema: string,
 	data: Record<string, unknown>,
+	register = 'portaliq',
 ): Promise<string> {
-	const res = await request.post(`${OR_OBJECTS_BASE}/portaliq/${schema}`, {
-		headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
+	const res = await request.post(`${OR_OBJECTS_BASE}/${register}/${schema}`, {
+		headers: ADMIN_HEADERS,
 		data,
 	})
 	expect(
@@ -62,7 +85,33 @@ async function seed(
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
+	created.push(`${register}/${schema}/${id}`)
 	return id
+}
+
+/** The destination register and schema, made once for the run. */
+async function seedDestination(request: APIRequestContext): Promise<void> {
+	if (destinationIds.register) {
+		return
+	}
+	const schema = await request.post(`${OR_API}/schemas`, {
+		headers: ADMIN_HEADERS,
+		data: {
+			title: `E2E embed ${DESTINATION}`,
+			slug: DESTINATION,
+			properties: { caseType: { type: 'string' }, postcode: { type: 'string' } },
+			required: ['postcode'],
+			authorization: { create: ['public'], read: ['admin'] },
+		},
+	})
+	expect(schema.ok(), `the destination schema must be created: ${await schema.text()}`).toBeTruthy()
+	destinationIds.schema = (await schema.json()).id
+	const register = await request.post(`${OR_API}/registers`, {
+		headers: ADMIN_HEADERS,
+		data: { title: `E2E embed ${DESTINATION}`, slug: DESTINATION, schemas: [destinationIds.schema] },
+	})
+	expect(register.ok(), `the destination register must be created: ${await register.text()}`).toBeTruthy()
+	destinationIds.register = (await register.json()).id
 }
 
 /** A published form and the binding that frames it. */
@@ -71,26 +120,31 @@ async function seedEmbeddableForm(
 	route: string,
 	allowedOrigins: string[],
 ): Promise<void> {
+	await seedDestination(request)
 	const caseType = `embed-${Date.now()}`
 	await seed(request, 'registrationForm', {
-		caseType,
+		targetApp: 'portaliq',
+		register: DESTINATION,
+		schema: DESTINATION,
+		typeProperty: 'caseType',
+		typeValue: caseType,
+		isPublic: true,
 		audience: 'client',
 		name: `${caseType}-client`,
 		status: 'published',
 		fields: [{ name: 'postcode', order: 1, required: true }],
 		confirmationText: 'Bedankt. U hoort van ons.',
-	})
+	}, 'buildiq')
 	await seed(request, 'portalFormBinding', {
-		portal: 'dev-portal',
+		portal: SITE_PORTAL,
 		route,
 		typeRegister: 'portaliq',
 		typeSchema: 'portalCaseType',
 		typeId: caseType,
 		audience: 'client',
-		formRegister: 'portaliq',
+		formRegister: 'buildiq',
 		formSchema: 'registrationForm',
-		caseRegister: 'portaliq',
-		caseSchema: 'portalCase',
+		destination: { register: DESTINATION, schema: DESTINATION },
 		intakeKind: 'hosted',
 		allowedOrigins,
 		status: 'published',
@@ -98,6 +152,24 @@ async function seedEmbeddableForm(
 }
 
 test.describe('embedded-intake-form', () => {
+	test.afterAll(async ({ request }) => {
+		for (const ref of created.splice(0).reverse()) {
+			await request.delete(`${OR_OBJECTS_BASE}/${ref}`, { headers: ADMIN_HEADERS })
+		}
+		const sent = await request.get(`${OR_OBJECTS_BASE}/${DESTINATION}/${DESTINATION}?_limit=100`, { headers: ADMIN_HEADERS })
+		if (sent.ok()) {
+			for (const row of ((await sent.json()).results ?? []) as Array<{ id?: string }>) {
+				await request.delete(`${OR_OBJECTS_BASE}/${DESTINATION}/${DESTINATION}/${row.id}`, { headers: ADMIN_HEADERS })
+			}
+		}
+		if (destinationIds.register) {
+			await request.delete(`${OR_API}/registers/${destinationIds.register}`, { headers: ADMIN_HEADERS })
+		}
+		if (destinationIds.schema) {
+			await request.delete(`${OR_API}/schemas/${destinationIds.schema}`, { headers: ADMIN_HEADERS })
+		}
+	})
+
 	test('the allowed origin gets the form, and any other origin gets a message', async ({
 		request,
 	}) => {
@@ -224,7 +296,7 @@ test.describe('embedded-intake-form', () => {
 				data: {
 					subjectRef: `subject-${Date.now()}`,
 					audience: 'client',
-					organisation: 'dev-org',
+					organisation: ORGANISATION,
 				},
 			},
 		)
