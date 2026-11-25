@@ -1978,6 +1978,8 @@
             }
           }
         ],
+        "showCopyAction": false,
+        "showDeleteAction": false,
         "showTitle": true,
         "showTitleIcon": false,
         "countText": "{shown} of {total} invitations",
@@ -2354,15 +2356,19 @@
           {
             "key": "revoked",
             "label": "Revoked",
-            "widget": "badge",
+            "enum": [
+              "false",
+              "true"
+            ],
             "widgetProps": {
-              "colorMap": {
-                "false": "success",
-                "true": "error"
-              }
+              "trueLabel": "Yes",
+              "falseLabel": "No",
+              "pill": false
             }
           }
         ],
+        "showCopyAction": false,
+        "showDeleteAction": false,
         "showTitle": true,
         "showTitleIcon": false,
         "countText": "{shown} of {total} sessions · a session starts when someone signs in",

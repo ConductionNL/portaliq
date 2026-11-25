@@ -66,7 +66,13 @@ A fresh site has nobody to sign in as, so the area behind the button stays empty
 occ openregister:example-set:install zuiddrecht
 ```
 
-This needs the site (above), OpenRegister and dossiq. OpenRegister holds the cast of the set; portaliq adds its own part from `lib/Settings/example-sets/zuiddrecht.json`. For the site you get:
+This needs the site (above), OpenRegister and dossiq, with dossiq's case-type packages installed: the set's cases look up the case types `aanbesteding` and `subsidie`, which ship as packages. Install them first, or the set is refused with "found no dossiq caseType":
+
+```bash
+occ dossiq:package:install --all
+```
+
+OpenRegister holds the cast of the set; portaliq adds its own part from `lib/Settings/example-sets/zuiddrecht.json`. For the site you get:
 
 - Nextcloud accounts for the residents Sanne de Vries (`sanne.devries`), Henk Bakker, Linda Bakker and Fatima El-Amrani, and for the business contacts Jan-Willem van der Berg and Mark Visser. The passwords are shown once, with the other new passwords at the end of the output. Prefer your own? Put it in `OC_PASS` and add `--password-from-env`.
 - A portal account for each under the same id, and the mandates that let Linda act for her father Henk and Jan-Willem and Mark for their companies. The site greets a resident by name and asks for an e-mail address, as the design does.

@@ -515,6 +515,8 @@
         "Returning visitors": "Returning visitors",
         "Revoke all sessions for this organisation": "Revoke all sessions for this organisation",
         "Revoked": "Revoked",
+        "Yes": "Yes",
+        "No": "No",
         "Revoked sessions": "Revoked sessions",
         "Revoked {count} session(s).": "Revoked {count} session(s).",
         "Route": "Route",

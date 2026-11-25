@@ -113,7 +113,7 @@ class SessionAdminControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
 	 */
 	public function testRevokeSessionRevokesOneSessionAsTheAdmin(): void {
 		$response = $this->oneSession(found: true)->revokeSession(jti: 'jti-1');
@@ -127,7 +127,7 @@ class SessionAdminControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
 	 */
 	public function testRevokeSessionOfAnUnknownSessionIsNotFound(): void {
 		$response = $this->oneSession(found: false)->revokeSession(jti: 'jti-1');
@@ -141,7 +141,7 @@ class SessionAdminControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
 	 */
 	public function testRevokeSessionWithoutATokenIdIsRefused(): void {
 		$response = $this->oneSession(found: true, calls: 0)->revokeSession(jti: '');

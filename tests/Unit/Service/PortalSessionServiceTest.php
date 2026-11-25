@@ -380,7 +380,7 @@ class PortalSessionServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
 	 */
 	public function testAnAdminRevokesOneSessionAndIsNamed(): void {
 		$store = [];
@@ -409,7 +409,7 @@ class PortalSessionServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
 	 */
 	public function testAnAdminRevokeOfAnUnknownSessionDoesNothing(): void {
 		$store = [];

@@ -263,7 +263,7 @@ class PortalAccountAdminController extends Controller {
 	 * @return JSONResponse `{state: sent, expiresAt}`, or a refusal. Never the
 	 *                      secret: that is in the mail only.
 	 *
-	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
 	 */
 	#[NoAdminRequired]
 	public function resendInvitation(string $id, string $organisation = ''): JSONResponse {

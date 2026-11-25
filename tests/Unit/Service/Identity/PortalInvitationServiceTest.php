@@ -169,7 +169,7 @@ class PortalInvitationServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
 	 */
 	public function testResendingReplacesTheSecretAndRestartsTheWindow(): void {
 		$service = $this->service();
@@ -192,7 +192,7 @@ class PortalInvitationServiceTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
 	 */
 	public function testOnlyAnOpenInvitationIsSentAgain(): void {
 		$service = $this->service();

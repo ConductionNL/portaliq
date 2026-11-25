@@ -218,8 +218,9 @@ function handlers(overrides = {}) {
 		confirmWithdrawInvitation: async () => true,
 		notify: (text) => calls.notices.push(text),
 		notifyError: (text) => calls.errors.push(text),
-		reload: () => {
+		reload: (list) => {
 			calls.reloads++
+			calls.lists = [...(calls.lists || []), list]
 		},
 		...overrides,
 	})
@@ -232,6 +233,7 @@ test('the header actions open their dialog and reload after a success only', asy
 	assert.equal(await h.inviteSomeone(), true)
 	assert.deepEqual(calls.notices, ['issued', 'sent'])
 	assert.equal(calls.reloads, 2)
+	assert.deepEqual(calls.lists, ['portaliq-portalAccount', 'portaliq-portalInvitation'])
 
 	const cancelled = handlers({ openIssue: async () => null })
 	assert.equal(await cancelled.handlers.issueAccount(), false)
@@ -254,6 +256,7 @@ test('withdraw invitation asks first, and a refusal is shown without a reload', 
 	assert.equal(await done.handlers.withdrawInvitation({ item: { id: 'inv-1' } }), true)
 	assert.deepEqual(done.calls.withdrawn, [{ id: 'inv-1' }])
 	assert.equal(done.calls.reloads, 1)
+	assert.deepEqual(done.calls.lists, ['portaliq-portalInvitation'])
 })
 
 const PORTAL = {

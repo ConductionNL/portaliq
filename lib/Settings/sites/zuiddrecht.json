@@ -348,7 +348,7 @@
                             "band": true,
                             "closable": false,
                             "lead": "Let op",
-                            "text": "Zaterdag 10 oktober is het stadskantoor open van 9.00 tot 13.00 uur.",
+                            "text": "Zaterdag 10 oktober is het stadskantoor open van 9:00 tot 13:00 uur.",
                             "linkLabel": "Bekijk de openingstijden",
                             "linkHref": "/contact"
                         }
