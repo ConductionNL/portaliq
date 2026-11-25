@@ -56,6 +56,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use OCA\Portaliq\Service\Identity\ContactAddressValues;
 use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 
 /**
@@ -191,6 +192,8 @@ class NextcloudAccountRegistrationTest extends TestCase {
 		$door = $this->door();
 		$this->assertSame('', $door->registerUrl(portal: self::portalWith(['modes' => ['nextcloud']])), 'no group named');
 		$this->assertSame('', $door->registerUrl(portal: self::portalWith(['modes' => ['digid'], 'registration' => ['residentGroup' => 'inwoners']])), 'no account route');
+		$malformed = self::portalWith(authentication: ['modes' => ['nextcloud', 'google'], 'registration' => ['residentGroup' => 'inwoners']]);
+		$this->assertSame(expected: '', actual: $door->registerUrl(portal: $malformed), message: 'malformed block');
 		// REQ-IWI-014: the e-mail link never opens registration.
 		$this->assertSame('', $door->registerUrl(portal: self::portalWith(['modes' => ['email-link'], 'registration' => ['residentGroup' => 'inwoners', 'policy' => 'activation']])), 'e-mail link only');
 
@@ -355,7 +358,10 @@ class NextcloudAccountRegistrationTest extends TestCase {
 			$resolver,
 			new ContactAddressValues(),
 			new RequestedPortal(),
-			new SiteReturnAddress(),
+			new SiteReturnAddress(
+				portalResolver: $this->createMock(originalClassName: PortalResolverInterface::class),
+				request: $this->createMock(originalClassName: IRequest::class)
+			),
 			null,
 			$this->door(published: [$portal], provisioner: new NextcloudAccountProvisioner($reader, $writer, $users, $published))
 		);

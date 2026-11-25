@@ -518,7 +518,7 @@ export default {
 		 *
 		 * @return {Array<object>}
 		 *
-		 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
+		 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
 		 */
 		caseActions() {
 			return caseActionsView(this.data)
@@ -643,7 +643,7 @@ export default {
 
 		/**
 		 * @return {{label: string, url: string}|null} Where the case's result is public.
-		 * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-links-to-where-its-result-is-public-req-wdm-003
+		 * @spec openspec/changes/archive/2026-11-24-woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-links-to-where-its-result-is-public-req-wdm-003
 		 */
 		questions() {
 			return caseQuestions(this.data)
@@ -781,7 +781,7 @@ export default {
 		 * @param {object} question The question.
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
+		 * @spec openspec/changes/archive/2026-11-24-woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
 		 */
 		async sendAnswer(question) {
 			const values = this.questionValues[question.id] || {}

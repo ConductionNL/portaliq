@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
  * marketing-articles-from-pipelinq: the usage event carries the article's
  * identities and keeps every well-formed usage an app adds, in order.
  *
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
  */
 class ArticleUsagesRequestedEventTest extends TestCase {
 

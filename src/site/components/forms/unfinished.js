@@ -10,7 +10,7 @@ import { ACCOUNT_ROUTE } from '../../../shared/portalNav.js'
  *
  * @param {{app: string, action: string}} draft A live draft.
  * @return {string}
- * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+ * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
  */
 export function formRoute(draft) {
 	return `${ACCOUNT_ROUTE}/${encodeURIComponent(draft.app)}/${encodeURIComponent(draft.action)}`

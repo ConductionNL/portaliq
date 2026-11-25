@@ -12,7 +12,7 @@
   - schemas joined server-side into one answer, which one object list over
   - one schema cannot express.
   -
-  - @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
+  - @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
   -->
 <template>
 	<div class="article-usage" data-testid="article-usage">
@@ -55,7 +55,7 @@ import { fetchArticleUsages } from '../../lib/articlesApi.js'
 import { groupUsages } from '../../lib/articleStatus.js'
 
 /**
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
  */
 export default {
 	name: 'ArticleUsageSection',
@@ -78,7 +78,7 @@ export default {
 	computed: {
 		/**
 		 * @return {Array<{app: string, items: Array<object>}>} The usages by app.
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
 		 */
 		groups() {
 			return groupUsages(this.rows)
@@ -140,7 +140,7 @@ export default {
 		 * Read the usages.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
+		 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
 		 */
 		async load() {
 			const id = this.effectiveId()

@@ -56,6 +56,16 @@ const DEFAULT_PLURAL_FORM = 'nplurals=2; plural=(n != 1);'
 const L10N_DIR = path.join(REPO_ROOT, 'l10n')
 
 /**
+ * The locale whose keys ARE its source strings. Its browser catalogue carries
+ * only the entries that differ from their key (a capitalisation fix, a
+ * trailing space, a plural pair): `t()` already falls back to the key, so an
+ * identity entry costs bytes on every English page and changes nothing.
+ * l10n/en.json keeps every key, because PHP `$l->t()` and the completeness
+ * checks read it.
+ */
+const SOURCE_LOCALE = 'en'
+
+/**
  * The app id the browser catalogue must register under. Read from
  * appinfo/info.xml rather than hard-coded: this app has already been renamed
  * once (hrmq -> humaniq), and a catalogue registered under the old id is
@@ -72,6 +82,28 @@ function appId() {
 		process.exit(1)
 	}
 	return match[1].trim()
+}
+
+/**
+ * The entries the browser needs from one catalogue: all of them, except for
+ * the source locale, where an entry equal to its own key is dropped.
+ *
+ * @spec PERF-HANDOFF.md (all apps: drop identity entries from the English catalogue at build time)
+ * @param {string} locale - the catalogue's locale code
+ * @param {object} translations - key -> translation
+ * @return {object} key -> translation, as served to the browser
+ */
+function browserEntries(locale, translations) {
+	if (locale !== SOURCE_LOCALE) {
+		return translations
+	}
+	const kept = {}
+	for (const key of Object.keys(translations)) {
+		if (translations[key] !== key) {
+			kept[key] = translations[key]
+		}
+	}
+	return kept
 }
 
 /**
@@ -148,8 +180,10 @@ function readCatalogue(locale) {
 
 /**
  * Bring one locale's .js in line with its .json: report it current, record it
- * stale under --check, or write it.
+ * stale under --check, or write it. The source locale's .js carries only its
+ * non-identity entries (see browserEntries).
  *
+ * @spec PERF-HANDOFF.md (all apps: drop identity entries from the English catalogue at build time)
  * @param {{check: boolean, id: string, stale: string[]}} run - the mode, the
  *   app id, and the stale files found so far
  * @param {string} locale - the locale name
@@ -157,12 +191,13 @@ function readCatalogue(locale) {
 function buildLocale(run, locale) {
 	const jsFile = path.join(L10N_DIR, `${locale}.js`)
 	const doc = readCatalogue(locale)
-	const rendered = renderJs(run.id, doc)
+	const entries = browserEntries(locale, doc.translations)
+	const rendered = renderJs(run.id, { ...doc, translations: entries })
 	const current = fs.existsSync(jsFile) ? fs.readFileSync(jsFile, 'utf8') : null
 
 	if (current === rendered) {
 		console.log(
-			`  ✓ l10n/${locale}.js up to date (${Object.keys(doc.translations).length} keys)`,
+			`  ✓ l10n/${locale}.js up to date (${Object.keys(entries).length} keys)`,
 		)
 		return
 	}
@@ -172,7 +207,7 @@ function buildLocale(run, locale) {
 	}
 	fs.writeFileSync(jsFile, rendered)
 	console.log(
-		`  ✎ l10n/${locale}.js written (${Object.keys(doc.translations).length} keys)`,
+		`  ✎ l10n/${locale}.js written (${Object.keys(entries).length} keys)`,
 	)
 }
 
@@ -194,4 +229,8 @@ function main() {
 	}
 }
 
-main()
+if (require.main === module) {
+	main()
+}
+
+module.exports = { browserEntries, renderJs, SOURCE_LOCALE }

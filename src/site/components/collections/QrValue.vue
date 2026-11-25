@@ -62,7 +62,7 @@ const STRINGS = {
 }
 
 /**
- * @spec openspec/changes/link-field-qr-code/tasks.md#t5
+ * @spec openspec/specs/portal-contribution-contract/spec.md
  */
 export default {
 	name: 'QrValue',
@@ -91,7 +91,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The address the code says, or '' when the value is none.
-		 * @spec openspec/changes/link-field-qr-code/tasks.md#t3
+		 * @spec openspec/specs/portal-contribution-contract/spec.md
 		 */
 		address() {
 			const origin = this.origin || globalThis.window?.location?.origin || ''
@@ -100,7 +100,7 @@ export default {
 
 		/**
 		 * @return {string} The link's words: `linkLabel`, else the address.
-		 * @spec openspec/changes/link-field-qr-code/tasks.md#t5
+		 * @spec openspec/specs/portal-contribution-contract/spec.md
 		 */
 		linkText() {
 			return typeof this.column?.linkLabel === 'string'
@@ -111,7 +111,7 @@ export default {
 
 		/**
 		 * @return {string} What the code opens, for its accessible name: the column's words, else the address.
-		 * @spec openspec/changes/link-field-qr-code/tasks.md#t4
+		 * @spec openspec/specs/portal-contribution-contract/spec.md
 		 */
 		codeLabel() {
 			return qrLabel(this.column) || this.value.trim()
@@ -119,7 +119,7 @@ export default {
 
 		/**
 		 * @return {Record<string, string>} The words in the page language.
-		 * @spec openspec/changes/link-field-qr-code/tasks.md#t7
+		 * @spec openspec/specs/portal-contribution-contract/spec.md
 		 */
 		words() {
 			const lang = (

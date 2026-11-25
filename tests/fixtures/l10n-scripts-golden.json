@@ -74,11 +74,11 @@
 	"build-l10n-js": {
 		"write every locale": {
 			"status": 0,
-			"stdout": "  ✎ l10n/en.js written (2 keys)\n  ✎ l10n/nl.js written (1 keys)\n",
+			"stdout": "  ✎ l10n/en.js written (0 keys)\n  ✎ l10n/nl.js written (1 keys)\n",
 			"stderr": "",
 			"l10n": {
 				".schema-l10n-baseline.json": "{\"uncovered\": 1}\n",
-				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"A\",\n        \"Say \\\"hi\\\"\": \"Say \\\"hi\\\"\"\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
+				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
 				"en.json": "{\"translations\":{\"A\":\"A\",\"Say \\\"hi\\\"\":\"Say \\\"hi\\\"\"}}",
 				"nl.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"Aa\"\n    },\n    \"nplurals=2; plural=(n > 1);\"\n)\n",
 				"nl.json": "{\"translations\":{\"A\":\"Aa\"},\"pluralForm\":\"nplurals=2; plural=(n > 1);\"}",
@@ -87,11 +87,11 @@
 		},
 		"one current, one missing": {
 			"status": 0,
-			"stdout": "  ✓ l10n/en.js up to date (2 keys)\n  ✎ l10n/nl.js written (1 keys)\n",
+			"stdout": "  ✓ l10n/en.js up to date (0 keys)\n  ✎ l10n/nl.js written (1 keys)\n",
 			"stderr": "",
 			"l10n": {
 				".schema-l10n-baseline.json": "{\"uncovered\": 1}\n",
-				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"A\",\n        \"Say \\\"hi\\\"\": \"Say \\\"hi\\\"\"\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
+				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
 				"en.json": "{\"translations\":{\"A\":\"A\",\"Say \\\"hi\\\"\":\"Say \\\"hi\\\"\"}}",
 				"nl.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"Aa\"\n    },\n    \"nplurals=2; plural=(n > 1);\"\n)\n",
 				"nl.json": "{\"translations\":{\"A\":\"Aa\"},\"pluralForm\":\"nplurals=2; plural=(n > 1);\"}",
@@ -100,11 +100,11 @@
 		},
 		"check finds stale": {
 			"status": 1,
-			"stdout": "  ✓ l10n/en.js up to date (2 keys)\n",
+			"stdout": "  ✓ l10n/en.js up to date (0 keys)\n",
 			"stderr": "\nStale browser catalogue: l10n/nl.js\nRun `npm run l10n:build` and commit the result.\n",
 			"l10n": {
 				".schema-l10n-baseline.json": "{\"uncovered\": 1}\n",
-				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"A\",\n        \"Say \\\"hi\\\"\": \"Say \\\"hi\\\"\"\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
+				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
 				"en.json": "{\"translations\":{\"A\":\"A\",\"Say \\\"hi\\\"\":\"Say \\\"hi\\\"\"}}",
 				"nl.js": "old",
 				"nl.json": "{\"translations\":{\"A\":\"Aa\"},\"pluralForm\":\"nplurals=2; plural=(n > 1);\"}",
@@ -113,11 +113,11 @@
 		},
 		"check passes": {
 			"status": 0,
-			"stdout": "  ✓ l10n/en.js up to date (2 keys)\n  ✓ l10n/nl.js up to date (2 keys)\n",
+			"stdout": "  ✓ l10n/en.js up to date (0 keys)\n  ✓ l10n/nl.js up to date (2 keys)\n",
 			"stderr": "",
 			"l10n": {
 				".schema-l10n-baseline.json": "{\"uncovered\": 1}\n",
-				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"A\",\n        \"Say \\\"hi\\\"\": \"Say \\\"hi\\\"\"\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
+				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
 				"en.json": "{\"translations\":{\"A\":\"A\",\"Say \\\"hi\\\"\":\"Say \\\"hi\\\"\"}}",
 				"nl.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"A\",\n        \"Say \\\"hi\\\"\": \"Say \\\"hi\\\"\"\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
 				"nl.json": "{\"translations\":{\"A\":\"A\",\"Say \\\"hi\\\"\":\"Say \\\"hi\\\"\"}}",
@@ -126,11 +126,11 @@
 		},
 		"empty translations": {
 			"status": 0,
-			"stdout": "  ✎ l10n/en.js written (2 keys)\n  ✎ l10n/nl.js written (0 keys)\n",
+			"stdout": "  ✎ l10n/en.js written (0 keys)\n  ✎ l10n/nl.js written (0 keys)\n",
 			"stderr": "",
 			"l10n": {
 				".schema-l10n-baseline.json": "{\"uncovered\": 1}\n",
-				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"A\",\n        \"Say \\\"hi\\\"\": \"Say \\\"hi\\\"\"\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
+				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
 				"en.json": "{\"translations\":{\"A\":\"A\",\"Say \\\"hi\\\"\":\"Say \\\"hi\\\"\"}}",
 				"nl.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
 				"nl.json": "{\"translations\": {}}",
@@ -151,11 +151,11 @@
 		},
 		"catalogue without translations": {
 			"status": 1,
-			"stdout": "  ✎ l10n/en.js written (2 keys)\n  ✎ l10n/nl.js written (1 keys)\n",
+			"stdout": "  ✎ l10n/en.js written (0 keys)\n  ✎ l10n/nl.js written (1 keys)\n",
 			"stderr": "l10n/zz.json is missing \"translations\"\n",
 			"l10n": {
 				".schema-l10n-baseline.json": "{\"uncovered\": 1}\n",
-				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"A\",\n        \"Say \\\"hi\\\"\": \"Say \\\"hi\\\"\"\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
+				"en.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n\n    },\n    \"nplurals=2; plural=(n != 1);\"\n)\n",
 				"en.json": "{\"translations\":{\"A\":\"A\",\"Say \\\"hi\\\"\":\"Say \\\"hi\\\"\"}}",
 				"nl.js": "OC.L10N.register(\n    \"demoapp\",\n    {\n        \"A\": \"Aa\"\n    },\n    \"nplurals=2; plural=(n > 1);\"\n)\n",
 				"nl.json": "{\"translations\":{\"A\":\"Aa\"},\"pluralForm\":\"nplurals=2; plural=(n > 1);\"}",

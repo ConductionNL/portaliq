@@ -50,7 +50,7 @@ interface WriteRefusalInterface {
 	 *
 	 * @return JSONResponse|null
 	 *
-	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 	 */
 	public function response(string $failure, array $data): ?JSONResponse;
 }//end interface

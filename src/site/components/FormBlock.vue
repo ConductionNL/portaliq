@@ -45,16 +45,49 @@
 				:label="field.label"
 				:required="!!field.required"
 				:optionalLabel="text.optional"
-				:help="field.type === 'date' ? text.dateHint : ''"
+				:help="helpOf(field)"
 				:error="errors[field.id] || ''"
-				:group="field.type === 'date'"
+				:group="isGroup(field)"
 				:errorTestid="`form-field-error-${field.id}`">
+				<!--
+					A DATE WITH `picker` IS ONE CALENDAR CONTROL (design D1, Date
+					Picker): the browser's own date input, bounded by the field's
+					earliest and latest date, sending the same `yyyy-mm-dd` the
+					day, month and year group sends.
+					@spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+				-->
+				<input
+					v-if="isDatePicker(field)"
+					:id="fieldElementId(field)"
+					v-model="values[field.id]"
+					type="date"
+					class="utrecht-textbox utrecht-textbox--html-input pq-form__date-picker"
+					:min="dateLimit(field.earliest) || undefined"
+					:max="dateLimit(field.latest) || undefined"
+					:aria-labelledby="`${fieldElementId(field)}-label`"
+					:required="!!field.required"
+					:aria-invalid="errors[field.id] ? 'true' : undefined"
+					:aria-describedby="describedBy"
+					:data-testid="`form-field-${field.id}`" />
+
 				<DateInputGroup
-					v-if="field.type === 'date'"
+					v-else-if="field.type === 'date'"
 					:id="fieldElementId(field)"
 					v-model="values[field.id]"
 					:required="!!field.required"
 					:invalid="!!errors[field.id]"
+					:testid="`form-field-${field.id}`" />
+
+				<SelectCombobox
+					v-else-if="field.type === 'select' && field.searchable === true"
+					:id="fieldElementId(field)"
+					v-model="values[field.id]"
+					:options="field.options || []"
+					:labelOf="(option) => optionLabel(field, option)"
+					:required="!!field.required"
+					:invalid="!!errors[field.id]"
+					:labelledby="`${fieldElementId(field)}-label`"
+					:describedby="describedBy"
 					:testid="`form-field-${field.id}`" />
 
 				<select
@@ -76,10 +109,106 @@
 					</option>
 				</select>
 
+				<!--
+					A GROUP OF CHOICES IS A FIELDSET (FieldShell's group): the
+					legend names the question and each option is its own
+					labelled control, so a screen reader reads "Keuze A, 1 of 3"
+					rather than a row of unnamed boxes. Radio is one answer,
+					checkboxes are a list of answers.
+					@spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+				-->
+				<div
+					v-else-if="field.type === 'radio' || field.type === 'checkboxes'"
+					class="pq-form__choices"
+					:data-testid="`form-field-${field.id}`">
+					<div
+						v-for="(option, index) in field.options || []"
+						:key="option"
+						class="utrecht-form-field pq-form__choice"
+						:class="
+							field.type === 'radio'
+								? 'utrecht-form-field--radio'
+								: 'utrecht-form-field--checkbox'
+						">
+						<input
+							:id="`${fieldElementId(field)}-${index}`"
+							:type="field.type === 'radio' ? 'radio' : 'checkbox'"
+							:class="
+								field.type === 'radio'
+									? 'utrecht-radio-button'
+									: 'utrecht-checkbox utrecht-checkbox--html-input'
+							"
+							:name="fieldElementId(field)"
+							:value="option"
+							:checked="isChosen(field, option)"
+							:aria-invalid="errors[field.id] ? 'true' : undefined"
+							:aria-describedby="describedBy"
+							:data-testid="`form-field-${field.id}-${index}`"
+							@change="choose(field, option, $event.target.checked)" />
+						<label
+							:for="`${fieldElementId(field)}-${index}`"
+							class="utrecht-form-label pq-form__choice-label">
+							{{ optionLabel(field, option) }}
+						</label>
+					</div>
+				</div>
+
+				<!-- One box, one statement: "ja" when ticked, nothing when not, so "required" means "must be ticked". -->
+				<input
+					v-else-if="field.type === 'checkbox' || field.type === 'switch'"
+					:id="fieldElementId(field)"
+					type="checkbox"
+					:role="field.type === 'switch' ? 'switch' : undefined"
+					:class="
+						field.type === 'switch'
+							? 'pq-form__switch'
+							: 'utrecht-checkbox utrecht-checkbox--html-input'
+					"
+					:checked="values[field.id] === 'ja'"
+					:aria-required="field.required ? 'true' : undefined"
+					:aria-labelledby="`${fieldElementId(field)}-label`"
+					:aria-invalid="errors[field.id] ? 'true' : undefined"
+					:aria-describedby="describedBy"
+					:data-testid="`form-field-${field.id}`"
+					@change="values[field.id] = $event.target.checked ? 'ja' : ''" />
+
+				<!-- A prefix or suffix ("€", "m²") reads with the input: it is in the label's description, not only beside the box. -->
+				<div
+					v-else-if="field.type === 'textAffixed'"
+					class="pq-form__affixed">
+					<span v-if="field.prefix" class="pq-form__affix" aria-hidden="true">{{ field.prefix }}</span>
+					<input
+						:id="fieldElementId(field)"
+						v-model="values[field.id]"
+						class="utrecht-textbox"
+						type="text"
+						:aria-required="field.required ? 'true' : undefined"
+						:aria-invalid="errors[field.id] ? 'true' : undefined"
+						:aria-labelledby="`${fieldElementId(field)}-label`"
+						:aria-describedby="describedBy"
+						:data-testid="`form-field-${field.id}`" />
+					<span v-if="field.suffix" class="pq-form__affix" aria-hidden="true">{{ field.suffix }}</span>
+				</div>
+
+				<input
+					v-else-if="field.type === 'range'"
+					:id="fieldElementId(field)"
+					v-model="values[field.id]"
+					type="range"
+					class="pq-form__range"
+					:min="numberOr(field.min, 0)"
+					:max="numberOr(field.max, 100)"
+					:step="numberOr(field.step, 1)"
+					:aria-required="field.required ? 'true' : undefined"
+					:aria-labelledby="`${fieldElementId(field)}-label`"
+					:aria-describedby="describedBy"
+					:data-testid="`form-field-${field.id}`" />
+
 				<textarea
 					v-else-if="field.type === 'textarea'"
 					:id="fieldElementId(field)"
 					v-model="values[field.id]"
+					:rows="numberOr(field.rows, undefined)"
 					class="utrecht-textarea"
 					:aria-required="field.required ? 'true' : undefined"
 					:aria-invalid="errors[field.id] ? 'true' : undefined"
@@ -93,6 +222,10 @@
 					v-model="values[field.id]"
 					class="utrecht-textbox"
 					:type="inputType(field)"
+					:min="field.type === 'number' ? numberOr(field.min, undefined) : undefined"
+					:max="field.type === 'number' ? numberOr(field.max, undefined) : undefined"
+					:step="field.type === 'number' ? numberOr(field.step, undefined) : undefined"
+					:autocomplete="field.autocomplete || undefined"
 					:aria-required="field.required ? 'true' : undefined"
 					:aria-invalid="errors[field.id] ? 'true' : undefined"
 					:aria-labelledby="`${fieldElementId(field)}-label`"
@@ -135,12 +268,21 @@ import { defineAsyncComponent } from 'vue'
 import DateInputGroup from './forms/DateInputGroup.vue'
 import ErrorSummary from './forms/ErrorSummary.vue'
 import FieldShell from './forms/FieldShell.vue'
+import SelectCombobox from './forms/SelectCombobox.vue'
 import {
 	capturedReferrer,
 	captureLanding,
 	firstTouch,
 	lastTouch,
 } from '../lib/campaignTracking.js'
+import { choiceErrors } from '../lib/comboboxOptions.js'
+import {
+	chosenList,
+	chosenValue,
+	dateLimit,
+	dateRangeErrors,
+	minimumErrors,
+} from '../lib/formFieldValues.js'
 import { submitLandingPageForm } from '../lib/formSubmission.js'
 import { hasHelp, mergeHelp } from '../lib/help.js'
 import {
@@ -164,6 +306,23 @@ function fieldRules(fields) {
 		required: !!field.required,
 		date: field.type === 'date',
 	}))
+}
+
+/**
+ * The plain errors plus the checkbox groups' minimum (site-nlds-widget-palette
+ * D1: a Checkbox Group declares how many must be ticked).
+ *
+ * @param {Array<object>} fields The declared form fields.
+ * @param {object} values The values per field id.
+ * @return {Record<string, string>} The message per field id.
+ */
+function formErrors(fields, values) {
+	return {
+		...plainFieldErrors(fieldRules(fields), values),
+		...minimumErrors(fields, values),
+		...dateRangeErrors(fields, values),
+		...choiceErrors(fields, values),
+	}
 }
 
 /**
@@ -205,6 +364,7 @@ export default {
 
 	components: {
 		DateInputGroup,
+		SelectCombobox,
 		ErrorSummary,
 		FieldShell,
 		FormHelp: defineAsyncComponent(() => import('./FormHelp.vue')),
@@ -359,6 +519,94 @@ export default {
 		optionLabel,
 
 		/**
+		 * The field's description: its own, else the date's example.
+		 *
+		 * @param {object} field One declared form field.
+		 * @return {string} The help line.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		helpOf(field) {
+			const own = typeof field.description === 'string' ? field.description.trim() : ''
+			const affix = field.type === 'textAffixed'
+				? [field.prefix, field.suffix].filter(Boolean).join(' – ')
+				: ''
+			if (own !== '') {
+				return affix ? `${own} (${affix})` : own
+			}
+			if (affix) {
+				return affix
+			}
+			return field.type === 'date' && !this.isDatePicker(field) ? this.text.dateHint : ''
+		},
+
+		dateLimit,
+
+		/**
+		 * Whether a date field is drawn as one calendar control.
+		 *
+		 * @param {object} field One declared form field.
+		 * @return {boolean} True for a `date` with `picker`.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		isDatePicker(field) {
+			return field.type === 'date' && field.picker === true
+		},
+
+		/**
+		 * Whether the field is a group of inputs under one legend.
+		 *
+		 * @param {object} field One declared form field.
+		 * @return {boolean} True for a date group, a radio group and checkboxes; a
+		 *  date picker is one control with its own label.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		isGroup(field) {
+			if (this.isDatePicker(field)) {
+				return false
+			}
+			return ['date', 'radio', 'checkboxes'].includes(field.type)
+		},
+
+		/**
+		 * @param {*} value A declared number.
+		 * @param {*} fallback What to use when it is not one.
+		 * @return {*} The number, or the fallback.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		numberOr(value, fallback) {
+			return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+		},
+
+		/**
+		 * @param {object} field A radio or checkboxes field.
+		 * @param {string} option One of its options.
+		 * @return {boolean} Whether the visitor chose it.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		isChosen(field, option) {
+			return chosenList(field, this.values[field.id]).includes(option)
+		},
+
+		/**
+		 * Record a choice: a radio keeps one option, checkboxes a list.
+		 *
+		 * @param {object} field A radio or checkboxes field.
+		 * @param {string} option The option.
+		 * @param {boolean} checked Whether it is now ticked.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		choose(field, option, checked) {
+			this.values[field.id] = chosenValue(field, this.values[field.id], option, checked)
+		},
+
+		/**
 		 * @param {object} field One declared form field.
 		 * @return {string} The `<input type>` to use — text-family types pass
 		 *  through, anything else (e.g. an author typo) degrades to `text`
@@ -382,7 +630,7 @@ export default {
 		 */
 		async submit() {
 			this.status = null
-			this.errors = plainFieldErrors(fieldRules(this.fields), this.values)
+			this.errors = formErrors(this.fields, this.values)
 			if (Object.keys(this.errors).length > 0) {
 				this.$nextTick(() => {
 					if (this.$refs.summary) {
@@ -415,6 +663,28 @@ export default {
 
 .pq-form__field + .pq-form__field {
 	margin-block-start: var(--utrecht-space-block-md, 1rem);
+}
+
+.pq-form__choices {
+	display: flex;
+	flex-direction: column;
+	gap: var(--utrecht-space-block-sm, 0.5rem);
+}
+
+.pq-form__choice {
+	display: flex;
+	align-items: center;
+	gap: var(--utrecht-space-inline-sm, 0.5rem);
+}
+
+.pq-form__date-picker {
+	max-inline-size: 12rem;
+}
+
+.pq-form__affixed {
+	display: flex;
+	align-items: center;
+	gap: var(--utrecht-space-inline-sm, 0.5rem);
 }
 
 .pq-form__consent,

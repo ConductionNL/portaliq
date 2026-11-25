@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use OCA\Portaliq\Auth\PortalAuthConfig;
 use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCA\Portaliq\Kernel\Support\SessionTrust;
 use OCP\AppFramework\Http;
@@ -66,20 +67,23 @@ trait PublicContentGate {
 	 *
 	 * Fails closed to public read-only when the block is absent or
 	 * unparseable, which is what the schema documents: a portal without modes,
-	 * or with `public`, is readable by anyone.
+	 * or with `public`, is readable by anyone. The block is read by
+	 * PortalAuthConfig, the one reading every way in also uses.
 	 *
 	 * @param array<string, mixed> $portal The resolved portal.
 	 *
 	 * @return JSONResponse|null A refusal, or null when the read may proceed.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	private function refuseUnlessPermitted(array $portal): ?JSONResponse {
-		$auth  = (array)($portal['authentication'] ?? []);
-		$modes = array_values(array_filter((array)($auth['modes'] ?? []), 'is_string'));
-		if ($modes === [] || in_array('public', $modes, true) === true) {
+		$auth = PortalAuthConfig::fromPortal(portal: $portal);
+		if ($auth->readsPublicly() === true) {
 			return null;
 		}
+
+		$modes = $auth->modes();
 
 		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
 		if ($subject === null) {
@@ -89,7 +93,7 @@ trait PublicContentGate {
 			return $this->refusal(error: 'authentication_required', status: Http::STATUS_UNAUTHORIZED, modes: $modes);
 		}
 
-		if ((new SessionTrust())->trustSatisfies($subject['trust'] ?? null, ($auth['minTrust'] ?? null)) === false) {
+		if ((new SessionTrust())->trustSatisfies($subject['trust'] ?? null, $auth->minTrust()) === false) {
 			// A real session that is not assured enough. Distinct from 401:
 			// signing in again with the same means would loop.
 			return $this->refusal(error: 'insufficient_trust', status: Http::STATUS_FORBIDDEN, modes: $modes);

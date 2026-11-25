@@ -364,7 +364,7 @@ function objectsIn(body, orNull) {
  * @param {object} row The row.
  * @param {object} provider The provider.
  * @return {{value: unknown, label: unknown, description?: string}} The option.
- * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
+ * @spec openspec/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
  */
 export function optionOf(row, provider) {
 	const option = { value: optionValue(row, provider), label: optionLabel(row, provider) }
@@ -823,6 +823,18 @@ export function createPortalApi(config, store = {}) {
 				return { ok: false, status: 0 }
 			}
 			return send('PATCH', path, {})
+		},
+
+		/**
+		 * Download a submission receipt as a PDF: its reference, moment and
+		 * answers. The server answers only for the resident's own receipt.
+		 *
+		 * @param {{id: string, name: string}} receipt What receiptPdfOf() gave.
+		 * @return {Promise<object>} `{ ok }`, or `{ ok: false, status }`.
+		 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+		 */
+		async downloadReceiptPdf(receipt) {
+			return saveDownload(`${base}/receipts/${encodeURIComponent(receipt.id)}/pdf`, receipt.name)
 		},
 
 		/**
@@ -1471,7 +1483,7 @@ export function createPortalApi(config, store = {}) {
 		 *
 		 * @return {Promise<Array<{app: string, action: string, label: string, updatedAt: string, expiresAt: string}>>}
 		 *
-		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+		 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
 		 */
 		async listDrafts() {
 			try {
@@ -1568,7 +1580,7 @@ export function createPortalApi(config, store = {}) {
 		 * @param {string} onCase The case, `<register>/<schema>/<id>`.
 		 * @return {Promise<object>} `{ ok, status, object, error, message }`.
 		 *
-		 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+		 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
 		 */
 		async createObjectOnCase(action, data, onCase) {
 			const query = `?actionId=${encodeURIComponent(action.id || '')}&onCase=${encodeURIComponent(onCase)}`
@@ -1998,7 +2010,7 @@ export function createPortalApi(config, store = {}) {
 		 *
 		 * @param {object} provider optionsProvider: `{ register, schema, valueField, labelField, descriptionField? }`.
 		 * @return {Promise<Array<object>>} `{ value, label, description? }`; the description is a choice card's second line.
-		 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
+		 * @spec openspec/specs/site-forms/spec.md#requirement-a-choice-card-may-carry-a-second-line
 		 */
 		async fetchOptions(provider) {
 			const body = await get(`${col(provider.register, provider.schema)}`)

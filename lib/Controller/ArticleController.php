@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCP\IUserSession;
 /**
  * Article routes for staff.
  *
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
  */
 class ArticleController extends Controller {
 	use StaffActionGuard;
@@ -81,7 +81,7 @@ class ArticleController extends Controller {
 	 *
 	 * @return JSONResponse `{data, pagination}`.
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 	 */
 	#[NoAdminRequired]
 	public function index(int $page = 1, int $limit = 20): JSONResponse {
@@ -97,7 +97,7 @@ class ArticleController extends Controller {
 	 *
 	 * @return JSONResponse `{article}`, or 404.
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 	 */
 	#[NoAdminRequired]
 	public function show(string $id): JSONResponse {
@@ -116,7 +116,7 @@ class ArticleController extends Controller {
 	 *
 	 * @return JSONResponse 201 `{article}`, or 400 naming the field.
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-holds-its-body-as-markdown-and-its-own-identity
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-holds-its-body-as-markdown-and-its-own-identity
 	 */
 	#[NoAdminRequired]
 	public function create(): JSONResponse {
@@ -137,7 +137,7 @@ class ArticleController extends Controller {
 	 *
 	 * @return JSONResponse `{article}`, 400 or 404.
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-holds-its-body-as-markdown-and-its-own-identity
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-holds-its-body-as-markdown-and-its-own-identity
 	 */
 	#[NoAdminRequired]
 	public function update(string $id): JSONResponse {
@@ -153,7 +153,7 @@ class ArticleController extends Controller {
 	 *
 	 * @return JSONResponse `{article}`, 400 or 404.
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
 	 */
 	#[NoAdminRequired]
 	public function publish(string $id): JSONResponse {
@@ -169,7 +169,7 @@ class ArticleController extends Controller {
 	 *
 	 * @return JSONResponse `{article}`, 400 or 404.
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
 	 */
 	#[NoAdminRequired]
 	public function archive(string $id): JSONResponse {
@@ -186,7 +186,7 @@ class ArticleController extends Controller {
 	 *
 	 * @return JSONResponse `{article}`, 400 or 404.
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-moves-through-a-declared-lifecycle
 	 */
 	#[NoAdminRequired]
 	public function transition(string $id, string $transition = ''): JSONResponse {
@@ -202,7 +202,7 @@ class ArticleController extends Controller {
 	 *
 	 * @return JSONResponse `{data}`, or 404.
 	 *
-	 * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-an-article-reports-where-it-has-been-used
 	 */
 	#[NoAdminRequired]
 	public function usages(string $id): JSONResponse {

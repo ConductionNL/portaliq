@@ -48,3 +48,25 @@ change is archived.
   Ticked: archived as `openspec/changes/archive/2026-09-28-a-report-without-an-account-and-a-custodian-who-may-reveal-it`.
 - [ ] 16 Hand the three dossiq halves of wave 3 to the dossiq lane, with the
   row ids. None of them exists on dossiq `development` today.
+
+## Buildiq consumer halves (handed over 25 Nov 2026 by the buildiq lane)
+
+- [ ] 17 What `buildiq-registration-form` and `buildiq-page-layout` serve to
+  the portal; leaf shapes and example answers in `buildiq-consumer-halves.md`.
+  - [ ] 17.1 `isPublic` arrives on each served form: only a form with
+    `isPublic: true` opens for a visitor without a session; cluster 51 keeps
+    the captcha, the address check and the reuse of earlier case data as
+    they are (buildiq `forms-per-case-type` 8.4, `competitor-parity-2026-09` 2.4).
+  - [x] 17.2 `confirmationText` arrives on each served form and replaces the
+    intake confirmation for that form. Already consumed:
+    `PortalFormBindingResolver::withFormConfirmation()`.
+  - [ ] 17.3 A portal page that shows a case asks `buildiq-page-layout` as the
+    visitor: buildiq resolves a caller without an account to the `portal` and
+    `everyone` audiences only, never a group, team or user layer, so the
+    portal sends no audience of its own (buildiq
+    `screen-overrides-as-a-patch-with-fall-through` 5.2,
+    `competitor-parity-2026-09` 5.3).
+  - [ ] 17.4 The served form `fee` (`{amount, currency, description}`, buildiq
+    `forms-fee-on-submit` T05) as `portalFee` when the case type declares
+    none. Waits for a decision (money): the served fee has no `payAction`,
+    and the pay route (D3 of `intake-pay-on-submit`) needs one.

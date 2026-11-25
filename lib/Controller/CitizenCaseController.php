@@ -228,7 +228,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *
 	 * @return list<array<string, mixed>>
 	 *
-	 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
+	 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
 	 */
 	private function caseActionsFor(array $context, string $register, string $schema): array {
 		if ($this->caseActions === null) {
@@ -250,7 +250,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *
 	 * @return list<array<string, mixed>>
 	 *
-	 * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
+	 * @spec openspec/changes/archive/2026-11-24-woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-open-question-is-answered-on-the-case-page-req-wdm-001
 	 */
 	private function openQuestions(array $context): array {
 		if ($this->questions === null) {
@@ -705,7 +705,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-links-to-where-its-result-is-public-req-wdm-003
+	 * @spec openspec/changes/archive/2026-11-24-woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-links-to-where-its-result-is-public-req-wdm-003
 	 */
 	private function projected(array $context, array $case): array {
 		$visible = (new CitizenCaseProjection(logger: $this->logger))->visible(context: $context, case: $case);
@@ -773,7 +773,8 @@ class CitizenCaseController extends Controller implements PortalProtected {
 
 	/**
 	 * Save the write on the case under the action's scope. Null when the
-	 * scoped write finds no case.
+	 * scoped write finds no case. Nothing is thrown here: the writer fails
+	 * closed and turns an OpenRegister Exception into null.
 	 *
 	 * @param CaseWriteRun         $write The write.
 	 * @param array<string, mixed> $data  What to write.
@@ -985,7 +986,7 @@ class CitizenCaseController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse|null The refusal, or null to proceed.
 	 *
-	 * @spec openspec/changes/citizen-case-write-limit/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md#requirement-a-residents-writes-on-her-own-case-are-limited-per-case-and-per-identity-req-cwl-001
 	 */
 	private function guardWrite(array $context, string $id): ?JSONResponse {
 		$allowed = $this->throttle->allow(

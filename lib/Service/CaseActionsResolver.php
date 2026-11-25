@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
+ * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use Throwable;
  * A window opens the day after the case's `from` date and closes at the end of the last of
  * `days` days, Europe/Amsterdam. A missing or unreadable date reads as closed.
  *
- * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-window-is-computed-on-the-server-req-coc-003
+ * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-window-is-computed-on-the-server-req-coc-003
  */
 class CaseActionsResolver {
 
@@ -53,7 +53,7 @@ class CaseActionsResolver {
 	 * @param ITimeFactory $time The clock.
 	 * @param IL10N        $l10n Translations, for the default closed sentence.
 	 *
-	 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
+	 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
 	 */
 	public function __construct(
 		private readonly ITimeFactory $time,
@@ -71,7 +71,7 @@ class CaseActionsResolver {
 	 *
 	 * @return list<array<string,mixed>> Each `{app, action, label, open, closesOn?, closedText?}`.
 	 *
-	 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
+	 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
 	 */
 	public function forCase(array $contributions, string $register, string $schema, array $case): array {
 		$found = [];
@@ -108,7 +108,7 @@ class CaseActionsResolver {
 	 *
 	 * @return string|null The field name.
 	 *
-	 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+	 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
 	 */
 	public function crossRefField(array $action, string $register, string $schema): ?string {
 		$onCase = ($action[OnCaseConfigNormaliser::KEY] ?? null);
@@ -137,7 +137,7 @@ class CaseActionsResolver {
 	 *
 	 * @return array{open: bool, closesOn?: string}
 	 *
-	 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-window-is-computed-on-the-server-req-coc-003
+	 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-window-is-computed-on-the-server-req-coc-003
 	 */
 	public function window(array $action, array $case): array {
 		$window = ($action[OnCaseConfigNormaliser::KEY]['window'] ?? null);
@@ -165,7 +165,7 @@ class CaseActionsResolver {
 	 *
 	 * @return string The sentence.
 	 *
-	 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-window-is-computed-on-the-server-req-coc-003
+	 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-window-is-computed-on-the-server-req-coc-003
 	 */
 	public function closedText(array $action): string {
 		$text = ($action[OnCaseConfigNormaliser::KEY]['closedText'] ?? null);
@@ -216,7 +216,7 @@ class CaseActionsResolver {
 	 *
 	 * @return array<string,mixed> The form's action.
 	 *
-	 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+	 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
 	 */
 	private function formOf(array $action): array {
 		$field = (string)($action[OnCaseConfigNormaliser::KEY]['crossRef'] ?? '');

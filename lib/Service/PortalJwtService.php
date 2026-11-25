@@ -256,7 +256,7 @@ class PortalJwtService implements PortalJwtServiceInterface {
 	 *
 	 * @return array<string, string>
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
 	private function portalClaim(array $context): array {
 		$portal = ($context['portal'] ?? '');

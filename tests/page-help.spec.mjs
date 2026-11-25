@@ -19,6 +19,13 @@ globalThis.document = {
 	createElement: () => ({ innerHTML: '', content: { querySelectorAll: () => [] } }),
 }
 
+// MarkdownBlock tags the markup through DOMParser; node has none.
+globalThis.DOMParser = class {
+	parseFromString(html) {
+		return { body: { innerHTML: html, querySelectorAll: () => [] } }
+	}
+}
+
 test('a text shows a closed disclosure with the summary line', async () => {
 	const html = await renderComponent(PageHelp, { text: 'Hier staat wat de gemeente van u nodig heeft.' })
 

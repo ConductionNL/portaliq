@@ -35,7 +35,7 @@ namespace OCA\Portaliq\Contribution;
  * Adds `input` hints, value types and enum options from the action's schema.
  *
  * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
+ * @spec openspec/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
  */
 class SchemaInputHintNormaliser {
 	/**
@@ -199,7 +199,7 @@ class SchemaInputHintNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-form-must-send-each-value-in-the-type-its-field-declares
 	 */
 	private function withValueType(array $action, SchemaFieldProperty $hint): array {
 		$type = ($hint->property['type'] ?? null);

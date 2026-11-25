@@ -55,6 +55,13 @@
 			data-testid="mijn-documents-upload-notice">
 			{{ uploadNotice }}
 		</p>
+		<!-- The bundle button above the list and the media groups after it
+		     load on demand, only for a block that declares them
+		     (documents-grouped-per-record). -->
+		<DocumentsExtras
+			v-if="block.bulkDownload && api"
+			part="bundle"
+			v-bind="$props" />
 		<Skeleton
 			v-if="answer === null && !failed"
 			:label="tr('Loading')"
@@ -101,18 +108,55 @@
 				data-testid="mijn-documents-note">
 				{{ block.note }}
 			</p>
+			<section
+				v-if="pendingTerms"
+				class="pq-documents-block__terms"
+				data-testid="mijn-documents-terms"
+				:aria-label="tr('Conditions for {name}', { name: pendingTerms.entry.title || pendingTerms.entry.id })">
+				<p class="utrecht-paragraph">
+					{{ pendingTerms.message || tr('Read the conditions and accept them before you download this document.') }}
+				</p>
+				<p class="utrecht-paragraph pq-documents-block__terms-text">
+					{{ pendingTerms.text }}
+				</p>
+				<div class="pq-documents-block__terms-actions">
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--primary-action"
+						data-testid="mijn-documents-terms-accept"
+						:disabled="busyId !== null"
+						@click="acceptAndOpen">
+						{{ tr('Accept and download') }}
+					</button>
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--secondary-action"
+						@click="pendingTerms = null">
+						{{ tr('Cancel') }}
+					</button>
+				</div>
+				<p v-if="termsNotice" class="utrecht-paragraph" role="alert">
+					{{ termsNotice }}
+				</p>
+			</section>
 			<p v-if="openFailed" class="utrecht-paragraph" role="alert">
 				{{ tr('The document could not be opened. Try again.') }}
 			</p>
 		</template>
+		<DocumentsExtras
+			v-if="block.extraGroups && api"
+			part="media"
+			v-bind="$props" />
 	</section>
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
 import EmptyState from './EmptyState.vue'
 import FileItem from './FileItem.vue'
 import LoadError from './LoadError.vue'
 import Skeleton from './Skeleton.vue'
+import { documentTermsApi } from '../../../shared/documentTermsApi.js'
 import { fileLine, groupDocuments, paperLine, statusState } from './documents.js'
 import { mijnTranslator } from './rows.js'
 
@@ -122,7 +166,13 @@ import { mijnTranslator } from './rows.js'
 export default {
 	name: 'DocumentsBlock',
 
-	components: { EmptyState, FileItem, LoadError, Skeleton },
+	components: {
+		DocumentsExtras: defineAsyncComponent(() => import('./DocumentsExtras.vue')),
+		EmptyState,
+		FileItem,
+		LoadError,
+		Skeleton,
+	},
 
 	// The portal's organisation type label, from the site shell (App.vue);
 	// none reads "de organisatie" (portal-identity-from-the-admin REQ-PIA-003).
@@ -155,6 +205,8 @@ export default {
 			openFailed: false,
 			uploading: false,
 			uploadNotice: '',
+			pendingTerms: null,
+			termsNotice: '',
 		}
 	},
 
@@ -203,7 +255,7 @@ export default {
 		/**
 		 * @return {string} The heading's id.
 		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
-		 * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
 		 */
 		headingId() {
 			// One block per record draws several headings: each its own id.
@@ -287,7 +339,7 @@ export default {
 		 * @param {object} entry A document.
 		 * @return {string} Who added it, when, its type and size.
 		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
-		 * @spec openspec/changes/documents-for-each-record/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-documents-block-for-each-record-shows-one-group-per-record
 		 */
 		lineOf(entry) {
 			// The provider's own line is shown as written; a paper that is not
@@ -310,15 +362,77 @@ export default {
 		},
 
 		/**
-		 * Download one document; a failure says so.
+		 * Download one document; a failure says so. A document whose app
+		 * declares download conditions the resident has not accepted shows
+		 * them first, with Accept and download (document-download-terms).
+		 *
+		 * @param {object} entry A document.
+		 * @return {Promise<void>}
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
+		 * @spec openspec/changes/document-download-terms/tasks.md#task-3
+		 */
+		async openDocument(entry) {
+			this.openFailed = false
+			this.termsNotice = ''
+			if (!this.isCase && this.collection?.documents?.terms && this.api?.request) {
+				this.busyId = entry.id
+				let terms
+				try {
+					terms = await documentTermsApi(this.api).fetchTerms(this.collection, this.recordId, entry)
+				} catch {
+					terms = null
+				}
+				this.busyId = null
+				const agreement = terms?.agreement
+				if (terms?.mayDownload === false && agreement && typeof agreement.version === 'string' && agreement.version !== '') {
+					this.pendingTerms = {
+						entry,
+						version: agreement.version,
+						text: typeof agreement.text === 'string' ? agreement.text : '',
+						message: typeof terms.message === 'string' ? terms.message : '',
+					}
+					return
+				}
+			}
+			await this.download(entry)
+		},
+
+		/**
+		 * Accept the conditions shown, then download the document.
+		 *
+		 * @return {Promise<void>}
+		 * @spec openspec/changes/document-download-terms/tasks.md#task-3
+		 */
+		async acceptAndOpen() {
+			const pending = this.pendingTerms
+			if (!pending) {
+				return
+			}
+			this.busyId = pending.entry.id
+			let result
+			try {
+				result = await documentTermsApi(this.api).acceptTerms(this.collection, this.recordId, pending.entry, pending.version)
+			} catch {
+				result = null
+			}
+			this.busyId = null
+			if (result?.ok !== true) {
+				this.termsNotice = result?.message || this.tr('The conditions could not be accepted. Try again.')
+				return
+			}
+			this.pendingTerms = null
+			await this.download(pending.entry)
+		},
+
+		/**
+		 * Stream one document through the case or collection route.
 		 *
 		 * @param {object} entry A document.
 		 * @return {Promise<void>}
 		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-cases-documents-and-history-must-render-as-file-items-and-a-contact-timeline-req-smo-005
 		 */
-		async openDocument(entry) {
+		async download(entry) {
 			this.busyId = entry.id
-			this.openFailed = false
 			let result
 			try {
 				const download = this.isCase
@@ -377,6 +491,22 @@ export default {
 </script>
 
 <style scoped>
+.pq-documents-block__terms {
+	margin-block: var(--utrecht-space-block-md, 1rem);
+	padding: var(--utrecht-space-block-md, 1rem);
+	border: 1px solid var(--utrecht-color-grey-80, #ccc);
+}
+
+.pq-documents-block__terms-text {
+	white-space: pre-line;
+}
+
+.pq-documents-block__terms-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+}
+
 .pq-documents-block {
 	margin-block-end: var(--utrecht-space-block-lg, 1.5rem);
 }

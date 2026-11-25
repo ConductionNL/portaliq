@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+ * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
  */
 
 declare(strict_types=1);
@@ -43,7 +43,7 @@ namespace OCA\Portaliq\Auth;
  * organisation's provider as before. An `oidc` value that is not an object,
  * or an `issuer`/`clientId` that is not a non-empty string, is malformed.
  *
- * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+ * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
  */
 final class PortalAuthConfig {
 
@@ -87,7 +87,7 @@ final class PortalAuthConfig {
 	 *
 	 * @return self
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public static function fromPortal(?array $portal): self {
 		$auth = ($portal['authentication'] ?? null);
@@ -114,7 +114,7 @@ final class PortalAuthConfig {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function isMalformed(): bool {
 		return $this->malformed;
@@ -125,7 +125,7 @@ final class PortalAuthConfig {
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function modes(): array {
 		return $this->modes;
@@ -138,18 +138,32 @@ final class PortalAuthConfig {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function offers(string $mode): bool {
 		return in_array($mode, $this->modes, true);
 	}//end offers()
 
 	/**
+	 * Whether anyone may read the portal's published content without signing
+	 * in: a portal without modes, one that offers `public`, and a malformed
+	 * block. A malformed block fails closed to public read-only, so it offers
+	 * no way in and no write, yet its published content stays readable.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 */
+	public function readsPublicly(): bool {
+		return $this->malformed === true || $this->modes === [] || $this->offers(mode: 'public') === true;
+	}//end readsPublicly()
+
+	/**
 	 * The declared assurance floor, or null when none is declared (or the block is malformed).
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function minTrust(): ?string {
 		return $this->minTrust;
@@ -165,7 +179,7 @@ final class PortalAuthConfig {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function acceptsOidcProvider(array $config): bool {
 		if ($this->malformed === true) {
@@ -186,7 +200,7 @@ final class PortalAuthConfig {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function namesOidcProvider(): bool {
 		return $this->oidc['issuer'] !== null || $this->oidc['clientId'] !== null;

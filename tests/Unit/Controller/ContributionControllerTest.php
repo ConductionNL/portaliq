@@ -645,7 +645,7 @@ class ContributionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/anonymous-collection-reads-what-the-public-may/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
 	 */
 	public function testAnAnonymousCollectionIsReadAsThePublicMayReadIt(): void {
 		$aggregate = $this->aggregate(

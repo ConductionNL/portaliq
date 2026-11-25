@@ -402,3 +402,89 @@ When the session that redeems an invitation's mailed link (REQ-PIS-008) holds an
 - **WHEN** the person signs in with that address
 - **THEN** nothing joins and her account keeps audience `client`
 - @e2e exclude covered by PHPUnit `WaitingAccountJoinTest::testAnAddressAloneNeverMovesAnAudience` and `::testOnlyTheRedeemOfASecretMovesTheAudience`
+
+### Requirement: Staff can ask whether a citizen has a portal account
+
+portaliq SHALL answer, for a signed-in Nextcloud user who is not a portal citizen, whether the citizen with a given
+BSN has an active DigiD or eIDAS portal account, and the portal's name, and nothing else. It SHALL refuse the question
+to a portal citizen's own session and to a caller who is not signed in.
+
+#### Scenario: dossiq's Bereikbaar via
+
+- **GIVEN** Sanne de Vries has an active DigiD portal account
+- **WHEN** Pieter (a dossiq handler) opens her contact page
+- **THEN** portaliq answers `{allowed: true, hasAccount: true, portalName: "Mijn Zuiddrecht"}`
+
+#### Scenario: A citizen asks
+
+- **WHEN** a portal citizen's own session asks about another BSN
+- **THEN** the answer is `{allowed: false}`
+
+### Requirement: An existing account's audience wins over the sign-in route's
+
+When a sign-in (the broker route or the OIDC route) finds an existing portal account for the
+identity, the session MUST carry that account's stored audience, and the role `<audience>:read`,
+whatever audience the provider preset or the organisation's claim map proposes. Only an account
+created by that sign-in MUST take the proposed audience. An account whose stored audience is empty
+MUST take the proposed one.
+
+#### Scenario: An invited employer signs in with eHerkenning
+- **GIVEN** an app invited Linda as `employer`, and her account holds identity type `eherkenning`
+- **WHEN** she signs in through the broker, whose eHerkenning preset proposes `supplier`
+- **THEN** her session's audience is `employer` and its role `employer:read`
+- @e2e exclude server sign-in, covered by PHPUnit `BrokerLoginTest`, `SessionControllerTest` and `PortalAccountServiceTest`; the live proof is learniq's employer board check
+
+#### Scenario: A first sign-in creates an account with the proposed audience
+- **GIVEN** no account exists for an eHerkenning identity
+- **WHEN** the person signs in
+- **THEN** a new account with audience `supplier` is created and the session carries `supplier`
+- @e2e exclude server sign-in, covered by PHPUnit `PortalAccountServiceTest`
+
+### Requirement: The session names the company the person acts for
+
+The session answer MUST carry `organisationName`: the first non-empty string
+`claims.<appId>.organisationName` on the person's account, trimmed and cut at 200 characters, and ''
+when there is none. It MUST NOT fall back to the portal's organisation slug.
+
+#### Scenario: Linda's chip names her company
+- **GIVEN** learniq wrote the claim `organisationName` "Jansen Installatietechniek BV" on Linda's account
+- **WHEN** the site asks for the session
+- **THEN** `organisationName` is "Jansen Installatietechniek BV"
+- @e2e exclude session payload, covered by PHPUnit `SessionControllerTest::testIndexNamesTheCompanyFromAClaim`; the chip itself by `tests/resident-menu-badges.spec.mjs`
+
+### Requirement: An app may provision an active account for a Nextcloud user
+
+An app MAY dispatch `PortalAccountProvisionRequestedEvent` with `nextcloudUid` and `portal` to
+provision an active portal account for the `nextcloud` sign-in mode. Portaliq MUST create it only
+when the app id is known, the Nextcloud user exists, and `portal` is a published portal of the
+given organisation that offers the `nextcloud` mode. The account MUST be `active`, its `subjectRef`
+MUST be the user id, `provisionedBy` MUST be the dispatching app, and a given e-mail address MUST
+be stored as unverified. A repeat for the same user, organisation and audience MUST answer the
+existing account and write nothing. Portaliq MUST NOT change an existing account: an account under
+that subjectRef in another organisation or audience, or a live account in the organisation holding
+the same address under another subjectRef, MUST be refused as `conflict`; an account under that
+subjectRef that is not active MUST be refused as `not_active`. No route MUST reach this path.
+
+#### Scenario: A training participant gets an account
+@e2e exclude PHPUnit through the real event and listener: tests/Unit/Service/Identity/NextcloudAccountProvisionerTest.php
+- GIVEN the published portal `warmtepompacademie` of organisation `academie`, offering the `nextcloud` mode, and the Nextcloud user `training-deelnemer-151`
+- WHEN learniq dispatches the event with that user id, the portal, audience `participant` and organisation `academie`
+- THEN an active account with subjectRef `training-deelnemer-151` exists, and the event answers that subjectRef with status `active`
+
+#### Scenario: The install runs again
+@e2e exclude PHPUnit: tests/Unit/Service/Identity/NextcloudAccountProvisionerTest.php
+- GIVEN that account exists
+- WHEN the same event is dispatched again
+- THEN nothing is written and the same subjectRef is answered
+
+#### Scenario: Somebody else's account
+@e2e exclude PHPUnit: tests/Unit/Service/Identity/NextcloudAccountProvisionerTest.php
+- GIVEN an account with subjectRef `training-deelnemer-151` in organisation `gemeente-x`, or a waiting account in `academie` for the same address under a minted subjectRef
+- WHEN the event is dispatched
+- THEN it is refused as `conflict` and no account changes
+
+#### Scenario: A portal without the mode
+@e2e exclude PHPUnit: tests/Unit/Service/Identity/NextcloudAccountProvisionerTest.php
+- GIVEN a portal that offers only `digid`
+- WHEN the event names it
+- THEN it is refused as `mode_not_offered`

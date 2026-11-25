@@ -88,7 +88,7 @@ export default {
 		 * @param {object} body The answers.
 		 * @return {Promise<object>} The create's result.
 		 *
-		 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-window-is-computed-on-the-server-req-coc-003
+		 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-window-is-computed-on-the-server-req-coc-003
 		 */
 		async sendOnCase(body) {
 			const result = await this.api.createObjectOnCase(
@@ -105,7 +105,7 @@ export default {
 		 *
 		 * @param {object|null} object The created object.
 		 *
-		 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-resident-gets-a-receipt-on-the-case-page-req-coc-005
+		 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-resident-gets-a-receipt-on-the-case-page-req-coc-005
 		 */
 		onSubmitted(object) {
 			this.receipt = receiptLines(this.t, object)

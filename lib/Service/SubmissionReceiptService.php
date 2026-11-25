@@ -113,6 +113,7 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 	 *                                                          on a successful receipt write; itself
 	 *                                                          fail-safe, never affects this call.
 	 * @param IDateTimeZone|null $timeZone The instance's time zone, in which the receipt names the moment.
+	 * @param SubmissionReceiptPdf|null $pdfs Reads a receipt back and renders its PDF (REQ-CRG-005).
 	 *
 	 * @spec openspec/changes/receipt-date-reads-in-the-portals-language/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
 	 */
@@ -123,6 +124,7 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 		private readonly LoggerInterface $logger,
 		private readonly NotificationDispatchService $notificationDispatch,
 		private readonly ?IDateTimeZone $timeZone = null,
+		private readonly ?SubmissionReceiptPdf $pdfs = null,
 	) {
 	}//end __construct()
 
@@ -682,4 +684,34 @@ class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
 		return $recorded;
 	}//end recordedOutcome()
 
+	/**
+	 * The PDF of one of the subject's own receipts: the reference, the moment
+	 * of receipt and the submitted answers from its data copy, rendered
+	 * through OpenRegister. Someone else's receipt, an unknown id and a
+	 * message that is no receipt all answer RECEIPT_NOT_FOUND, read before
+	 * anything is rendered.
+	 *
+	 * @param array<string, mixed> $subject The resolved session subject.
+	 * @param string $id The receipt message's id, as the client sent it.
+	 *
+	 * @return array{status: string, bytes?: string, name?: string} `status` is
+	 *         RECEIPT_PDF, RECEIPT_NOT_FOUND, RECEIPT_PDF_UNAVAILABLE or RECEIPT_PDF_FAILED.
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 */
+	public function receiptPdf(array $subject, string $id): array {
+		if ($this->pdfs === null) {
+			return ['status' => self::RECEIPT_NOT_FOUND];
+		}
+
+		$l10n = $this->language->forOrganisation(organisation: (string)($subject['organisation'] ?? ''));
+
+		return $this->pdfs->pdfFor(
+			subject: $subject,
+			id: $id,
+			l10n: $l10n,
+			subjectKey: self::SUBJECT_KEY,
+			readable: fn (string $moment): string => $this->readable(l10n: $l10n, moment: $moment)
+		);
+	}//end receiptPdf()
 }//end class

@@ -245,7 +245,7 @@ class PortalBlockResolverTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/steps-highlight/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
+	 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
 	 */
 	public function testAStepsBlockMayDrawAHighlight(): void {
 		$declared = [
@@ -323,7 +323,7 @@ class PortalBlockResolverTest extends TestCase {
 	 * collection itself, so it stays on a page that is no record page, with
 	 * its title and subtitle fields; anything but true keeps the old rule.
 	 *
-	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 *
 	 * @return void
 	 */
@@ -451,7 +451,7 @@ class PortalBlockResolverTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-label-may-name-any-field-of-the-open-record
 	 */
 	public function testACtaKeepsTheLabelForAnEmptyField(): void {
 		$declared = ['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht aan {teacherName}', 'labelWhenEmpty' => ' Bericht sturen '];
@@ -468,7 +468,7 @@ class PortalBlockResolverTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/guardian-message-to-and-whole-day/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
 	 */
 	public function testACtaKeepsWhomItsMessageGoesTo(): void {
 		$declared = ['type' => 'cta', 'route' => '/mijn/messages', 'label' => 'Bericht aan {teacherName}', 'messageTo' => 'teacherRef'];

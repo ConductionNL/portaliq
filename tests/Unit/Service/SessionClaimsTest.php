@@ -190,7 +190,7 @@ class SessionClaimsTest extends TestCase {
 	/**
 	 * A signed portal slug reads back; a malformed one reads as no portal.
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 *
 	 * @return void
 	 */

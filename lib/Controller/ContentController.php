@@ -41,6 +41,7 @@ use OCA\Portaliq\Kernel\Contracts\PublicSourceScopeInterface;
 use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
 use OCA\Portaliq\Kernel\Contracts\TrafficConfigResolverInterface;
 use OCA\Portaliq\Service\Cms\MediaReferences;
+use OCA\Portaliq\Service\Publication\PublicationReportSwitch;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
@@ -232,6 +233,15 @@ class ContentController extends Controller {
 				// documents. On unless the portal switched it off
 				// (portal-federated-search REQ-PFS-CONTENT-001).
 				'searchInsideDocuments' => (($portal['searchInsideDocuments'] ?? true) !== false),
+				// The two opt-in publication features, both off by default:
+				// "Fout melden" on a publication page, and what a withdrawn or
+				// withheld record shows (publication-error-reports-and-withheld-notices
+				// REQ-PER-001, REQ-PER-003). Never the owner: who receives the
+				// reports is not the visitor's business.
+				'publications' => [
+					'errorReports'    => (new PublicationReportSwitch())->isOn(portal: $portal),
+					'withheldNotices' => (($portal['showWithheldNotices'] ?? false) === true),
+				],
 				// Whether the "Ask a question" widget is offered: the portal turned it on
 				// AND hermiq's entry point answers. Off otherwise
 				// (search-assistant-from-public-content REQ-SAP-006).

@@ -56,7 +56,8 @@
 			</h2>
 			<FederatedSearchBlock
 				:lockedFilters="{ themes: subject.id }"
-				:lockedLabels="{ themes: subject.title }" />
+				:lockedLabels="{ themes: subject.title }"
+				@navigate="$emit('navigate', $event)" />
 		</template>
 	</article>
 </template>
@@ -92,6 +93,15 @@ export default {
 		/** The subject's slug, from the route, from the host. */
 		routeParam: { type: String, default: '' },
 	},
+
+	/**
+	 * A result link inside the subject's publications is handed on to the
+	 * grid, which routes it; without this the click was prevented and went
+	 * nowhere.
+	 *
+	 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+	 */
+	emits: ['navigate'],
 
 	data() {
 		return { subject: null, state: 'loading' }

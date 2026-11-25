@@ -97,7 +97,7 @@ class PortalShellTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/resident-menu-leave-out/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
+	 * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
 	 */
 	public function testTheProjectionServesTheItemsLeftOut(): void {
 		$projected = (new PortalShell())->project(portal: [

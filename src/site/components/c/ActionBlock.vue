@@ -100,7 +100,7 @@ function goTo(url) {
  * contribution, so a block can only run an action that contribution declares.
  *
  * @spec openspec/specs/site-portal-parity/spec.md#requirement-an-endpoint-action-must-show-its-answer-or-follow-its-redirect-req-srp-027
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+ * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
  */
 export default {
 	name: 'ActionBlock',
@@ -164,7 +164,7 @@ export default {
 		 * Whether the action goes to its app's own endpoint.
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
 		 */
 		endpoint() {
 			return isEndpointAction(this.resolved)
@@ -174,7 +174,7 @@ export default {
 		 * An `action` block on an endpoint action that needs input: its form.
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
 		 */
 		isEndpointForm() {
 			return (
@@ -190,7 +190,7 @@ export default {
 		 * only with that record, above (isRecordForm).
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
 		 */
 		opensForm() {
 			return (
@@ -215,7 +215,7 @@ export default {
 		 * first on the open record's form, the action's label first otherwise.
 		 *
 		 * @return {string} The heading.
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
 		 */
 		formHeading() {
 			const labels = this.isRecordForm
@@ -228,7 +228,7 @@ export default {
 		 * The open record in its field, for the form on the open record; none otherwise.
 		 *
 		 * @return {object|undefined} The preset, or undefined for the form's own default.
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
 		 */
 		recordPreset() {
 			return this.isRecordForm
@@ -294,7 +294,7 @@ export default {
 		 * @param {object} body The typed answers.
 		 * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
 		 * @return {Promise<object>} The result in the form's send shape.
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
 		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
 		 */
 		async sendForward(body, options = {}) {

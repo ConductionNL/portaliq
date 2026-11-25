@@ -6,6 +6,7 @@ namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\Contribution\PortalProviderLocator;
 use OCA\Portaliq\Service\CollectionDocuments;
+use OCA\Portaliq\Service\DocumentOpening;
 use OCA\Portaliq\Service\PortalAuditHook;
 use OCA\Portaliq\Service\PortalCaseDocumentReader;
 use OCA\Portaliq\Service\PortalFileReader;
@@ -53,6 +54,50 @@ class FakeOpenedProvider {
 		return $this->answer;
 	}
 
+	/**
+	 * What the terms hook answers, or an exception to throw.
+	 *
+	 * @var mixed
+	 */
+	public mixed $terms = null;
+
+	/**
+	 * The terms hook.
+	 *
+	 * @param string                $objectId   The object.
+	 * @param string                $documentId The document.
+	 * @param array<string, string> $subject    The session's subject.
+	 *
+	 * @return mixed
+	 */
+	public function paperTerms(string $objectId, string $documentId, array $subject): mixed {
+		$this->calls[] = ['terms', $objectId, $documentId, $subject];
+		if ($this->terms instanceof RuntimeException) {
+			throw $this->terms;
+		}
+
+		return $this->terms;
+	}
+
+	/**
+	 * The accept hook: answers $answer.
+	 *
+	 * @param string                $objectId   The object.
+	 * @param string                $documentId The document.
+	 * @param array<string, string> $subject    The session's subject.
+	 * @param string                $version    The version shown.
+	 *
+	 * @return mixed
+	 */
+	public function paperAccept(string $objectId, string $documentId, array $subject, string $version): mixed {
+		$this->calls[] = ['accept', $objectId, $documentId, $subject, $version];
+		if ($this->answer instanceof RuntimeException) {
+			throw $this->answer;
+		}
+
+		return $this->answer;
+	}
+
 	private function privateHook(string $objectId, string $documentId, array $subject): bool {
 		return true;
 	}
@@ -75,6 +120,10 @@ class CollectionDocumentsTest extends TestCase {
 	private const DOCUMENTS = ['label' => 'Stukken', 'provider' => 'papers', 'opened' => 'confidentialPaperOpened'];
 
 	private const OBJECT = ['register' => 'decidiq', 'schema' => 'agendaItem', 'id' => 'a1'];
+
+	private const TERMS = ['provider' => 'papers', 'opened' => 'confidentialPaperOpened', 'terms' => 'paperTerms', 'accept' => 'paperAccept'];
+
+	private const BUNDLED = ['provider' => 'certificates', 'bundle' => 'validCertificates'];
 
 	private FakeOpenedProvider $provider;
 
@@ -218,4 +267,117 @@ class CollectionDocumentsTest extends TestCase {
 		$this->assertSame(CollectionDocuments::REFUSED, $service->open(subject: self::SUBJECT, app: 'decidiq', documents: ['provider' => 'papers', 'opened' => 'staticHook'], object: self::OBJECT, documentId: 'd1'));
 		$this->assertSame([], $this->warnings, 'a hook that is not a public instance method refuses without a warning');
 	}//end testTheAuditAndTheHookWarningsAreAsRecorded()
-}//end class
+
+	/**
+	 * The bundle streams the first entry the `bundle` method answers and is
+	 * recorded as a download; no `bundle` method, or no entry, streams nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+	 */
+	public function testTheBundleStreamsTheFirstEntryOfTheBundleMethod(): void {
+		$service = $this->service();
+		$this->files->expects($this->once())->method('streamFile')->with('r', 's', 'o', 'f1');
+		$this->audit->expects($this->once())->method('download');
+
+		$result = $service->bundle(subject: self::SUBJECT, app: 'learniq', documents: self::BUNDLED, object: self::OBJECT);
+
+		$this->assertInstanceOf(expected: StreamResponse::class, actual: $result);
+	}//end testTheBundleStreamsTheFirstEntryOfTheBundleMethod()
+
+	/**
+	 * @return void
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+	 */
+	public function testNoBundleMethodOrNoEntryStreamsNothing(): void {
+		$service = $this->service();
+		$this->files->expects($this->never())->method('streamFile');
+		$this->assertNull(actual: $service->bundle(subject: self::SUBJECT, app: 'learniq', documents: self::DOCUMENTS, object: self::OBJECT));
+
+		$service = $this->service(listed: false);
+		$this->files->expects($this->never())->method('streamFile');
+		$this->audit->expects($this->never())->method('download');
+		$this->assertNull(actual: $service->bundle(subject: self::SUBJECT, app: 'learniq', documents: self::BUNDLED, object: self::OBJECT));
+	}//end testNoBundleMethodOrNoEntryStreamsNothing()
+
+	/**
+	 * One listed document of the test object, as the controller hands it over.
+	 *
+	 * @param array<string, mixed> $documents  The declaration.
+	 * @param string               $documentId The listed entry's id.
+	 *
+	 * @return DocumentOpening
+	 */
+	private function opening(array $documents=self::TERMS, string $documentId='d1'): DocumentOpening {
+		return new DocumentOpening(subject: self::SUBJECT, app: 'filinq', documents: $documents, object: self::OBJECT, documentId: $documentId);
+	}
+
+	/**
+	 * document-download-terms task 1: the terms hook answers the conditions, filtered, with the session's subject.
+	 *
+	 * @return void
+	 */
+	public function testTheTermsHookAnswersTheConditionsShown(): void {
+		$service               = $this->service();
+		$agreement             = ['version' => 'v2', 'text' => 'No reuse'];
+		$this->provider->terms = ['mayDownload' => false, 'message' => 'Accept first', 'agreement' => $agreement, 'internal' => 'x'];
+
+		$terms = $service->terms(opening: $this->opening());
+
+		$this->assertSame(expected: ['mayDownload' => false, 'message' => 'Accept first', 'agreement' => $agreement], actual: $terms);
+		$subject = ['subjectRef' => 'bsn-1', 'trust' => 'substantial', 'identityType' => 'digid', 'audience' => 'citizen'];
+		$this->assertSame(expected: ['terms', 'a1', 'd1', $subject], actual: $this->provider->calls[0]);
+	}
+
+	/**
+	 * document-download-terms task 1: no hook, an unlisted document, a throw or a non-array answer gives no terms.
+	 *
+	 * @return void
+	 */
+	public function testTermsAreNullWhenTheyCannotBeRead(): void {
+		$this->assertNull(actual: $this->service()->terms(opening: $this->opening(documents: self::DOCUMENTS)));
+		$this->assertNull(actual: $this->service(listed: false)->terms(opening: $this->opening()));
+		$this->assertSame(expected: [], actual: $this->provider->calls);
+
+		$service               = $this->service();
+		$this->provider->terms = new RuntimeException('down');
+		$this->assertNull(actual: $service->terms(opening: $this->opening()));
+		$this->provider->terms = 'yes';
+		$this->assertNull(actual: $service->terms(opening: $this->opening()));
+	}
+
+	/**
+	 * document-download-terms task 1: accepting passes the trimmed version and is true only on exactly true.
+	 *
+	 * @return void
+	 */
+	public function testAcceptingPassesTheVersionShown(): void {
+		$service = $this->service();
+		$this->assertTrue(condition: $service->accept(opening: $this->opening(), version: ' v2 '));
+		$this->assertSame(expected: 'v2', actual: $this->provider->calls[0][4]);
+
+		$this->provider->answer = 'true';
+		$this->assertFalse(condition: $service->accept(opening: $this->opening(), version: 'v2'));
+		$this->provider->answer = new RuntimeException('down');
+		$this->assertFalse(condition: $service->accept(opening: $this->opening(), version: 'v2'));
+	}
+
+	/**
+	 * document-download-terms task 1: no hook, no version or an unlisted document records nothing.
+	 *
+	 * @return void
+	 */
+	public function testAnAcceptanceWithoutHookVersionOrListingRecordsNothing(): void {
+		$service = $this->service();
+		$this->assertFalse(condition: $service->accept(opening: $this->opening(documents: self::DOCUMENTS), version: 'v2'));
+		$this->assertFalse(condition: $service->accept(opening: $this->opening(), version: '  '));
+		$this->assertFalse(condition: $service->accept(opening: $this->opening(documentId: ''), version: 'v2'));
+		$this->assertSame(expected: [], actual: $this->provider->calls);
+
+		$unlisted = $this->service(listed: false);
+		$this->assertFalse(condition: $unlisted->accept(opening: $this->opening(), version: 'v2'));
+		$this->assertSame(expected: [], actual: $this->provider->calls);
+	}
+}

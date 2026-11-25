@@ -122,3 +122,24 @@ export function heroWithPortalImage(props, heroImage) {
 	}
 	return { ...props, backgroundImage: heroImage }
 }
+
+/**
+ * The language switch's props: the PORTAL's languages after the authored
+ * props, so a placement can rename the landmark but cannot add a language
+ * (design D1 row 52). Without them the switch keeps its empty default and
+ * never renders.
+ *
+ * @param {object} props The switch's authored props.
+ * @param {object|null|undefined} languages The portal's `{ locales, current }`.
+ * @return {object} The props to render.
+ *
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+ */
+export function languageNavProps(props, languages) {
+	const portal = languages || {}
+	return {
+		...props,
+		locales: Array.isArray(portal.locales) ? portal.locales : [],
+		current: portal.current || '',
+	}
+}

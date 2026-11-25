@@ -267,7 +267,7 @@ export default {
 		 *
 		 * @return {number} The count.
 		 *
-		 * @spec openspec/changes/count-field/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
 		 */
 		countMin() {
 			return Number.isInteger(this.config.min) ? this.config.min : 1
@@ -278,7 +278,7 @@ export default {
 		 *
 		 * @return {number} The count.
 		 *
-		 * @spec openspec/changes/count-field/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
 		 */
 		countMax() {
 			return Number.isInteger(this.config.max) ? this.config.max : 99

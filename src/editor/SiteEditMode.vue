@@ -158,6 +158,7 @@
 			:editor="editor"
 			:loadCatalogueKinds="loadCatalogueKinds"
 			:excludedPaths="excludedPaths"
+			:formRows="formRows"
 			publicOnly />
 
 		<PageHistoryDialog
@@ -184,7 +185,12 @@ import SiteMenuPanel from './SiteMenuPanel.vue'
 import SitePagesPanel from './SitePagesPanel.vue'
 import { defaultSizeFor } from '../lib/pageWidgetCatalogue.js'
 import { fetchCatalogueKinds } from '../site/lib/publicCatalogue.js'
-import { createPageEditor, createPageSaver, kindsFrom } from './index.js'
+import {
+	createFormRowFields,
+	createPageEditor,
+	createPageSaver,
+	kindsFrom,
+} from './index.js'
 import { instanceUrl } from './instanceUrl.js'
 import { loadExcludedPaths } from './reportExclusion.js'
 
@@ -245,6 +251,14 @@ export default {
 
 	data() {
 		return {
+			// The bound form row a form widget's field list edits (T11b, option b).
+			formRows: createFormRowFields({
+				get: (url) => axios.get(url),
+				put: (url, payload, config) => axios.put(url, payload, config),
+				url: (id) =>
+					instanceUrl(`/apps/openregister/api/objects/portaliq/form/${encodeURIComponent(id)}`),
+			}),
+
 			editor: createPageEditor({
 				saver: createPageSaver({
 					get: (url) => axios.get(url),
@@ -283,7 +297,7 @@ export default {
 		 *
 		 * @return {string} The address, without a fragment.
 		 *
-		 * @spec openspec/changes/page-public-on-purpose/tasks.md#1.1
+		 * @spec openspec/changes/archive/2026-11-24-page-public-on-purpose/tasks.md#1.1
 		 */
 		publicAddress() {
 			return typeof window === 'undefined'
@@ -370,7 +384,7 @@ export default {
 		 * @param {boolean} confirmed Whether the editor chose Publish.
 		 * @return {Promise<void>} Resolves when published, refused or cancelled.
 		 *
-		 * @spec openspec/changes/page-public-on-purpose/tasks.md#1.1
+		 * @spec openspec/changes/archive/2026-11-24-page-public-on-purpose/tasks.md#1.1
 		 *
 		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-an-editor-must-be-able-to-edit-a-page-in-place-on-the-portal-req-pie-006
 		 */

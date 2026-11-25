@@ -116,7 +116,7 @@ class InstanceLoopback {
 	 *
 	 * @throws Throwable When no address answered (the first transport failure).
 	 *
-	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-once-on-the-loopback
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
 	 */
 	public function request(string $method, string $path, array $options = []): IResponse {
 		$absolute = $this->urlGenerator->getAbsoluteURL($path);
@@ -149,7 +149,7 @@ class InstanceLoopback {
 	 *
 	 * @throws Throwable Any failure that is not a connect-phase one.
 	 *
-	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-once-on-the-loopback
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
 	 */
 	private function sendAbsolute(string $method, string $absolute, array $options): IResponse {
 		try {
@@ -177,7 +177,7 @@ class InstanceLoopback {
 	 *
 	 * @throws Throwable The original failure when no loopback origin answers.
 	 *
-	 * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
 	 */
 	private function retryOnLoopback(LoopbackRetry $retry): IResponse {
 		foreach ($this->loopbackOrigins(absolute: $retry->absolute) as $origin) {

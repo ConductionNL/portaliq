@@ -551,7 +551,7 @@ export default {
 		 * The day a draft saved now is kept until, in words (REQ-FSR-001).
 		 *
 		 * @return {string}
-		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-saving-a-form-first-says-what-saving-does-req-fsr-001
+		 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-saving-a-form-first-says-what-saving-does-req-fsr-001
 		 */
 		keptUntil() {
 			const until = new Date(Date.now() + this.draftDays * 86400000)
@@ -562,7 +562,7 @@ export default {
 		 * When the draft waiting to be resumed was last saved, in words.
 		 *
 		 * @return {string}
-		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-reopening-a-form-asks-before-it-continues-req-fsr-002
+		 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-reopening-a-form-asks-before-it-continues-req-fsr-002
 		 */
 		pendingDraftMoment() {
 			const at = this.pendingDraft && this.pendingDraft.updatedAt
@@ -768,7 +768,7 @@ export default {
 		 *
 		 * @return {Record<string, string>} The values.
 		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
 		 */
 		emptyValues() {
 			const values = {}
@@ -1049,7 +1049,7 @@ export default {
 		 * first step with a missing required answer, else on the review.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-reopening-a-form-asks-before-it-continues-req-fsr-002
+		 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-reopening-a-form-asks-before-it-continues-req-fsr-002
 		 */
 		continueDraft() {
 			const draft = this.pendingDraft
@@ -1080,7 +1080,7 @@ export default {
 		 * Start again: discard the saved draft and keep the fields empty.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-reopening-a-form-asks-before-it-continues-req-fsr-002
+		 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-reopening-a-form-asks-before-it-continues-req-fsr-002
 		 */
 		async startAgain() {
 			this.submitting = true
@@ -1098,7 +1098,7 @@ export default {
 		 * save keeps the resident here with the refusal shown.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-saving-a-form-first-says-what-saving-does-req-fsr-001
+		 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-saving-a-form-first-says-what-saving-does-req-fsr-001
 		 */
 		async saveAndStop() {
 			await this.saveDraft()
@@ -1113,7 +1113,7 @@ export default {
 		 * keeping nothing new.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-saving-a-form-first-says-what-saving-does-req-fsr-001
+		 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-saving-a-form-first-says-what-saving-does-req-fsr-001
 		 */
 		leaveForm() {
 			this.askingToSave = false
@@ -1187,7 +1187,7 @@ export default {
 		 * @return {Promise<void>}
 		 *
 		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-file-field-must-upload-after-the-record-exists-req-srp-023
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+		 * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
 		 */
 		async submit() {
@@ -1266,7 +1266,7 @@ export default {
 		 * @return {Promise<{ok: boolean, status: number, object: object|null, id: string, failed: Array, errors: object, invalid: object}>} The result.
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+		 * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
 		 */
 		async sendBody(body) {

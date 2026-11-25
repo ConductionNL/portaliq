@@ -25,7 +25,7 @@ use RuntimeException;
  * an undeclared move, the first publish stamps the moment once, a client
  * never sets the agent mark, and usages are asked, not stored.
  *
- * @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md
+ * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md
  */
 class ArticleServiceTest extends TestCase {
 

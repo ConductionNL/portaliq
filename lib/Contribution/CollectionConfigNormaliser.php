@@ -255,7 +255,7 @@ class CollectionConfigNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
+	 * @spec openspec/changes/archive/2026-11-24-case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
 	 */
 	private function normaliseOutcome(array $collection): array {
 		if (array_key_exists('outcome', $collection) === false) {
@@ -281,7 +281,7 @@ class CollectionConfigNormaliser {
 	 *
 	 * @return array<string, string>
 	 *
-	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
+	 * @spec openspec/changes/archive/2026-11-24-case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
 	 */
 	private function keptOutcome(mixed $outcome, mixed $fields): array {
 		if (is_array($outcome) === false) {
@@ -308,7 +308,7 @@ class CollectionConfigNormaliser {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
+	 * @spec openspec/changes/archive/2026-11-24-case-outcome-on-the-case-page/specs/portal-contribution-contract/spec.md
 	 */
 	private function namesProjected(mixed $field, mixed $fields): bool {
 		return is_string($field) === true && $field !== ''

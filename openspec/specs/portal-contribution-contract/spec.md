@@ -1934,6 +1934,202 @@ A `type: create` action MAY declare `fieldMap`, an object from answer name to a 
 - **THEN** that app is listed with the error class and every other app is still listed
 - @e2e exclude CLI; pinned by ContributionsCommandTest
 
+### Requirement: A field may declare a count stepper
+
+An action field config MAY declare `widget: count`. The server MUST keep `min` and `max` only as whole numbers from 0 to 999 with `max` not below `min`, `unit` only with both `one` and `other` as text of at most 60 characters, and `priceLabel` only as text of at most 60 characters. It MUST drop the widget and its companions on a field with an options provider, a date input or a file.
+
+#### Scenario: The employer's booking form keeps its stepper
+- **GIVEN** a field declaring `widget: count`, `min: 1`, `max: 12`, `unit: {one: deelnemer, other: deelnemers}`, `priceLabel: [PRIJS]`
+- **WHEN** the manifest is normalised
+- **THEN** all five keys are kept
+- @e2e exclude server normaliser, covered by PHPUnit `ActionConfigNormaliserTest::testACountStepperKeepsWhatFits`
+
+### Requirement: An anonymous collection shows what the public may read
+
+A collection a contribution declares `anonymous: true` MUST be read without the subject scope, with OpenRegister's own read rules applied to the caller as it is, so the read never shows more than OpenRegister shows that caller. Its declared `filter` MUST narrow the read, a row naming another tenant than the session's MUST be dropped, and its `fields` whitelist MUST shape every row. Every other collection MUST stay scoped to the subject.
+
+#### Scenario: The council calendar
+- GIVEN decidiq contributes `publicCalendar` over `publication-payload` with `anonymous: true` and `filter: {oriType: "Vergadering"}`
+- AND three council meetings are published
+- WHEN a signed-in resident opens "Vergaderkalender"
+- THEN the meetings are listed
+- AND a payload whose publication date lies ahead is not
+- @e2e exclude pinned by `PortalObjectReaderTest::testAPublicReadLetsOpenRegisterDecideAndNarrowsAndProjects` and `ContributionControllerTest::testAnAnonymousCollectionIsReadAsThePublicMayReadIt`; the live check on the rehearsal follows the merge
+
+#### Scenario: A resident's own records stay theirs
+- GIVEN a collection without `anonymous`
+- WHEN a resident reads it
+- THEN only the rows their scope field names are listed, as before
+- @e2e exclude pinned by `PortalObjectReaderTest::testFiltersOnScopeAndDropsForeignRows`
+
+### Requirement: A collection block may leave out its first rows
+
+A collection block MAY declare `skip`, a whole number from 1 to 50. The site MUST leave out that
+many rows after the block's order and before its limit, also when the resident opens the whole
+list. Any other value MUST be dropped.
+
+#### Scenario: "Daarna" under the next course day
+@e2e exclude Unit tests in node: tests/site-look/collection-skip.spec.mjs; PHPUnit CollectionSkipTest
+- GIVEN course days on 8, 15, 22 and 29 October, a highlight showing 8 October, and "Daarna" with `skip: 1` and `limit: 2`
+- WHEN the overview renders
+- THEN "Daarna" lists 15 and 22 October and offers the rest
+
+### Requirement: A documents block may show the documents of every record it can read
+
+A `documents` block MAY declare `eachRecord: true`. Such a block MUST stay on any page of its contribution, not only on its collection's record page, and MUST keep `titleFields` and `subtitleFields` only as lists of fields the collection projects. Any other value of `eachRecord` MUST leave the record-page rule as it is. A documents block MAY declare `subtitle` and `emptyLabel`, kept trimmed when they are text of at most 400 characters. Listing and opening a document of one row MUST go through the per-object route, which proves the row is the subject's before the provider is asked.
+
+#### Scenario: Fatima's two children on one page
+- GIVEN learniq's page `parentDocuments` with a block `{type: documents, collection: parentChildren, eachRecord: true, titleFields: [givenName], subtitleFields: [groupLabel]}` and no record collection
+- WHEN the manifest is normalised
+- THEN the block stays, with `eachRecord: true` and both field lists
+- AND a block with `eachRecord: "yes"` on the same page is dropped
+- @e2e exclude normaliser output, covered by PHPUnit `PortalBlockResolverTest::testADocumentsBlockForEachRecordStaysOnAnyPage` and `BoardKeysTest::testADocumentsBlockKeepsItsSubtitleAndEmptyWords`
+
+### Requirement: A documents entry may carry its own line, a new mark and a status
+
+The entry reader MUST keep an entry's `meta`, `status` and `statusTone` when each is a non-empty text of at most 200 characters, and `isNew` when it is a boolean. Any other key or value MUST be left out. The `file` reference MUST still never reach the browser.
+
+#### Scenario: A new report
+- GIVEN learniq answers a report with `isNew: true` and `meta: "Groep 6"`
+- WHEN the guardian's page lists it
+- THEN the row shows "Nieuw" and "Groep 6"
+- @e2e exclude reader output, covered by PHPUnit `PortalCaseDocumentReaderTest::testKeepsTheLineTheNewMarkAndTheStatus`
+
+### Requirement: A lookup may be keyed on a field of the row
+
+A block lookup MAY declare `rowField`. The site MUST then match the row's value of that field
+against the lookup collection's `matchField`, where `id` names the looked-up row's id, and put the
+`valueField` of the matching row under the lookup's `as` name. Without `rowField` the lookup MUST
+key on the row's id. A lookup's `as` name MUST count as a field of the block's rows where the block
+names fields. A lookup MUST read only a collection of the same contribution.
+
+#### Scenario: An absence report names the child
+@e2e exclude Unit tests in node: tests/site-look/lookup-by-row-field.spec.mjs; PHPUnit LookupByRowFieldTest
+- GIVEN a report with `learnerRef` `sami` and the guardian's child Sami
+- WHEN the reports block with the `childName` lookup renders
+- THEN the report reads "Sami"
+
+### Requirement: A task may be titled by a sentence with fields
+
+A tasks block MAY declare `titleTemplate`, at most 200 characters, whose `{name}` places each name
+a field of the rows or a lookup. The site MUST title a task with the filled sentence, and with the
+joined title fields when a place stays empty.
+
+#### Scenario: The parent-teacher conversation
+@e2e exclude Unit tests in node: tests/site-look/lookup-by-row-field.spec.mjs; PHPUnit LookupByRowFieldTest
+- GIVEN a conference task for Sami and the template "Kies een tijd voor het oudergesprek van {childName}"
+- WHEN the overview renders the task
+- THEN the card reads "Kies een tijd voor het oudergesprek van Sami"
+
+### Requirement: A dated row may say when its status was set
+
+A collection block with `display: rows` MAY declare `statusNoteAtField`, a date-time field. The line under the status MUST then read the `statusNoteField` value, a comma, and the moment: "vandaag" and the time when it is today, else the day and month and the time ("1 oktober 8:20 uur"). Without a moment the line MUST be the name alone; without a name, the moment alone. The normaliser MUST keep `statusNoteAtField` like the other rows keys.
+
+#### Scenario: Goedgekeurd by the teacher, with the time
+- GIVEN Vera's absence report with status "Goedgekeurd", `decidedBy` "Meester Daan" and `decidedAt` 1 October 2026 08:20
+- AND the rows block declares `statusNoteField: decidedBy` and `statusNoteAtField: decidedAt`
+- WHEN the guardian opens Afwezigheid on 5 October
+- THEN the row reads "Goedgekeurd" with "Meester Daan, 1 oktober 8:20 uur" under it, and a report decided that morning reads "Juf Esra, vandaag 8:12 uur"
+- @e2e exclude pure function, covered by `node --test tests/site-school-displays.spec.mjs` ("the line under a status says who set it and when") and PHPUnit `SchoolBlockKeysTest::testRowsKeepTheMomentTheStatusWasSet`
+
+### Requirement: A cta label may name any field of the open record
+
+On a record page a cta label MAY hold `{field}` for any field of the open record besides `{title}`, filled as plain text. A cta MAY declare `labelWhenEmpty` (at most 120 characters); when a field its label names is empty on the open record, that label MUST be shown instead. Without it the empty placeholder is left out.
+
+#### Scenario: Bericht aan meester Daan
+- GIVEN Vera's page with a cta `route: /mijn/messages`, label "Bericht aan {teacherName}" and `labelWhenEmpty` "Bericht sturen"
+- WHEN the guardian opens Vera, whose `teacherName` is "Meester Daan"
+- THEN the button reads "Bericht aan Meester Daan"
+- AND on the page of a child without a teacher it reads "Bericht sturen"
+- @e2e exclude pure function, covered by `node --test tests/mijn-wave6.spec.mjs` ("a cta label names any field of the open record") and PHPUnit `PortalBlockResolverTest::testACtaKeepsTheLabelForAnEmptyField`
+
+### Requirement: A message button opens the form with its teacher chosen
+
+A cta block MAY declare `messageTo`, the name of a field of the open record that holds a staff member's reference. Opening such a cta on a record page MUST keep the open record and that staff member for the browser tab, and the messages page MUST, once, open its form with the matching contact chosen in "Aan" and the form in view. When no contact matches both, it MUST choose the record's contact if there is exactly one, and no one otherwise. A `messageTo` that is not a plain field name MUST be dropped.
+
+#### Scenario: Bericht aan meester Daan
+- GIVEN Vera's page with a cta `route: /mijn/messages`, label "Bericht aan {teacherName}" and `messageTo: teacherRef`, and Vera's record with `teacherRef` meester Daan
+- WHEN her father presses "Bericht aan Meester Daan"
+- THEN the messages page opens with "Meester Daan, over Vera" chosen in "Aan"
+- AND opening the messages page again later chooses no one
+- @e2e exclude pure functions, covered by `node --test tests/site-messages-per-record.spec.mjs` ("Bericht aan meester Daan" opens the form with meester Daan chosen) and PHPUnit `PortalBlockResolverTest::testACtaKeepsWhomItsMessageGoesTo`
+
+### Requirement: A column may render its value as a QR code
+
+A collection column MAY declare `render: qr`. The normaliser MUST keep `qr` as a render kind. A `link` or `qr` column MAY declare `linkLabel`; the normaliser MUST keep it trimmed when it is a string of 1 to 60 characters and MUST drop it otherwise, and MUST drop it on a column of any other render kind. The rest of the column MUST be kept either way.
+
+#### Scenario: learniq's wallet column keeps its render and its words
+- GIVEN learniq's `participantCertificates` collection declares a column `{field: "walletOfferUri", label: "Wallet", render: "qr", linkLabel: "Add to wallet"}`
+- WHEN the manifest is normalised
+- THEN the column carries `render: qr` and `linkLabel: "Add to wallet"`
+- @e2e exclude server normaliser, covered by PHPUnit `CollectionConfigNormaliserTest::testAQrColumnKeepsItsLinkLabel`
+
+#### Scenario: A malformed or misplaced link label is dropped
+- GIVEN a `qr` column with `linkLabel` as an empty string, a number or 61 characters, and a `badge` column with `linkLabel: "Open"`
+- WHEN the manifest is normalised
+- THEN neither column has `linkLabel` and both keep their field, label and render
+- @e2e exclude server normaliser, covered by PHPUnit `CollectionConfigNormaliserTest::testAMalformedLinkLabelIsDropped`
+
+### Requirement: The site only draws a QR code for an allowed address
+
+The site MUST draw a code and a link for a `qr` value only when it is an `http` or `https` address, a site-relative path, an `openid-credential-offer://` address or an `openid4vp://` address. A site-relative path MUST be encoded as the full address on the site's own origin. Any other value MUST render as plain text, with no code and no link. An empty value MUST render nothing.
+
+#### Scenario: A wallet offer is drawn
+- GIVEN a certificate row whose `walletOfferUri` is `openid-credential-offer://?credential_offer_uri=https%3A%2F%2Fexample.org%2Foffers%2F42`
+- WHEN the participant opens it on the detail card
+- THEN the card shows a QR code that encodes exactly that address, and a link "Add to wallet" to it
+- @e2e exclude component behaviour, covered by `node --test tests/site-qr-field.spec.mjs` ("a wallet offer is drawn"); the live certificate page by learniq's proof run
+
+#### Scenario: A script address is never drawn
+- GIVEN a `qr` value `javascript:alert(1)`
+- WHEN the row is rendered
+- THEN the cell shows the text and contains no code and no link
+- @e2e exclude component behaviour, covered by `node --test tests/site-qr-field.spec.mjs` ("a refused scheme renders as text")
+
+#### Scenario: A path becomes a full address
+- GIVEN a site at `https://portaal.example.nl/` and a `qr` value `/zaken/123`
+- WHEN the detail card is rendered
+- THEN the code encodes `https://portaal.example.nl/zaken/123`
+- @e2e exclude component behaviour, covered by `node --test tests/site-qr-field.spec.mjs` ("a path is made absolute")
+
+#### Scenario: No offer, no code
+- GIVEN a certificate whose `walletOfferUri` is empty
+- WHEN the participant opens "My certificates"
+- THEN that row's wallet cell is empty and has no button
+- @e2e exclude component behaviour, covered by `node --test tests/site-qr-field.spec.mjs` ("an empty value renders nothing")
+
+### Requirement: The record page shows the code, the table opens it on request
+
+On the detail card a `qr` field MUST show the code, the link and, under them, the address as selectable plain text and the caption "Scan this code with your phone". In a table a `qr` cell MUST show the link and a button "Show QR code" with `aria-expanded`, which opens the code, the address and the caption in the cell and then reads "Hide QR code". The link's words MUST be `linkLabel` when declared, else the address.
+
+#### Scenario: The participant opens the code from the table
+- GIVEN "My certificates" as a table with two certificates that have an open offer
+- WHEN the participant presses "Show QR code" on the first row
+- THEN that row shows its code, its address and the caption, the button reads "Hide QR code" with `aria-expanded="true"`, and the second row shows no code
+- @e2e exclude component behaviour, covered by `node --test tests/site-qr-field.spec.mjs` ("the table opens one code at a time"); no contribution on the e2e instance declares a `qr` column until learniq adopts it
+
+### Requirement: The code is readable by a camera and by a screen reader
+
+The code MUST be drawn in the browser as an inline SVG, without sending the value to any other server. It MUST use error correction level M, a quiet zone of four modules, black modules on a white field that includes the quiet zone, in every theme and in dark mode, and at least 160 CSS pixels wide on the detail card and 128 in a table. The SVG MUST have `role="img"` and the accessible name "QR code for: " followed by the column's `linkLabel`, else its `label`, else the field name in words. The caption and the link MUST meet WCAG 2.2 AA contrast through theme variables. A value too long to encode at level M MUST render as the link and the address only.
+
+#### Scenario: Dark mode does not invert the code
+- GIVEN the site in dark mode with an NL Design System theme
+- WHEN a detail card with a `qr` field is rendered
+- THEN the code's field is `#fff` and its modules are `#000`
+- @e2e exclude visual property of a component, covered by `node --test tests/site-qr-field.spec.mjs` ("the code ignores the theme")
+
+#### Scenario: A screen reader hears what the code opens
+- GIVEN the wallet column with `linkLabel: "Add to wallet"`
+- WHEN a screen reader reaches the code
+- THEN it announces an image named "QR code for: Add to wallet"
+- @e2e exclude component behaviour, covered by `node --test tests/site-qr-field.spec.mjs` ("the code has an accessible name")
+
+#### Scenario: Nothing leaves the page
+- GIVEN a detail card with a `qr` field
+- WHEN it is rendered
+- THEN no network request carries the value
+- @e2e exclude component behaviour, covered by `node --test tests/site-qr-field.spec.mjs` ("the code is drawn without a request")
+
 ## Non-Functional Requirements
 
 - **Performance:** trust filtering adds no OpenRegister queries; `scopeClaim`

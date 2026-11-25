@@ -58,7 +58,8 @@ class ContentNewsCatalogueGoldenTest extends TestCase {
 		'unresolved' => [null, null],
 		'open' => [['slug' => 'p-open'], null],
 		'publicMode' => [['slug' => 'p-pub', 'authentication' => ['modes' => ['digid', 'public']]], null],
-		'signInNoBearer' => [['slug' => 'p-in', 'authentication' => ['modes' => ['digid', 7], 'minTrust' => 'substantial']], null],
+		// Well-formed: a malformed block fails closed to public read-only (portal-scoping-and-auth), see PublicContentGateGoldenTest.
+		'signInNoBearer' => [['slug' => 'p-in', 'authentication' => ['modes' => ['digid'], 'minTrust' => 'substantial']], null],
 		'signInLowTrust' => [['slug' => 'p-in', 'authentication' => ['modes' => ['digid'], 'minTrust' => 'substantial']], ['trust' => 'low']],
 		'signInEnoughTrust' => [['slug' => 'p-in', 'authentication' => ['modes' => ['digid'], 'minTrust' => 'substantial']], ['trust' => 'high']],
 		'signInDefaultTrust' => [['slug' => 'p-in', 'authentication' => ['modes' => ['eherkenning']]], ['trust' => 'low']],

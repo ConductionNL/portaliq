@@ -214,8 +214,49 @@ const RENDERABLE_WIDGET_TYPES = new Set([
 	// nextcloud-vue 2.80 registers it for the detail-page and app-dashboard
 	// surfaces; a filter without @objectId tokens needs no current object.
 	'record-list',
+	...libraryWidgetKeys(),
 	...registryWidgetKeys(),
 ])
+
+/**
+ * The widget types nextcloud-vue registers for a `config.widgets` dashboard.
+ *
+ * CnDashboardPage resolves `type` through the shared dashboard widget
+ * registry, which `CnWidgetGrid/registerDashboardWidgets.js` fills: by calls
+ * in that module and by the registration modules it imports. Those keys are
+ * read off the library source, so a type the library registers (such as
+ * `object-table`) is mountable here without this script naming it. A library
+ * that is not installed adds no keys; the hand-written list above still holds.
+ *
+ * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#T07
+ *
+ * @param {string} [libraryRoot] The nextcloud-vue package directory.
+ * @return {string[]} The registered keys.
+ */
+function libraryWidgetKeys(libraryRoot = path.join(REPO_ROOT, 'node_modules', '@conduction', 'nextcloud-vue')) {
+	const entry = path.join(libraryRoot, 'src', 'components', 'CnWidgetGrid', 'registerDashboardWidgets.js')
+	if (!fs.existsSync(entry)) {
+		return []
+	}
+	const source = fs.readFileSync(entry, 'utf8')
+	const sources = [source]
+	const sideEffect = /^import '(\.\.?\/[^']+\.js)'/gm
+	let match
+	while ((match = sideEffect.exec(source)) !== null) {
+		const file = path.resolve(path.dirname(entry), match[1])
+		if (fs.existsSync(file)) {
+			sources.push(fs.readFileSync(file, 'utf8'))
+		}
+	}
+	const keys = new Set()
+	const call = /registerDashboardWidget\(\s*'([a-z0-9-]+)'/g
+	for (const text of sources) {
+		while ((match = call.exec(text)) !== null) {
+			keys.add(match[1])
+		}
+	}
+	return [...keys]
+}
 
 /**
  * The kind: "widget" keys declared in src/registry.js.
@@ -252,9 +293,9 @@ const TILE_LINK_TYPES = new Set(['app', 'url'])
  *                      layout renders its empty state — "No widgets
  *                      configured" — which reads as "nothing was configured
  *                      yet" rather than "your configuration is unreachable".
- *   unrenderable type  `text` and `object-table` are not in the renderer's
- *                      vocabulary. They validate, they round-trip, and they
- *                      mount nothing.
+ *   unrenderable type  a type neither the library nor src/registry.js
+ *                      registers. It validates, it round-trips, and it
+ *                      mounts nothing.
  *
  * Neither is a schema violation: the schema describes the manifest's SHAPE,
  * and both of these are true statements about a component's behaviour.
@@ -613,4 +654,8 @@ function main() {
 	process.exit(1)
 }
 
-main()
+if (require.main === module) {
+	main()
+}
+
+module.exports = { libraryWidgetKeys, rendererContractLint }

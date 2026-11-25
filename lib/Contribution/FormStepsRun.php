@@ -153,8 +153,8 @@ final class FormStepsRun {
 	}//end step()
 
 	/**
-	 * A kept step with its description, its review mark, or the decision a
-	 * step that is not the review declares.
+	 * A kept step with its description, its review mark, or the decision and
+	 * the fetches a step that is not the review declares.
 	 *
 	 * @param array<string, mixed> $clean The kept step so far.
 	 * @param array<string, mixed> $step  The declared step.
@@ -175,6 +175,12 @@ final class FormStepsRun {
 		$decision = (new FormStepDecision())->normalise(decision: ($step['decision'] ?? null), known: $this->known);
 		if ($decision !== null) {
 			$clean['decision'] = $decision;
+		}
+
+		// The fetches a step runs at the step change (data-lookups-and-checks-in-forms REQ-DIF-005).
+		$fetch = (new FormStepFetch())->normalise(fetches: ($step['fetch'] ?? null), known: $this->known);
+		if ($fetch !== []) {
+			$clean['fetch'] = $fetch;
 		}
 
 		return $clean;

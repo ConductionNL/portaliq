@@ -22,7 +22,7 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Portaliq\Service\CaseResultLink
  *
- * @spec openspec/changes/woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-links-to-where-its-result-is-public-req-wdm-003
+ * @spec openspec/changes/archive/2026-11-24-woo-dossier-in-my-cases/specs/citizen-writes-on-their-own-case/spec.md#requirement-the-case-links-to-where-its-result-is-public-req-wdm-003
  */
 class CitizenCaseResultLinkTest extends TestCase {
 

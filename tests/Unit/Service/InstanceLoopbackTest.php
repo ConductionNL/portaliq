@@ -487,7 +487,7 @@ class InstanceLoopbackTest extends TestCase {
 	 * absolute URL and port 80 do not. The origin that answered is kept for
 	 * the rest of the request.
 	 *
-	 * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
 	 *
 	 * @return void
 	 */
@@ -523,7 +523,7 @@ class InstanceLoopbackTest extends TestCase {
 	 * Each origin is tried in turn after a connect-phase failure, and the
 	 * warning names every one that failed.
 	 *
-	 * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
 	 *
 	 * @return void
 	 */
@@ -553,7 +553,7 @@ class InstanceLoopbackTest extends TestCase {
 	 * A loopback origin that connected and then failed is not followed by
 	 * another one: the request may already have been applied.
 	 *
-	 * @spec openspec/changes/loopback-tries-the-address-php-was-reached-on/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
+	 * @spec openspec/changes/instance-loopback-self-calls/specs/instance-loopback/spec.md#requirement-a-transport-failure-on-the-absolute-url-is-retried-on-the-addresses-this-server-answers-on
 	 *
 	 * @return void
 	 */

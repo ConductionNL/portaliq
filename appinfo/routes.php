@@ -418,6 +418,8 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // reference page that reads the submission's real state.
         // form-flow-repeating-groups-calculations-and-decisions: a step's decision, asked of the rule engine on the server.
         ['name' => 'portalIntake#decide', 'url' => '/portal/api/intake/decide', 'verb' => 'POST'],
+        // A step's fetch, asked of integriq on the server (data-lookups-and-checks-in-forms).
+        ['name' => 'formStepFetch#fetch', 'url' => '/portal/api/intake/fetch', 'verb' => 'POST'],
         ['name' => 'portalIntake#catalogue', 'url' => '/portal/api/intake/catalogue', 'verb' => 'GET'],
         // Street and town for a postcode and house number (data-lookups-and-checks-in-forms).
         ['name' => 'portalIntake#address', 'url' => '/portal/api/intake/address', 'verb' => 'GET'],
@@ -461,6 +463,10 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // A guest's one act from a link a contributing app signed
         // (identity-guest-page-for-signed-links D3): public, rate limited, no session.
         ['name' => 'guestAction#preview', 'url' => '/portal/api/guest/{appId}/{actionId}/preview', 'verb' => 'POST'],
+        // An error report on a publication, and its owner closing it
+        // (publication-error-reports-and-withheld-notices REQ-PER-002).
+        ['name' => 'publicationReport#create', 'url' => '/api/site/publication-reports', 'verb' => 'POST'],
+        ['name' => 'publicationReport#close', 'url' => '/api/publication-reports/{id}/close', 'verb' => 'POST'],
         ['name' => 'guestAction#act', 'url' => '/portal/api/guest/{appId}/{actionId}', 'verb' => 'POST'],
         ['name' => 'portalAccountSelf#updateDetails', 'url' => '/portal/api/identity/details', 'verb' => 'PATCH'],
         ['name' => 'portalAccountSelf#details', 'url' => '/portal/api/identity/details', 'verb' => 'GET'],
@@ -500,6 +506,8 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'portalPlans#update', 'url' => '/portal/api/plans/{id}', 'verb' => 'PATCH'],
         ['name' => 'portalPlans#destroy', 'url' => '/portal/api/plans/{id}', 'verb' => 'DELETE'],
         ['name' => 'portalPlans#pdf', 'url' => '/portal/api/plans/{id}/pdf', 'verb' => 'GET'],
+        // capability-rows-without-a-requirement (REQ-CRG-005): a receipt's answers as a PDF, for its own subject only.
+        ['name' => 'submissionReceipt#pdf', 'url' => '/portal/api/receipts/{id}/pdf', 'verb' => 'GET'],
         ['name' => 'portalPlans#addFile', 'url' => '/portal/api/plans/{id}/files', 'verb' => 'POST'],
         ['name' => 'portalPlans#file', 'url' => '/portal/api/plans/{id}/files/{fileId}', 'verb' => 'GET'],
         ['name' => 'portalPlans#addParticipants', 'url' => '/portal/api/plans/{id}/participants', 'verb' => 'POST'],
@@ -537,6 +545,22 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         ['name' => 'contribution#object', 'url' => '/portal/api/collections/{register}/{schema}/{id}', 'verb' => 'GET'],
         // site-member-voting-record-and-confidential-papers: the papers of one object, on any collection that declares `documents`.
         ['name' => 'portalCollectionDocuments#list', 'url' => '/portal/api/collections/{register}/{schema}/{id}/documents', 'verb' => 'GET'],
+        // A documents block's media group (documents-grouped-per-record), read through OpenRegister's own access checks.
+        ['name' => 'portalAudienceMedia#list', 'url' => '/portal/api/media-groups/{register}/{schema}', 'verb' => 'GET'],
+        ['name' => 'portalAudienceMedia#open', 'url' => '/portal/api/media-groups/{register}/{schema}/{id}', 'verb' => 'GET'],
+        // The bundle the collection's `bundle` method answers (documents-grouped-per-record), before the {documentId} route.
+        ['name' => 'portalCollectionDocuments#bundle', 'url' => '/portal/api/collections/{register}/{schema}/{id}/documents-bundle', 'verb' => 'GET'],
+        // A listed paper's download conditions (document-download-terms): read, and accept.
+        [
+            'name' => 'portalCollectionDocuments#terms',
+            'url' => '/portal/api/collections/{register}/{schema}/{id}/documents/{documentId}/terms',
+            'verb' => 'GET',
+        ],
+        [
+            'name' => 'portalCollectionDocuments#acceptTerms',
+            'url' => '/portal/api/collections/{register}/{schema}/{id}/documents/{documentId}/terms',
+            'verb' => 'POST',
+        ],
         ['name' => 'portalCollectionDocuments#open', 'url' => '/portal/api/collections/{register}/{schema}/{id}/documents/{documentId}', 'verb' => 'GET'],
         // The declared history of one object the subject owns (portaliq#723).
         ['name' => 'portalTimeline#show', 'url' => '/portal/api/collections/{register}/{schema}/{id}/timeline', 'verb' => 'GET'],

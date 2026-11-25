@@ -29,8 +29,8 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
- * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.1
+ * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#1.2
+ * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#3.1
  * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
  */
 
@@ -52,7 +52,7 @@ use Throwable;
  * AND (portal-oidc-broker-login) per-organisation OIDC broker configuration —
  * replacing the `idp` placeholder this change removes the last dependency on.
  *
- * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
+ * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#1.2
  * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
  *
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
@@ -157,8 +157,8 @@ class PortalOrganisationConfigService implements PortalOrganisationConfigService
 	 *                              silentSignIn}`.
 	 *
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T09
-	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
-	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.3
+	 * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#1.2
+	 * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#1.3
 	 * @spec openspec/specs/supplier-portal/spec.md#requirement-the-public-site-must-render-its-own-words-through-a-locale-aware-translation-layer
 	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T01
 	 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
@@ -554,7 +554,7 @@ class PortalOrganisationConfigService implements PortalOrganisationConfigService
 	 *
 	 * @return array<int, string>
 	 *
-	 * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.2
+	 * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#3.2
 	 */
 	private function allowedEmbedOrigins(array $overrides): array {
 		$raw = ($overrides['allowedEmbedOrigins'] ?? []);

@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/lookup-by-row-field/specs/portal-contribution-contract/spec.md#requirement-a-task-may-be-titled-by-a-sentence-with-fields
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-task-may-be-titled-by-a-sentence-with-fields
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Sanitises a tasks block's `titleTemplate`.
  *
- * @spec openspec/changes/lookup-by-row-field/specs/portal-contribution-contract/spec.md#requirement-a-task-may-be-titled-by-a-sentence-with-fields
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-task-may-be-titled-by-a-sentence-with-fields
  */
 class TaskTitleTemplate {
 	/**
@@ -46,7 +46,7 @@ class TaskTitleTemplate {
 	 *
 	 * @return array<string, string>
 	 *
-	 * @spec openspec/changes/lookup-by-row-field/specs/portal-contribution-contract/spec.md#requirement-a-task-may-be-titled-by-a-sentence-with-fields
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-task-may-be-titled-by-a-sentence-with-fields
 	 */
 	public function keys(mixed $declared, array $collection): array {
 		if ($this->isSentence(declared: $declared) === false) {

@@ -135,7 +135,7 @@ interface PortalObjectWriterInterface {
 	 *
 	 * @return string The refusal, or ''.
 	 *
-	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 	 */
 	public function lastFailure(): string;
 

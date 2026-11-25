@@ -92,7 +92,7 @@ class OidcStateStoreService implements OidcStateStoreServiceInterface {
 	 *
 	 * @spec openspec/changes/archive/2026-07-24-portal-oidc-broker-login/tasks.md#T02
 	 * @spec openspec/changes/archive/2026-09-30-signin-session-idle-warning-and-sso/tasks.md#T07
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 *
 	 * @SuppressWarnings(PHPMD.BooleanArgumentFlag) -- `silent` is one recorded
 	 * fact of the round trip, stored as-is on the row; the method does the
@@ -154,7 +154,7 @@ class OidcStateStoreService implements OidcStateStoreServiceInterface {
 	 * @return bool True when the row was written.
 	 *
 	 * @spec openspec/specs/portal-broker-envelope-login/spec.md#requirement-the-broker-start-binds-the-login-to-one-organisation-and-one-provider-req-bel-002
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
 	public function createBroker(string $state, string $org, string $provider, string $returnTo, string $portal = ''): bool {
 		if ($state === '') {

@@ -23,6 +23,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\TestCase;
 use OCA\Portaliq\Service\Identity\ContactAddressValues;
 use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Service\Signin\SiteReturnAddress;
 
 /**
@@ -694,7 +695,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
 	public function testOidcCallbackBindsTheSessionToThePortalTheLoginStartedOn(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
@@ -754,7 +755,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function testOidcCallbackAcceptsOnlyTheProviderTheStartPortalNames(): void {
 		$cases = [
@@ -810,7 +811,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function testOidcCallbackRefusesWhenTheStartPortalIsGone(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
@@ -841,7 +842,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	public function testOidcStartRefusesAProviderThePortalDoesNotName(): void {
 		$portals = $this->createMock(originalClassName: PortalResolver::class);
@@ -935,7 +936,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-the-session-names-the-company-the-person-acts-for
+	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-the-session-names-the-company-the-person-acts-for
 	 */
 	public function testIndexNamesTheCompanyFromAClaim(): void {
 		$session = $this->createMock(PortalSessionService::class);
@@ -965,7 +966,7 @@ class SessionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
+	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-an-existing-accounts-audience-wins-over-the-sign-in-routes
 	 */
 	public function testOidcCallbackKeepsTheAccountsOwnAudience(): void {
 		$orgConfig = $this->createMock(PortalOrganisationConfigService::class);
@@ -1525,7 +1526,10 @@ class SessionControllerTest extends TestCase {
 			($portals ?? $this->createMock(originalClassName: PortalResolver::class)),
 			new ContactAddressValues(),
 			new RequestedPortal(),
-			new SiteReturnAddress(),
+			new SiteReturnAddress(
+				portalResolver: $this->createMock(originalClassName: PortalResolverInterface::class),
+				request: $this->createMock(originalClassName: IRequest::class)
+			),
 			$loginConfig
 		);
 
@@ -1617,7 +1621,9 @@ class SessionControllerTest extends TestCase {
 			->method('issueSession')
 			// The session is bound to the portal the user signed in on
 			// (portal-scoping-and-auth Task 4).
-			->with('alice', 'client', 'org-1', 'low', ['client:read'], '', '', '', [], 'demo')
+			// The way in is named, so a media group can ask OpenRegister as
+			// this account (documents-grouped-per-record task 3).
+			->with('alice', 'client', 'org-1', 'low', ['client:read'], '', 'nextcloud', '', [], 'demo')
 			->willReturn(['token' => 'tok en']);
 		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
 		$accounts->method('findBySubjectRef')->willReturn(

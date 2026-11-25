@@ -813,8 +813,8 @@ without a signed-in Nextcloud user, and a portal bearer never signs one in. No
 `/portal/` route and no public or bearer-guarded controller reaches the MCP
 surface (`tests/Unit/Mcp/PortalEdgeMcpTest.php`).
 
-See `openspec/changes/portaliq-mcp-adoption` and
-`openspec/changes/hermiq-ai-tooling`.
+See the capability spec `openspec/specs/portaliq-mcp-surface/spec.md` and
+the open change `openspec/changes/portaliq-mcp-adoption`.
 
 ### Code quality
 

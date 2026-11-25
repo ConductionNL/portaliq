@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+ * @spec openspec/changes/archive/2026-11-24-an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
  */
 
 declare(strict_types=1);
@@ -47,7 +47,7 @@ use OCP\IUserManager;
 /**
  * Provisions an active `nextcloud`-mode portal account for an app.
  *
- * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+ * @spec openspec/changes/archive/2026-11-24-an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
  */
 class NextcloudAccountProvisioner implements NextcloudAccountProvisionerInterface {
 	/**
@@ -102,7 +102,7 @@ class NextcloudAccountProvisioner implements NextcloudAccountProvisionerInterfac
 	 *         `refused`, `unknown_user`, `unknown_portal`, `portal_mismatch`, `mode_not_offered`,
 	 *         `conflict`, `not_active` or `unavailable`.
 	 *
-	 * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+	 * @spec openspec/changes/archive/2026-11-24-an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one parameter per field
 	 * of the account asked for, as on the provision event it answers.
@@ -159,7 +159,7 @@ class NextcloudAccountProvisioner implements NextcloudAccountProvisionerInterfac
 	 *
 	 * @return string|null `refused`, `unknown_user`, or null.
 	 *
-	 * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+	 * @spec openspec/changes/archive/2026-11-24-an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
 	 */
 	private function askRefusal(array $required, string $uid): string|null {
 		if (in_array('', $required, true) === true) {

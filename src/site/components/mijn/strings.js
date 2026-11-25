@@ -14,6 +14,10 @@
 
 export default {
 	nl: {
+		// site-nlds-widget-palette T9: a Mijn omgeving widget, signed out
+		'Sign in to see this.': 'Log in om dit te zien.',
+		'Sign in': 'Inloggen',
+		'There is nothing to show here yet.': 'Er is hier nog niets te zien.',
 		// capability-rows-said-and-planned T07: the messages on a case
 		Messages: 'Berichten',
 		'The messages could not be loaded.':
@@ -114,6 +118,13 @@ export default {
 		'Nothing has happened yet.': 'Er is nog niets gebeurd.',
 		'The document could not be opened. Try again.':
 			'Het document kon niet worden geopend. Probeer het opnieuw.',
+		'Conditions for {name}': 'Voorwaarden voor {name}',
+		'Read the conditions and accept them before you download this document.':
+			'Lees de voorwaarden en ga ermee akkoord voordat u dit document downloadt.',
+		'Accept and download': 'Akkoord en downloaden',
+		'Cancel': 'Annuleren',
+		'The conditions could not be accepted. Try again.':
+			'De voorwaarden konden niet worden geaccepteerd. Probeer het opnieuw.',
 		'On whose behalf you act': 'Namens wie u werkt',
 		'You are now acting for {party}.': 'U regelt nu zaken voor {party}.',
 		'You are now handling your own affairs.': 'U regelt nu uw eigen zaken.',
@@ -127,6 +138,9 @@ export default {
 		'{value} of {total} {label}': '{value} van {total} {label}',
 	},
 	en: {
+		'Sign in to see this.': 'Sign in to see this.',
+		'Sign in': 'Sign in',
+		'There is nothing to show here yet.': 'There is nothing to show here yet.',
 		// capability-rows-said-and-planned T07: the messages on a case
 		Messages: 'Messages',
 		'The messages could not be loaded.': 'The messages could not be loaded.',
@@ -222,6 +236,13 @@ export default {
 		'Nothing has happened yet.': 'Nothing has happened yet.',
 		'The document could not be opened. Try again.':
 			'The document could not be opened. Try again.',
+		'Conditions for {name}': 'Conditions for {name}',
+		'Read the conditions and accept them before you download this document.':
+			'Read the conditions and accept them before you download this document.',
+		'Accept and download': 'Accept and download',
+		'Cancel': 'Cancel',
+		'The conditions could not be accepted. Try again.':
+			'The conditions could not be accepted. Try again.',
 		'On whose behalf you act': 'On whose behalf you act',
 		'You are now acting for {party}.': 'You are now acting for {party}.',
 		'You are now handling your own affairs.':

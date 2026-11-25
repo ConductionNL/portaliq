@@ -8,7 +8,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/lookup-by-row-field/specs/portal-contribution-contract/spec.md#requirement-a-lookup-may-be-keyed-on-a-field-of-the-row
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-lookup-may-be-keyed-on-a-field-of-the-row
  */
 
 declare(strict_types=1);
@@ -19,7 +19,7 @@ use OCA\Portaliq\Contribution\PortalManifestNormaliser;
 use PHPUnit\Framework\TestCase;
 
 /**
- * @spec openspec/changes/lookup-by-row-field/specs/portal-contribution-contract/spec.md#requirement-a-lookup-may-be-keyed-on-a-field-of-the-row
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-lookup-may-be-keyed-on-a-field-of-the-row
  */
 class LookupByRowFieldTest extends TestCase {
 	/**

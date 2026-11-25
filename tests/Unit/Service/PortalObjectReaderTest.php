@@ -76,6 +76,122 @@ class PortalObjectReaderTest extends TestCase {
 
 	}//end testReturnsEmptyWhenOpenRegisterUnavailable()
 
+	/**
+	 * A store that throws on the list read yields no rows and logs why, by schema.
+	 *
+	 * @return void
+	 */
+	public function testAFailingListReadYieldsEmptyAndLogsTheReason(): void {
+		$objectService = new class {
+			/**
+			 * Selects the register.
+			 *
+			 * @param string $register The register.
+			 *
+			 * @return self
+			 */
+			public function setRegister(string $register): self {
+				return $this;
+			}//end setRegister()
+
+			/**
+			 * Selects the schema.
+			 *
+			 * @param string $schema The schema.
+			 *
+			 * @return self
+			 */
+			public function setSchema(string $schema): self {
+				return $this;
+			}//end setSchema()
+
+			/**
+			 * Reads the rows.
+			 *
+			 * @param array $config        The read configuration.
+			 * @param bool  $_rbac         Whether RBAC applies.
+			 * @param bool  $_multitenancy Whether multitenancy applies.
+			 *
+			 * @return array
+			 */
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): array {
+				throw new RuntimeException(message: 'store down');
+			}//end findAll()
+		};
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->once())
+			->method(constraint: 'warning')
+			->with('Portaliq: OR read failed', ['schema' => 'exampleDocument', 'reason' => 'store down']);
+
+		$reader = new PortalObjectReader(
+			container: $this->container(objectService: $objectService),
+			logger: $logger,
+			projector: $this->projector()
+		);
+
+		$this->assertSame(
+			expected: [],
+			actual: $reader->readCollection(register: 'portaliq', schema: 'exampleDocument', scopeField: 'subjectRef', subjectRef: 's1')
+		);
+
+	}//end testAFailingListReadYieldsEmptyAndLogsTheReason()
+
+	/**
+	 * A list read that answers something other than an array yields no rows.
+	 *
+	 * @return void
+	 */
+	public function testANonArrayListReadYieldsEmpty(): void {
+		$objectService = new class {
+			/**
+			 * Selects the register.
+			 *
+			 * @param string $register The register.
+			 *
+			 * @return self
+			 */
+			public function setRegister(string $register): self {
+				return $this;
+			}//end setRegister()
+
+			/**
+			 * Selects the schema.
+			 *
+			 * @param string $schema The schema.
+			 *
+			 * @return self
+			 */
+			public function setSchema(string $schema): self {
+				return $this;
+			}//end setSchema()
+
+			/**
+			 * Reads the rows.
+			 *
+			 * @param array $config        The read configuration.
+			 * @param bool  $_rbac         Whether RBAC applies.
+			 * @param bool  $_multitenancy Whether multitenancy applies.
+			 *
+			 * @return mixed
+			 */
+			public function findAll(array $config, bool $_rbac = true, bool $_multitenancy = true): mixed {
+				return 'not rows';
+			}//end findAll()
+		};
+
+		$reader = new PortalObjectReader(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			projector: $this->projector()
+		);
+
+		$this->assertSame(
+			expected: [],
+			actual: $reader->readCollection(register: 'portaliq', schema: 'exampleDocument', scopeField: 'subjectRef', subjectRef: 's1')
+		);
+
+	}//end testANonArrayListReadYieldsEmpty()
+
 	public function testFiltersOnScopeAndDropsForeignRows(): void {
 		$objectService = new class {
 
@@ -145,7 +261,7 @@ class PortalObjectReaderTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/anonymous-collection-reads-what-the-public-may/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
 	 */
 	public function testAPublicReadLetsOpenRegisterDecideAndNarrowsAndProjects(): void {
 		$objectService = new class {

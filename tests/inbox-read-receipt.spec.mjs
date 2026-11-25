@@ -109,3 +109,25 @@ test('the message page shows the read moment, the receipt request and the link t
 	assert.equal(nl['All recipients of this sending'], 'Alle ontvangers van deze verzending')
 	assert.equal(nl['Read by {object.subjectRef}'], 'Gelezen door {object.subjectRef}')
 })
+
+// @spec openspec/changes/inbox-read-receipt-on-request/specs/portal-inbox/spec.md#requirement-staff-see-who-read-one-sending-req-irr-005
+test('the Portal Messages index counts the read messages of a sending it is filtered on', () => {
+	const manifest = JSON.parse(readFileSync('src/manifest.json', 'utf8'))
+	const page = manifest.pages.find((entry) => entry.id === 'PortalMessages')
+	assert.equal(page.type, 'index')
+
+	// The count line only changes while a filter (the sending's ?sendingRef=) narrows the list.
+	assert.equal(page.config.countTextFiltered, '{read} of {total} read')
+	assert.equal(page.config.countText, undefined, 'the unfiltered list keeps its own count line')
+	assert.deepEqual(page.config.countValues, { read: { metric: 'count', filter: { read: true } } })
+
+	// The address filter is the only way to one sending: nothing may pin or hide it.
+	assert.equal(page.config.fixedFilters, undefined)
+	assert.equal(page.config.filter, undefined)
+	assert.ok(page.config.columns.some((column) => column.key === 'sendingRef'), 'the sending stays a visible column')
+
+	for (const file of ['l10n/en.json', 'l10n/en_US.json']) {
+		assert.equal(JSON.parse(readFileSync(file, 'utf8')).translations['{read} of {total} read'], '{read} of {total} read')
+	}
+	assert.equal(JSON.parse(readFileSync('l10n/nl.json', 'utf8')).translations['{read} of {total} read'], '{read} van {total} gelezen')
+})

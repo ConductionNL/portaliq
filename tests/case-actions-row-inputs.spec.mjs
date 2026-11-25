@@ -4,7 +4,7 @@
 // A row action asks for the inputs its row declares, is offered on some rows
 // only, and shows what happened (case-actions-row-inputs-and-conditions).
 //
-// @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md
+// @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
@@ -247,7 +247,7 @@ test('the multipart body carries the answers as fields and the files under the d
 // REQ-RAI-001: an endpoint row action that declares `fields` asks for them
 // in the dialog, with the schema form's own field renderer (ActionFields),
 // and sends only what was filled in.
-// @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+// @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
 
 const cancel = {
 	id: 'cancel-subscription',

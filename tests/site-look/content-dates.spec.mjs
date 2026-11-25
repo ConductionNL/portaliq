@@ -75,7 +75,10 @@ test('outside the shell the document language still applies', async () => {
 
 test('the shell provides the page record language, else the site language, and marks the page', () => {
 	const app = readFileSync(join(ROOT, 'src/site/App.vue'), 'utf8')
-	assert.match(app, /return \{ siteContentLocale: \(\) => this\.contentLocale \}/)
+	assert.match(
+		app,
+		/return \{\s*siteContentLocale: \(\) => this\.contentLocale,?\s/,
+	)
 	assert.match(app, /const own = String\(this\.page\?\.locale \|\| ''\)\.trim\(\)/)
 	assert.match(app, /:lang="contentLocale"/)
 	for (const widget of [

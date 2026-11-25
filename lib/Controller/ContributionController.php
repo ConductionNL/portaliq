@@ -315,7 +315,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @param string $context Short label naming the caller, for the log line only.
 	 *
 	 * @return array<string, mixed>|JSONResponse The updated object, or the response to return.
-	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 	 */
 	private function writeScoped(
 		string $register,
@@ -1432,7 +1432,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<int, mixed> The rows.
 	 *
-	 * @spec openspec/changes/anonymous-collection-reads-what-the-public-may/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
 	 */
 	private function readRows(array $subject, array $match, string $register, string $schema): array {
 		$collection = $match['collection'];
@@ -2102,7 +2102,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @spec openspec/changes/archive/2026-07-24-portal-session-hardening-v2/tasks.md#T09
 	 * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
-	 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refused-answer-must-say-in-plain-words-which-field-to-change
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -2152,7 +2152,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, string>|JSONResponse
 	 *
-	 * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+	 * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
 	 */
 	private function onCaseFields(array $subject, array $match): array|JSONResponse {
 		$target = (string)$this->request->getParam('onCase', '');

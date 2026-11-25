@@ -62,7 +62,7 @@ import { countLine, countValue } from './fields.js'
  * The value sent is the whole number, as a typed number would be; the
  * buttons and the line are presentation only.
  *
- * @spec openspec/changes/count-field/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
+ * @spec openspec/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
  */
 export default {
 	name: 'CountStepper',

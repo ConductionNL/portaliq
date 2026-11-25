@@ -15,7 +15,9 @@
  * - `tasks` with `display: highlight`: a `tone` (`warning` or `info`) and
  *   `dueInLine: true` (the due day joins the sub line);
  * - `inbox`: `display: list` (a title and the day, no badge);
- * - `documents`: `upload: true` (an outlined button that adds a document);
+ * - `documents`: `upload: true` (an outlined button that adds a document),
+ *   `groupBy`, `note`, `extraGroups` (media groups for the signed-in person)
+ *   and `bulkDownload` (the words on the bundle button);
  * - `detail`: a `label` over the facts and `timeline: false`;
  * - `citizenCase`: `display: actions` (the closed window sentence as a
  *   notice, no status block, no documents section);
@@ -169,7 +171,7 @@ class BoardKeys {
 
 	/**
 	 * A documents block's board keys: `upload: true`, `groupBy`, `note`,
-	 * `subtitle` and `emptyLabel`.
+	 * `extraGroups`, `bulkDownload`, `subtitle` and `emptyLabel`.
 	 *
 	 * @param array<string, mixed> $block The declared block.
 	 *
@@ -177,7 +179,7 @@ class BoardKeys {
 	 *
 	 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
 	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-1
-	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
 	public function documentsKeys(array $block): array {
 		$out = [];
@@ -192,8 +194,24 @@ class BoardKeys {
 			$out['groupBy'] = $groupBy;
 		}
 
+		// Groups of media for the signed-in person, read through OpenRegister's
+		// own access checks (documents-grouped-per-record task 3).
+		$extras = new DocumentsBlockExtras();
+		$extra  = $extras->extraGroups(value: ($block['extraGroups'] ?? null));
+		if ($extra !== []) {
+			$out['extraGroups'] = $extra;
+		}
+
+		// The words on the bundle button; whether the button shows is the
+		// collection's `documents.bundle` (ListBlockNormaliser).
+		$bundle = $extras->bundleLabel(value: ($block['bulkDownload'] ?? null));
+		if ($bundle !== '') {
+			$out['bulkDownload'] = ['label' => $bundle];
+		}
+
 		return $out + $this->documentsTexts(block: $block);
 	}//end documentsKeys()
+
 
 	/**
 	 * A documents block's authored sentences: under the list, beside the
@@ -203,7 +221,7 @@ class BoardKeys {
 	 *
 	 * @return array<string, string>
 	 *
-	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
 	private function documentsTexts(array $block): array {
 		$out = [];
@@ -224,7 +242,7 @@ class BoardKeys {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
 	private function shortText(mixed $value): string {
 		if (is_string($value) === false) {

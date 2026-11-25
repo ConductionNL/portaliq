@@ -13,7 +13,7 @@
  * @param {object|null} data The citizen case answer.
  * @return {Array<{key: string, label: string, open: boolean, closedText: string, form: object|null}>}
  *
- * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
+ * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-case-page-offers-the-actions-the-server-lists-req-coc-002
  */
 export function caseActionsView(data) {
 	const listed = Array.isArray(data?.caseActions) ? data.caseActions : []
@@ -42,7 +42,7 @@ export function caseActionsView(data) {
  * @param {string} id The case id.
  * @return {string} The value, empty when a part is missing.
  *
- * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
+ * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-server-fills-in-the-case-and-the-guard-still-runs-req-coc-004
  */
 export function onCaseTarget(collection, id) {
 	const parts = [collection?.register, collection?.schema, id]
@@ -60,7 +60,7 @@ export function onCaseTarget(collection, id) {
  * @param {object|null} object The created object.
  * @return {Array<string>} The lines.
  *
- * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-resident-gets-a-receipt-on-the-case-page-req-coc-005
+ * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-resident-gets-a-receipt-on-the-case-page-req-coc-005
  */
 export function receiptLines(t, object) {
 	const reference =
@@ -79,7 +79,7 @@ export function receiptLines(t, object) {
  * @param {object} result The create's result.
  * @return {string} The sentence.
  *
- * @spec openspec/changes/case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-window-is-computed-on-the-server-req-coc-003
+ * @spec openspec/changes/archive/2026-11-24-case-page-objection-and-complaint/specs/citizen-case-objection-and-complaint/spec.md#requirement-the-window-is-computed-on-the-server-req-coc-003
  */
 export function closedRefusal(result) {
 	if (result && result.status === 409 && result.error === 'case_action_closed') {

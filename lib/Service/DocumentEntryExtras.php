@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-entry-may-carry-its-own-line-a-new-mark-and-a-status
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-entry-may-carry-its-own-line-a-new-mark-and-a-status
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Service;
 /**
  * Keeps the site-facing extras of one documents entry.
  *
- * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-entry-may-carry-its-own-line-a-new-mark-and-a-status
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-entry-may-carry-its-own-line-a-new-mark-and-a-status
  */
 class DocumentEntryExtras {
 
@@ -51,7 +51,7 @@ class DocumentEntryExtras {
 	 *
 	 * @return array<string, string|bool>
 	 *
-	 * @spec openspec/changes/documents-for-each-record/specs/portal-contribution-contract/spec.md#requirement-a-documents-entry-may-carry-its-own-line-a-new-mark-and-a-status
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-entry-may-carry-its-own-line-a-new-mark-and-a-status
 	 */
 	public function extrasOf(array $entry): array {
 		$out = [];

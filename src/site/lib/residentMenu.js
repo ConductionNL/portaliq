@@ -217,7 +217,7 @@ function rowsBadge({ entry, ctx }) {
  * @param {object} entry A navigation entry.
  * @param {Record<string, Array<object>>} recordRows The known rows.
  * @return {Array<object>|null} The rows.
- * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-a-menu-entry-may-show-the-count-of-a-collection
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-menu-entry-may-show-the-count-of-a-collection
  */
 export function badgeRows(entry, recordRows) {
 	const collection = entry?.page?.badge?.collection
@@ -234,7 +234,7 @@ export function badgeRows(entry, recordRows) {
  *
  * @param {{results?: Array<object>, failed?: boolean}|null} page The answer of the portal api's `fetchTasks()`.
  * @return {number} The count.
- * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-a-menu-entry-may-show-the-count-of-a-collection
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-menu-entry-may-show-the-count-of-a-collection
  */
 export function openTaskCount(page) {
 	if (!page || page.failed === true || !Array.isArray(page.results)) {
@@ -282,7 +282,7 @@ const NAMES = new WeakMap()
  * @spec openspec/specs/site-resident-menu/spec.md#requirement-the-residents-own-items-must-sit-in-a-menu-beside-the-content-req-srm-002
  * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-contributed-page-may-name-the-menu-group-it-belongs-to-req-srm-005
  * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
- * @spec openspec/changes/resident-menu-leave-out/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
  */
 export function residentMenuGroups(nav, menu) {
 	const { t, unread, hrefFor, recordRows = {}, layout = null, leaveOut = null, openTasks = 0 } = menu
@@ -666,7 +666,7 @@ function offersCases(contribution, names) {
  * @param {Array<{key: string, title: string, items: Array<object>}>} groups The groups.
  * @param {Array<string>|null} leaveOut The names to leave out.
  * @return {Array<{key: string, title: string, items: Array<object>}>}
- * @spec openspec/changes/resident-menu-leave-out/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
  */
 export function withoutLeftOut(groups, leaveOut) {
 	const names = new Set(Array.isArray(leaveOut) ? leaveOut : [])
@@ -718,7 +718,7 @@ export function laidOut(groups, { layout, t, hrefFor }) {
  *
  * @param {Array<{items: Array<object>}>} groups The site's own groups.
  * @return {Map<string, Array<object>>} The items by name.
- * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-resident-menu/spec.md#requirement-a-portals-layout-may-place-a-per-record-page-with-all-its-rows
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-portals-layout-may-place-a-per-record-page-with-all-its-rows
  */
 function itemsByName(groups) {
 	const byName = new Map()
@@ -750,7 +750,7 @@ function plainItem(item) {
  * @param {{byName: Map<string, Array<object>>, placed: Set<object>, t: (key: string, vars?: object) => string, hrefFor: (route: string) => string}} found The items by name, the items placed so far (changed in place), the translator and the address of a route.
  * @return {Array<object>} The items.
  * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
- * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-resident-menu/spec.md#requirement-a-portals-layout-may-place-a-per-record-page-with-all-its-rows
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-portals-layout-may-place-a-per-record-page-with-all-its-rows
  */
 function declaredItems(group, found) {
 	const { byName, placed, t, hrefFor } = found
@@ -887,7 +887,7 @@ function titleFieldsOf(page) {
  * @param {MenuContext} ctx What the items are built from.
  * @return {void}
  * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-contributed-page-may-place-itself-in-the-menu-per-record-or-as-home-req-smo-020
- * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-a-per-record-page-in-a-group-lists-each-row-with-its-subtitle
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-per-record-page-in-a-group-lists-each-row-with-its-subtitle
  */
 function addPerRecordItems(target, ctx) {
 	const fields = titleFieldsOf(target.entry.page)
@@ -917,7 +917,7 @@ function rowId(row) {
  * @param {{groups: Array<object>, entry: object, grouped?: boolean, row: {row: object, id: string, title: string}}} target Where it goes and the row with its id and name.
  * @param {MenuContext} ctx What the items are built from.
  * @return {void}
- * @spec openspec/changes/guardian-pages-follow-the-wilgenboom-boards/specs/site-resident-menu/spec.md#requirement-a-portals-layout-may-place-a-per-record-page-with-all-its-rows
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-portals-layout-may-place-a-per-record-page-with-all-its-rows
  */
 function addRowItem({ groups, entry, grouped = false, row: { row, id, title } }, ctx) {
 	const app = entry.contribution?.app || ''
@@ -940,7 +940,7 @@ function addRowItem({ groups, entry, grouped = false, row: { row, id, title } },
  * @param {object} item The item (changed in place).
  * @param {{row: object, title: string, entry: object}} source The row, its name and the page's navigation entry.
  * @return {void}
- * @spec openspec/changes/resident-menu-badges-and-cards/specs/site-resident-menu/spec.md#requirement-a-per-record-page-in-a-group-lists-each-row-with-its-subtitle
+ * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-per-record-page-in-a-group-lists-each-row-with-its-subtitle
  */
 function nameAfterRow(item, { row, title, entry }) {
 	item.name = title

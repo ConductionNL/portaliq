@@ -182,7 +182,7 @@ interface PortalObjectReaderInterface {
 	 *
 	 * @return array<int, array<string, mixed>> The rows, or [] when OpenRegister is absent or the read failed.
 	 *
-	 * @spec openspec/changes/anonymous-collection-reads-what-the-public-may/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
 	 */
 	public function readPublicCollection(
 		string $register,

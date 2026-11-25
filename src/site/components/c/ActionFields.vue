@@ -32,7 +32,7 @@ import { fieldConfig, fieldInput, fieldLabel, formFields } from './forms.js'
  * with the row action dialog). It keeps no answers of its own: the form that
  * holds it owns the values, and every typed value comes back as `update`.
  *
- * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+ * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
  */
 export default {
 	name: 'ActionFields',
@@ -68,7 +68,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The prefix of every input id.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
 		 */
 		base() {
 			return this.idBase !== '' ? this.idBase : `f-${this.action.id}`
@@ -76,7 +76,7 @@ export default {
 
 		/**
 		 * @return {string[]} The fields drawn: the ones given, else every field the action declares.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
 		 */
 		shown() {
 			return Array.isArray(this.fields) ? this.fields : formFields(this.action)
@@ -87,7 +87,7 @@ export default {
 		/**
 		 * @param {string} field The field.
 		 * @return {string} Its label.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
 		 */
 		labelOf(field) {
 			return fieldLabel(this.action, field)
@@ -96,7 +96,7 @@ export default {
 		/**
 		 * @param {string} field The field.
 		 * @return {object} Its declared field config.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
 		 */
 		configOf(field) {
 			return fieldConfig(this.action, field)
@@ -105,7 +105,7 @@ export default {
 		/**
 		 * @param {string} field The field.
 		 * @return {string} The input it is drawn as.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-collects-the-fields-it-declares-req-rai-001
 		 */
 		inputOf(field) {
 			return fieldInput(this.action, field, this.options[field])

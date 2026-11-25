@@ -5,23 +5,30 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
 use OCA\Portaliq\Service\Intake\FormStatements;
+use OCA\Portaliq\Service\Intake\FormStepFetches;
 use OCA\Portaliq\Service\Intake\PortalEmailVerification;
 use OCA\Portaliq\Service\Intake\PortalFamilyMembers;
 use OCA\Portaliq\Service\Intake\PortalFormCalculator;
 use OCA\Portaliq\Service\Intake\PortalFormDecision;
+use OCA\Portaliq\Service\Intake\PortalFormFetch;
 use OCA\Portaliq\Service\Intake\PortalFormValidator;
 use OCA\Portaliq\Service\Intake\PortalSubmissionChecks;
 use OCA\Portaliq\Service\Intake\SubmissionDecisions;
+use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\ServiceFetchEventFake;
+use OCP\EventDispatcher\IEventDispatcher;
 use OCP\AppFramework\Http\JSONResponse;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 
 /**
  * Pre-submission checks: validation, family refs, e-mail proofs, decisions, statements.
  */
 #[CoversClass(PortalSubmissionChecks::class)]
 #[UsesClass(SubmissionDecisions::class)]
+#[UsesClass(PortalFormFetch::class)]
+#[UsesClass(FormStepFetches::class)]
 class PortalSubmissionChecksTest extends TestCase {
 	/**
 	 * A validator that accepts what it is given.
@@ -257,4 +264,94 @@ class PortalSubmissionChecksTest extends TestCase {
 		$response = (new PortalSubmissionChecks($this->validator(), null, null, null, $decision))->decideStep($render, 's1', ['age' => 3, 'junk' => 1]);
 		$this->assertSame(['outcome' => 'yes', 'output' => 'o', 'nextStep' => []], $response->getData());
 	}//end testDecideStepLastMatchWithoutCalculator()
+	/**
+	 * A form whose second step asks the Kadaster who owns the building.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function fetchForm(): array {
+		return [
+			'fields' => [['name' => 'postcode'], ['name' => 'eigenaar'], ['name' => 'naam']],
+			'steps' => [
+				['id' => 'adres', 'fields' => ['postcode']],
+				[
+					'id' => 'pand',
+					'fields' => ['eigenaar', 'naam'],
+					'fetch' => [[
+						'id' => 'eigenaar',
+						'source' => 'kadaster-eigendom',
+						'inputs' => ['postcode' => 'postcode'],
+						'outputs' => ['eigenaarNaam' => 'eigenaar'],
+						'check' => ['label' => 'Wij controleren of u eigenaar bent', 'output' => 'isEigenaar', 'lines' => ['true' => 'Volgens het Kadaster staat dit pand op uw naam.']],
+					]],
+				],
+			],
+		];
+	}//end fetchForm()
+
+	/**
+	 * Integriq's fetch, answered by $answer, or left unhandled when null.
+	 *
+	 * @param callable|null $answer     Answers the dispatched command.
+	 * @param array         $dispatched Receives every dispatched command.
+	 *
+	 * @return PortalFormFetch
+	 */
+	private function fetches(?callable $answer, array &$dispatched = []): PortalFormFetch {
+		$events = $this->createMock(IEventDispatcher::class);
+		$events->method('dispatchTyped')->willReturnCallback(
+			static function (object $event) use ($answer, &$dispatched): void {
+				$dispatched[] = $event;
+				if ($answer !== null) {
+					$answer($event);
+				}
+			}
+		);
+
+		return new PortalFormFetch($events, $this->createMock(LoggerInterface::class), ServiceFetchEventFake::class);
+	}//end fetches()
+
+	/**
+	 * REQ-DIF-005: on submit the field a fetch fills holds what the source
+	 * says, not what the browser sent; a source that is down refuses the
+	 * submission and a form without fetches asks nothing.
+	 *
+	 * @return void
+	 */
+	public function testPrepareFetchesAgainAndRefusesWhenTheSourceIsDown(): void {
+		$fetches = $this->fetches(static fn (ServiceFetchEventFake $e) => $e->setOutputs(['eigenaarNaam' => 'S. de Vries', 'isEigenaar' => true], 'now'));
+		$checks  = new PortalSubmissionChecks($this->validator(), null, null, null, null, null, $fetches);
+
+		$prepared = $checks->prepare($this->fetchForm(), [], '/r', ['postcode' => '3311AB', 'eigenaar' => 'Iemand anders', 'naam' => 'Sanne'], null, [], []);
+		$this->assertIsArray($prepared);
+		$this->assertSame('S. de Vries', $prepared['answers']['eigenaar']);
+		$this->assertSame('Sanne', $prepared['answers']['naam']);
+
+		$down    = new PortalSubmissionChecks($this->validator(), null, null, null, null, null, $this->fetches(null));
+		$refused = $down->prepare($this->fetchForm(), [], '/r', ['eigenaar' => 'x'], null, [], []);
+		$this->assertInstanceOf(JSONResponse::class, $refused);
+		$this->assertSame(503, $refused->getStatus());
+
+		$noService = (new PortalSubmissionChecks($this->validator()))->prepare($this->fetchForm(), [], '/r', ['eigenaar' => 'x'], null, [], []);
+		$this->assertInstanceOf(JSONResponse::class, $noService, 'a form that fetches is not sent without the fetch service');
+
+		$events = $this->createMock(IEventDispatcher::class);
+		$events->expects($this->never())->method('dispatchTyped');
+		$plain = new PortalSubmissionChecks($this->validator(), null, null, null, null, null, new PortalFormFetch($events, $this->createMock(LoggerInterface::class), ServiceFetchEventFake::class));
+		$this->assertIsArray($plain->prepare(['fields' => [['name' => 'naam']], 'steps' => [['id' => 'a', 'fields' => ['naam']]]], [], '/r', ['naam' => 'n'], null, [], []));
+	}//end testPrepareFetchesAgainAndRefusesWhenTheSourceIsDown()
+
+	/**
+	 * REQ-DIF-005: the browser sees a fetch's id, the fields it fills and its
+	 * check label; the source and its inputs stay on the server.
+	 *
+	 * @return void
+	 */
+	public function testTheBrowserSeesNoSourceAndNoInputs(): void {
+		$steps = (new PortalSubmissionChecks($this->validator()))->stepsForTheBrowser($this->fetchForm()['steps']);
+
+		$this->assertSame([['id' => 'eigenaar', 'fields' => ['eigenaar'], 'checkLabel' => 'Wij controleren of u eigenaar bent']], $steps[1]['fetch']);
+		$this->assertStringNotContainsString('kadaster-eigendom', json_encode($steps));
+		$this->assertArrayNotHasKey('fetch', $steps[0]);
+	}//end testTheBrowserSeesNoSourceAndNoInputs()
 }//end class

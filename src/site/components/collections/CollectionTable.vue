@@ -241,7 +241,7 @@ export default {
 		 * @param {object} row A row.
 		 * @param {object} column A `qr` column.
 		 * @return {string} The key of that cell, to open one code at a time.
-		 * @spec openspec/changes/link-field-qr-code/tasks.md#t6
+		 * @spec openspec/specs/portal-contribution-contract/spec.md
 		 */
 		qrKey(row, column) {
 			return `${rowIdOf(row)}:${column.field}`
@@ -253,7 +253,7 @@ export default {
 		 * @param {object} row A row.
 		 * @param {object} column A `qr` column.
 		 * @return {void}
-		 * @spec openspec/changes/link-field-qr-code/tasks.md#t6
+		 * @spec openspec/specs/portal-contribution-contract/spec.md
 		 */
 		toggleQr(row, column) {
 			const key = this.qrKey(row, column)
@@ -295,7 +295,7 @@ export default {
 		/**
 		 * @param {object} row A row.
 		 * @return {Array<{id: string, text: string}>} The reasons its actions are not offered.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-can-be-offered-on-some-rows-only-req-rai-004
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-can-be-offered-on-some-rows-only-req-rai-004
 		 */
 		reasonsFor(row) {
 			const out = []

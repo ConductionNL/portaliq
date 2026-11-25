@@ -402,7 +402,7 @@ class SessionController extends Controller {
 	 *
 	 * @return string The company's name, or ''.
 	 *
-	 * @spec openspec/changes/the-account-names-the-audience-and-the-company/specs/portal-identity-space/spec.md#requirement-the-session-names-the-company-the-person-acts-for
+	 * @spec openspec/specs/portal-identity-space/spec.md#requirement-the-session-names-the-company-the-person-acts-for
 	 */
 	private function organisationNameOf(?array $account): string {
 		$claims = ($account['claims'] ?? null);
@@ -796,7 +796,7 @@ class SessionController extends Controller {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	private function portalAcceptsProvider(?array $site, array $config): bool {
 		if ($site === null) {
@@ -816,7 +816,7 @@ class SessionController extends Controller {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	private function startPortalAcceptsProvider(array $pending, array $config): bool {
 		$slug = (string)($pending['portal'] ?? '');
@@ -1178,7 +1178,7 @@ class SessionController extends Controller {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
 	 */
 	private function issueNextcloudSession(string $uid, array $account, string $portal = ''): ?array {
 		$audience = (string)($account['audience'] ?? 'client');
@@ -1192,6 +1192,9 @@ class SessionController extends Controller {
 			// this login felt more effortful.
 			trust: 'low',
 			roles: [$audience . ':read'],
+			// The way in, so a media group can ask OpenRegister as this
+			// account (documents-grouped-per-record task 3).
+			provider: 'nextcloud',
 			portal: $portal
 		);
 	}//end issueNextcloudSession()

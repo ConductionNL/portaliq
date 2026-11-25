@@ -1,0 +1,37 @@
+# Portaliq
+
+> The shared external portal for Nextcloud apps: clients and suppliers get one white-label portal to see and act on their records across apps. It reads data through OpenRegister, renders each app's registered portal contribution, and owns the external sign-in edge, the portal shell and the unified inbox.
+
+## Start here
+
+- [AGENTS.md](AGENTS.md): setup, build, test and lint commands, OpenSpec flow and conventions
+- [README.md](README.md): overview, architecture, installation and the Docker evaluation stack
+- [CONTRIBUTING.md](CONTRIBUTING.md): branches, pull requests and commit format
+
+## Documentation
+
+- [docs/intro.md](docs/intro.md): documentation home
+- [docs/Installation/](docs/Installation/): demo environment and the example site
+- [docs/operations/](docs/operations/): how each portal feature works and is configured
+- [docs/tutorials/](docs/tutorials/): user and admin walkthroughs
+- [docs/portal-parity.md](docs/portal-parity.md): parity of the Vue site against the React portal
+
+## API
+
+- [openapi.json](openapi.json): OpenAPI 3.0 description of the app's JSON API
+
+## Specifications and decisions
+
+- [openspec/config.yaml](openspec/config.yaml): OpenSpec project context and rules
+- [openspec/specs/](openspec/specs/): current requirements, one directory per capability
+- [openspec/changes/](openspec/changes/): proposed and in-progress changes; finished ones in `archive/`
+- [docs/adr/](docs/adr/README.md): this repo's numbered architecture decision records
+- [openspec/architecture/](openspec/architecture/): a copy of an organisation-wide decision record
+
+## Code
+
+- [appinfo/info.xml](appinfo/info.xml): app metadata
+- [lib/](lib/): PHP backend
+- [src/](src/): Vue admin app; pages and menu in [src/manifest.json](src/manifest.json)
+- [src/site/](src/site/): public portal site bundle
+- [lib/Settings/portaliq_register.json](lib/Settings/portaliq_register.json): OpenRegister register and schemas

@@ -26,9 +26,9 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 /**
- * The state of one CollectionDocuments::open() call. Never leaves that class.
+ * The state of one CollectionDocuments call on a listed document: open(), or
+ * terms() and accept() (document-download-terms), which the controller builds.
  *
- * @internal
  *
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t4
  */

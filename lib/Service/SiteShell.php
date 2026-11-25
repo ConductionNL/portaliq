@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.2
+ * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#3.2
  */
 
 declare(strict_types=1);
@@ -39,7 +39,7 @@ use OCA\Portaliq\Kernel\Contracts\SiteHeadInterface;
 /**
  * The values the site shell template is rendered with.
  *
- * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.2
+ * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#3.2
  */
 class SiteShell implements SiteShellInterface {
 	/**
@@ -222,9 +222,10 @@ class SiteShell implements SiteShellInterface {
 	 * (`?route=`, else the landing page of the host), the document language,
 	 * the slug the request names, and the search term and page number.
 	 *
-	 * @return array{portal: array<string, mixed>|null, route: string, locale: string, slug: string, query: string, page: int}
+	 * @return array{portal: array<string, mixed>|null, route: string, locale: string, slug: string, query: string, page: int, record: string}
 	 *
 	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-the-server-renders-a-plain-version-of-every-public-page-req-shj-002
+	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
 	 */
 	public function plainRequest(): array {
 		$slug = $this->requestedPortalSlug();
@@ -246,6 +247,7 @@ class SiteShell implements SiteShellInterface {
 			'slug'   => $slug,
 			'query'  => $this->stringParam(name: '_search'),
 			'page'   => $page,
+			'record' => $this->stringParam(name: 'record'),
 		];
 	}//end plainRequest()
 

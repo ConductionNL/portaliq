@@ -30,7 +30,7 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 
 /**
- * @spec openspec/changes/portal-scoping-and-auth/specs/portal-scoping-and-auth/spec.md#requirement-a-custom-domain-must-be-verified-before-it-serves
+ * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-custom-domain-must-be-verified-before-it-serves
  */
 class DomainReverificationJobTest extends TestCase {
 

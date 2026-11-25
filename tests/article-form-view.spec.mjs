@@ -4,7 +4,7 @@
 // The new-article route: closing the modal goes back to the article list, and
 // a saved article opens on its own detail page (marketing-articles-from-pipelinq).
 //
-// @spec openspec/changes/marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
+// @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-marketer-writes-and-reads-an-article-in-portaliq
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'

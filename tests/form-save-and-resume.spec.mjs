@@ -9,7 +9,7 @@
 // Usage:
 //   node --test tests/form-save-and-resume.spec.mjs
 //
-// @spec openspec/changes/form-save-and-resume-dialogs/specs/site-forms/spec.md
+// @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'

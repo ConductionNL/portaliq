@@ -27,6 +27,7 @@ import {
 import AssistantBlock from '../site/components/AssistantBlock.vue'
 import ContactForm from '../site/components/ContactForm.vue'
 import FederatedSearchBlock from '../site/components/FederatedSearchBlock.vue'
+import FormBlock from '../site/components/FormBlock.vue'
 import IntakeCatalogueBlock from '../site/components/IntakeCatalogueBlock.vue'
 import IntakeFormBlock from '../site/components/IntakeFormBlock.vue'
 import IntakeStatusBlock from '../site/components/IntakeStatusBlock.vue'
@@ -103,6 +104,8 @@ const HOST_SUPPLIED = {
 	publicationDetail: ['subjectId'],
 	intakeCatalogue: ['portal'],
 	intakeForm: ['portal', 'routeParam', 'portalHelp'],
+	// The host names the portal; the help is the portal's (WidgetGrid.propsFor).
+	form: ['portal', 'portalHelp'],
 	intakeStatus: ['portal'],
 	contactForm: ['portal', 'signedIn', 'ways', 'apiOverride'],
 	assistant: ['portal', 'askOverride'],
@@ -164,6 +167,8 @@ const KIND_OVERRIDES = {
  */
 const LAZY_ON_THE_SITE = {
 	federatedSearch: FederatedSearchBlock,
+	// The form widget's field list is edited in the inspector (site-nlds-widget-palette D4).
+	form: FormBlock,
 	publicationDetail: PublicationDetailBlock,
 	intakeCatalogue: IntakeCatalogueBlock,
 	intakeForm: IntakeFormBlock,

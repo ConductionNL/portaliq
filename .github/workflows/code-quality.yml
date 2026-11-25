@@ -270,7 +270,11 @@ jobs:
       # event stubs in tests/bootstrap.php load only when integriq's real event
       # classes are absent, so its presence here does not redeclare them.
       additional-apps: '[{"repo":"ConductionNL/openregister","app":"openregister","ref":"main"},{"repo":"ConductionNL/thematiq","app":"thematiq","ref":"development"},{"repo":"ConductionNL/integriq","app":"integriq","ref":"development"}]'
-      e2e-additional-apps: '[{"repo":"ConductionNL/dossiq","app":"dossiq","ref":"development"}]'
+      # `opencatalogi` is here for tests/e2e/site-without-javascript.spec.ts
+      # (site-honest-without-javascript task 3.4): the plain search and the
+      # plain publication page read its federation endpoint on the server, so
+      # no browser stub can answer them. ci-seed.sh seeds the publication.
+      e2e-additional-apps: '[{"repo":"ConductionNL/dossiq","app":"dossiq","ref":"development"},{"repo":"ConductionNL/opencatalogi","app":"opencatalogi","ref":"development"}]'
       enable-sbom: true
 
       # ── REUSE ────────────────────────────────────────────────────────────

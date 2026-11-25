@@ -27,7 +27,7 @@
 				v-if="run.band && componentFor(run.widget.widgetKey)"
 				:data-testid="`widget-${run.widget.id || run.widget.widgetKey}`"
 				:data-widget-key="run.widget.widgetKey"
-				v-bind="propsFor(run.widget)"
+				v-bind="widgetProps(run.widget)"
 				@subject="$emit('subject', $event)"
 				@navigate="$emit('navigate', $event)"
 				@search="forwardSearch" />
@@ -47,7 +47,7 @@
 						<component
 							:is="componentFor(widget.widgetKey)"
 							v-if="componentFor(widget.widgetKey)"
-							v-bind="propsFor(widget)"
+							v-bind="widgetProps(widget)"
 							@subject="$emit('subject', $event)"
 							@navigate="$emit('navigate', $event)"
 							@search="forwardSearch" />
@@ -75,7 +75,7 @@ import { defineAsyncComponent } from 'vue'
 import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
 import { assistantAvailable } from '../lib/assistantAvailable.js'
-import { heroWithPortalImage, withoutStyling } from '../lib/blockProps.js'
+import { heroWithPortalImage, languageNavProps, withoutStyling } from '../lib/blockProps.js'
 import {
 	asideCellStyle,
 	cellStyle,
@@ -83,7 +83,10 @@ import {
 	ownBand,
 	runsFor,
 } from '../lib/gridPlacement.js'
-import { loaders as siteWidgetLoaders } from '../widgets/loaders.js'
+import {
+	SIGNED_IN_WIDGETS,
+	loaders as siteWidgetLoaders,
+} from '../widgets/loaders.js'
 
 /**
  * LOADED ON DEMAND, and that is a budget decision rather than a style one.
@@ -397,6 +400,15 @@ export default {
 			default: false,
 		},
 
+		/**
+		 * The site record's `publications`, `{errorReports, withheldNotices}`
+		 * (publication-error-reports-and-withheld-notices).
+		 */
+		publications: {
+			type: Object,
+			default: null,
+		},
+
 		/** The portal's help details, offered as "Hulp nodig?" on a form. */
 		portalHelp: {
 			type: Object,
@@ -455,6 +467,18 @@ export default {
 		signInRoutes: {
 			type: Array,
 			default: () => [],
+		},
+
+		/**
+		 * The signed-in shell's data for the Mijn omgeving widgets: `{api,
+		 * contributions, nav, t, locale}`, null when signed out. Handed to
+		 * those widgets AFTER their authored props, so a placement can name an
+		 * app and a collection but never bring data, an endpoint or a subject
+		 * of its own (site-nlds-widget-palette REQ-SNW-012).
+		 */
+		mijn: {
+			type: Object,
+			default: null,
 		},
 	},
 
@@ -540,6 +564,41 @@ export default {
 		},
 
 		/**
+		 * The props handed to a mounted widget: a Mijn omgeving widget's own
+		 * (site-nlds-widget-palette T9), every other widget's from `propsFor()`.
+		 *
+		 * @param {object} widget The placement.
+		 * @return {object} The component props.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-a-mijn-omgeving-widget-must-show-only-the-visitors-own-data-req-snw-012
+		 */
+		widgetProps(widget) {
+			return SIGNED_IN_WIDGETS.includes(widget.widgetKey)
+				? this.signedInProps(withoutStyling(widget.props))
+				: this.propsFor(widget)
+		},
+
+		/**
+		 * The props of a Mijn omgeving widget: the authored ones, then the
+		 * shell's signed-in data, the ways in, the page language and the
+		 * route's record id, so none of those can be authored.
+		 *
+		 * @param {object} props The authored props.
+		 * @return {object} The component props.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-a-mijn-omgeving-widget-must-show-only-the-visitors-own-data-req-snw-012
+		 */
+		signedInProps(props) {
+			return {
+				...props,
+				mijn: this.signedIn === true ? this.mijn : null,
+				signInRoutes: this.signInRoutes,
+				locale: this.languages?.current || 'nl',
+				routeParam: this.routeParam,
+			}
+		},
+
+		/**
 		 * The props handed to a mounted widget.
 		 *
 		 * Only the placement's declared `props` are passed through, never the
@@ -553,6 +612,7 @@ export default {
 		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-blocks-must-take-their-data-as-props-and-nothing-else-req-ptb-007
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
 		 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-offers-the-portals-own-ways-in
+		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
 		 */
 		propsFor(widget) {
 			// `style` and `class` never reach a block (REQ-PTB-007).
@@ -615,7 +675,21 @@ export default {
 					...props,
 					subjectId: this.routeParam,
 					signedIn: this.signedIn === true,
+					// The two opt-in publication features, from the site
+					// record, after the authored props so a page cannot
+					// switch them on (publication-error-reports-and-withheld-notices).
+					publications: this.publications,
+					portal: this.portal,
 				}
+			}
+
+			// The subject page takes its subject from the route, like the
+			// publication detail: after the authored props, so a placement
+			// cannot pin the page to one subject. Read from the address itself
+			// it found `site` under `?route=` addressing
+			// (home-and-theme-landing-pages REQ-HTL-002).
+			if (widget.widgetKey === 'nlSubjectLanding') {
+				return { ...props, routeParam: this.routeParam }
 			}
 
 			// The search block learns the signed-in state the same way
@@ -667,20 +741,9 @@ export default {
 			}
 
 			// SAME RULE, SIXTH SUBJECT. The languages on offer are the
-			// PORTAL's, so the host supplies them after the authored props: a
-			// placement can rename the landmark but cannot add a language
-			// (design D1 row 52). Without this branch the switch kept its
-			// empty default and never rendered.
+			// PORTAL's; see languageNavProps().
 			if (widget.widgetKey === 'nlLanguageNav') {
-				const languages = this.languages || {}
-				return {
-					...props,
-					locales: Array.isArray(languages.locales)
-						? languages.locales
-						: [],
-
-					current: languages.current || '',
-				}
+				return languageNavProps(props, this.languages)
 			}
 
 			// site-school-blocks: the news widgets read this portal's public
