@@ -7417,7 +7417,7 @@
 				"note": "Two known, declared gaps keep the headless claim honest rather than silently degrading.",
 				"origin": "competitor",
 				"change": "portal-headless-content-api",
-				"requirement": "openspec/changes/portal-headless-content-api/specs/portal-headless-content-api/spec.md :: The API MUST expose a site's navigation, pages, glossary and media"
+				"requirement": "openspec/specs/portal-headless-content-api/spec.md :: The API MUST expose a site's navigation, pages, glossary and media"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

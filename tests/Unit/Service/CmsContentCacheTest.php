@@ -20,7 +20,7 @@ use Psr\Log\LoggerInterface;
  * working cache: audiences never share an entry, a 404 is cached and a
  * write drops it, and the cache says how often it answered.
  *
- * @spec openspec/changes/portal-headless-content-api/tasks.md#task-2
+ * @spec openspec/changes/archive/2026-11-25-portal-headless-content-api/tasks.md#task-2
  */
 class CmsContentCacheTest extends TestCase {
 	/**
