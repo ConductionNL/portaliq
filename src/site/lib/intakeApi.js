@@ -653,7 +653,7 @@ export async function fetchFamily(conn, sameAddressOnly) {
  * @param {IntakeConnection} conn The connection.
  * @param {{route: string, step: string, answers: object}} ask The binding route of the form, the id of the step that decides and the answers so far.
  * @return {Promise<{outcome: string, output: string, nextStep: string}>} The decision.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t06
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t06
  */
 export async function decideStep(conn, { route, step, answers }) {
 	const response = await postIntake(conn, {

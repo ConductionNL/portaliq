@@ -924,7 +924,7 @@ export default {
 		 *
 		 * @return {Record<string, number|string>} The value per calculated field.
 		 *
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
 		 */
 		calculated() {
 			return calculatedValues(this.fields, this.values)
@@ -1232,7 +1232,7 @@ export default {
 		 * @param {Record<string, number|string>} now The calculated values.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
 		 */
 		calculated(now) {
 			for (const field of this.fields) {
@@ -1701,7 +1701,7 @@ export default {
 		 * @param {object} field The field.
 		 * @return {boolean} True for a read-only, computed line.
 		 *
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
 		 */
 		isComputedField(field) {
 			return (
@@ -1717,7 +1717,7 @@ export default {
 		 * @param {object} field The field.
 		 * @return {string} The text.
 		 *
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
 		 */
 		computedText(field) {
 			const text = this.answerText(field)
@@ -1731,7 +1731,7 @@ export default {
 		 * @param {object} step The step.
 		 * @return {Promise<{nextStep: string}>} The decision.
 		 *
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t06
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t06
 		 */
 		async decideStep(step) {
 			const decided = await decideStepOnServer(intakeConnection(this.portal), {

@@ -26,7 +26,7 @@
  *
  * Environment (optional): PORTALIQ_E2E_PORTAL, PORTALIQ_E2E_ADMIN.
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/specs/portal-form-flow/spec.md#requirement-a-form-can-ask-the-same-questions-once-per-item-req-ffl-001
+ * @spec openspec/specs/portal-form-flow/spec.md#requirement-a-form-can-ask-the-same-questions-once-per-item-req-ffl-001
  */
 
 import type {

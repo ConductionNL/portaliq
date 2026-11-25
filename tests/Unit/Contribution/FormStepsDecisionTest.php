@@ -12,7 +12,7 @@ use PHPUnit\Framework\TestCase;
  * keeps a decision only when it is whole, and its outcomes only open steps
  * the form has.
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
  */
 class FormStepsDecisionTest extends TestCase {
 

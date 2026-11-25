@@ -232,7 +232,7 @@ class DestinationSubmitEdgeTest extends TestCase {
 	 * OpenRegister's validator takes one FormDestination with the schema and
 	 * the audience; the older named arguments threw "Unknown named parameter".
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md
 	 */
 	public function testTheValidatorIsHandedTheSchemaAndTheAudienceAsOneDestination(): void {
 		$schema    = new \stdClass();

@@ -235,7 +235,7 @@ class PortalFormValidator implements PortalFormValidatorInterface {
 	 * @return array{errors: array<string, string>, items: array<int, array<string, mixed>>|null}
 	 *         The errors, and the accepted items, or null when none are kept.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
 	 */
 	private function group(array $field, string $name, mixed $value): array {
 		$repeat = (array)($field['repeat'] ?? []);
@@ -266,7 +266,7 @@ class PortalFormValidator implements PortalFormValidatorInterface {
 	 *
 	 * @return int
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
 	 */
 	private function groupMin(array $field, array $repeat): int {
 		$min = (int)($repeat['min'] ?? 0);
@@ -287,7 +287,7 @@ class PortalFormValidator implements PortalFormValidatorInterface {
 	 *
 	 * @return array{errors: array<string, string>, items: null}|null
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
 	 */
 	private function groupCountRefusal(string $name, int $given, int $min, int $max): array|null {
 		if ($given < $min) {

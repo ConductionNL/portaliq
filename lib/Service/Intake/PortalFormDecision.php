@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use Throwable;
  * Duck-typed client for buildiq's rule engine. The rule and its table never
  * leave the server: the browser learns the outcome and the step it opens.
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
  */
 class PortalFormDecision implements PortalFormDecisionInterface {
 
@@ -91,7 +91,7 @@ class PortalFormDecision implements PortalFormDecisionInterface {
 	 * @return array{status: string, outcome: string, output: string, nextStep: string}
 	 *         `status` is DECIDED, UNAVAILABLE or NO_OUTCOME; `nextStep` is the step the outcome opens, or ''.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
 	 */
 	public function decide(array $decision, array $answers): array {
 		$result = ['status' => self::UNAVAILABLE, 'outcome' => '', 'output' => (string)($decision['output'] ?? ''), 'nextStep' => ''];

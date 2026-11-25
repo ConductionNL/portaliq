@@ -8,7 +8,7 @@
  * module mirrors them so the resident sees the value while filling in the form.
  * `tests/form-calculations.spec.mjs` runs both on the same fixtures.
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
  */
 
 export const OPERATIONS = Object.freeze([
@@ -228,7 +228,7 @@ function argsOf(calculate) {
  * @param {{op: string, args: Array<unknown>}} calculate The field's `calculate`.
  * @param {Record<string, unknown>} answers The answers so far.
  * @return {number|string|null} The result, or null when it cannot be worked out.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
  */
 export function evaluate(calculate, answers) {
 	const op = calculate && calculate.op
@@ -246,7 +246,7 @@ export function evaluate(calculate, answers) {
  * @param {Array<object>} fields The form's fields.
  * @param {Record<string, any>} values The values the resident typed.
  * @return {Record<string, number|string>} The value per calculated field; a field that cannot be worked out is absent.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
  */
 export function calculatedValues(fields, values) {
 	const run = { answers: { ...(values || {}) }, out: {} }

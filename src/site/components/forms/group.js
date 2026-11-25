@@ -7,7 +7,7 @@
  * them: how many items are allowed, what a card is called and says, what is
  * missing, and what removing an item leaves.
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 
 /**
@@ -30,7 +30,7 @@ export const GROUP_WORDS = Object.freeze({
  *
  * @param {object} field The group field.
  * @return {{min: number, max: number, itemLabel: string, itemsLabel: string, addLabel: string}} The repeat settings; `max` 0 means no limit.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function repeatOf(field) {
 	const repeat = (field && field.repeat) || {}
@@ -76,7 +76,7 @@ function wordsOr(words, fallback) {
  * @param {object} field The group field.
  * @param {Array<object>} items The items so far.
  * @return {boolean} False once `repeat.max` items exist.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function canAdd(field, items) {
 	const { max } = repeatOf(field)
@@ -89,7 +89,7 @@ export function canAdd(field, items) {
  * @param {object} field The group field.
  * @param {number} index The item's place, from 0.
  * @return {string} For example "Bewoner 2".
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function itemTitle(field, index) {
 	return `${repeatOf(field).itemLabel} ${index + 1}`
@@ -102,7 +102,7 @@ export function itemTitle(field, index) {
  * @param {object} field The group field.
  * @param {object} item The item's answers.
  * @return {{first: string, rest: string}} The two lines; either may be empty.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function itemLines(field, item) {
 	const answers = (Array.isArray(field.fields) ? field.fields : [])
@@ -119,7 +119,7 @@ export function itemLines(field, item) {
  * @param {Array<object>} items The items so far.
  * @param {string} [template] The sentence, with `{n}` and `{item}`.
  * @return {string} The sentence, or ''.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function missingMessage(field, items, template = GROUP_WORDS.addMore) {
 	const repeat = repeatOf(field)
@@ -138,7 +138,7 @@ export function missingMessage(field, items, template = GROUP_WORDS.addMore) {
  * @param {Array<object>} items The items.
  * @param {number} index The item to remove.
  * @return {Array<object>} A new list without it.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function withoutItem(items, index) {
 	return (items || []).filter((_item, at) => at !== index)
@@ -151,7 +151,7 @@ export function withoutItem(items, index) {
  * @param {number} index The place of the changed item, or -1 for a new one.
  * @param {object} item The saved answers.
  * @return {Array<object>} A new list.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function withItem(items, index, item) {
 	const list = [...(items || [])]
@@ -170,7 +170,7 @@ export function withItem(items, index, item) {
  * @param {object} item The item's answers.
  * @param {string} [template] The message, with `{field}`.
  * @return {Record<string, string>} The message per sub-field.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function itemErrors(field, item, template = GROUP_WORDS.required) {
 	const errors = {}
@@ -199,7 +199,7 @@ function isLeftEmpty(sub, item) {
  * @param {Record<string, any>} values The values per field name.
  * @param {{addMore?: string, tooMany?: string}} [words] The sentences.
  * @return {Record<string, string>} The message per group.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function groupCountErrors(fields, values, words = GROUP_WORDS) {
 	const errors = {}

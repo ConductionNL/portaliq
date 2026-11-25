@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalFormDecisionInterface;
  * Works out a submission's calculated fields and asks the rule engine for
  * the decisions its steps declare. Built by PortalSubmissionChecks.
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
  */
 final class SubmissionDecisions {
 	/**
@@ -55,7 +55,7 @@ final class SubmissionDecisions {
 	 *
 	 * @return array<string, mixed>|null The declared decision, or null when none is.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
 	 */
 	public function declaredDecision(array $steps, string $step): ?array {
 		$declared = null;
@@ -76,7 +76,7 @@ final class SubmissionDecisions {
 	 *
 	 * @return array<string, mixed> The known answers.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
 	 */
 	public function knownAnswers(array $fields, array $answers): array {
 		$names = array_map(static fn (array $field): string => (string)($field['name'] ?? ''), $fields);
@@ -94,8 +94,8 @@ final class SubmissionDecisions {
 	 * @return array{answers: array<string, mixed>, computed: array<int, string>, decisions: array<string, string>}|null
 	 *         Null when a decision the form declares could not be asked.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
 	 */
 	public function workedOut(array $render, array $answers): ?array {
 		$fields  = (array)($render['fields'] ?? []);
@@ -124,7 +124,7 @@ final class SubmissionDecisions {
 	 *
 	 * @return array{answers: array<string, mixed>, computed: array<int, string>}
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
 	private function calculated(array $fields, array $answers): array {
 		if ($this->calculator === null) {
@@ -146,7 +146,7 @@ final class SubmissionDecisions {
 	 * @return array{answers: array<string, mixed>, computed: array<int, string>, decisions: array<string, string>}|null
 	 *         Null when a decision could not be asked.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
 	 */
 	private function decidedSteps(array $steps, array $worked): ?array {
 		$worked['decisions'] = [];
@@ -172,7 +172,7 @@ final class SubmissionDecisions {
 	 *
 	 * @return array<string, mixed>|null The worked-out state, or null when the decision could not be asked.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
 	 */
 	private function withDecision(array $step, array $worked): ?array {
 		if ($this->decision === null) {

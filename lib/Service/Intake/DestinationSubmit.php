@@ -144,7 +144,7 @@ class DestinationSubmit {
 	 *         valid), or null when the destination or the validator could not be reached.
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md
 	 */
 	public function findings(array $destination, array $mapping, string $audience): ?array {
 		$validator = $this->resolve(name: self::VALIDATOR);
