@@ -135,6 +135,11 @@
 				<p data-testid="site-footer-colophon">
 					{{ content.colophon || title }}
 				</p>
+				<!-- Whose website this is, by the portal's organisation type
+				     (portal-identity-from-the-admin, REQ-PIA-003). -->
+				<p v-if="kindLine" data-testid="site-footer-kind">
+					{{ kindLine }}
+				</p>
 
 				<nav
 					v-if="legalLinks.length"
@@ -210,6 +215,8 @@ export default {
 		legalLabel: { type: String, default: 'Juridische informatie' },
 		/** A site route to the address that opens it; a route as it is without one. */
 		addressOf: { type: Function, default: null },
+		/** Whose website this is, by the organisation type: the content API's `organisationKindLine`. */
+		kindLine: { type: String, default: '' },
 	},
 
 	emits: ['navigate'],

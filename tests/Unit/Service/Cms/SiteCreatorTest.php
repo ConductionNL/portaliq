@@ -34,4 +34,44 @@ final class SiteCreatorTest extends TestCase {
 	public function testNoNameMeansNoCreator(): void {
 		self::assertSame('', SiteCreator::content(portal: ['organisationTypeLabel' => 'waterschap'], organisation: null));
 	}//end testNoNameMeansNoCreator()
+
+	/**
+	 * The footer names the kind with its Dutch article, and never a municipality it is not.
+	 *
+	 * @return void
+	 */
+	public function testTheFooterLineNamesTheKindWithItsArticle(): void {
+		self::assertSame(
+			expected: 'Een website van het waterschap',
+			actual: (new SiteCreator())->kindLine(portal: ['organisationTypeLabel' => ' Waterschap '], locale: 'nl')
+		);
+		self::assertSame(
+			expected: 'Een website van het ministerie',
+			actual: (new SiteCreator())->kindLine(portal: ['organisationTypeLabel' => 'ministerie'], locale: 'nl-NL')
+		);
+		self::assertSame(
+			expected: 'Een website van de provincie',
+			actual: (new SiteCreator())->kindLine(portal: ['organisationTypeLabel' => 'provincie'], locale: 'nl')
+		);
+	}//end testTheFooterLineNamesTheKindWithItsArticle()
+
+	/**
+	 * No type, or a page in another language, has no footer line.
+	 *
+	 * @return void
+	 */
+	public function testNoTypeOrAnotherLanguageHasNoFooterLine(): void {
+		self::assertSame(
+			expected: '',
+			actual: (new SiteCreator())->kindLine(portal: ['title' => 'Open Tilburg'], locale: 'nl')
+		);
+		self::assertSame(
+			expected: '',
+			actual: (new SiteCreator())->kindLine(portal: ['organisationTypeLabel' => '  '], locale: 'nl')
+		);
+		self::assertSame(
+			expected: '',
+			actual: (new SiteCreator())->kindLine(portal: ['organisationTypeLabel' => 'waterschap'], locale: 'en')
+		);
+	}//end testNoTypeOrAnotherLanguageHasNoFooterLine()
 }//end class

@@ -78,7 +78,7 @@ that is not in `check:specs` does not run in CI.
     unresolved, the picker offers nothing and its hint says why. Tests: `OrganisationTypeOptionsTest`
     (`testASaveStoresTheInstalledSchemesUuid`, `testAnUnreadableSchemeStoresNoUuid`) and
     `tests/portal-details.spec.mjs`. A portal saved before this change gets the uuid on its next save.
-- [ ] 3.2 Replace "Van de gemeente" in `src/site/components/mijn/strings.js` and every other place
+- [x] 3.2 Replace "Van de gemeente" in `src/site/components/mijn/strings.js` and every other place
   the site names the organisation's kind with the label and its article; add the footer line and
   `DCTERMS.creator` (REQ-PIA-003).
   - **fails today**: node test `tests/mijn-components.spec.mjs`
@@ -95,8 +95,17 @@ that is not in `check:specs` does not run in CI.
     (`lib/Service/Cms/SiteCreator.php`: the organisation's name, else the portal's title, with the type
     label), tests in `tests/Unit/Service/Cms/SiteCreatorTest.php`, `SiteShellTest` and
     `tests/site-head.spec.mjs`.
-  - Left: the footer line. The proposal does not say what the footer line reads or where it sits in the
-    footer's named keys, so it waits for that wording.
+  - Built 25 Nov 2026 (the footer line), on a decision taken here: the legal band, under the colophon,
+    reads "Een website van het waterschap". The content API words it (`SiteCreator::kindLine()`, sent
+    as `organisationKindLine` by `ContentController::site()` in the page language) and
+    `FooterColumns.vue` draws it (`data-testid="site-footer-kind"`, prop `kindLine` from `App.vue`), so
+    the site entry stays inside its size budget; `IdleWarningDialog` now loads on demand to make room.
+    It is no footer key: the portal authors nothing for it, and an authored colophon stays as written.
+    No type, or a page in another language, draws no line (the label is Dutch). Tests:
+    `SiteCreatorTest::testTheFooterLineNamesTheKindWithItsArticle`,
+    `::testNoTypeOrAnotherLanguageHasNoFooterLine`, `ContentControllerTest::testSiteSendsTheFooterKindLine`,
+    node `tests/site-shell-blocks.spec.mjs` `the footer names the organisation type: een website van het
+    waterschap`.
 
 ## 4. Live
 
