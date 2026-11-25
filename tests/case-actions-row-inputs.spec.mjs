@@ -171,7 +171,7 @@ test('the answer\'s words are read defensively', async () => {
 
 // row-action-carries-files REQ-RAF-001: an action that declares `files`
 // offers a file input and sends the chosen files beside the typed inputs.
-// @spec openspec/changes/row-action-carries-files/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
+// @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-endpoint-row-action-may-carry-the-files-the-resident-adds-req-raf-001
 
 const answer = {
 	id: 'beantwoordVraag',
