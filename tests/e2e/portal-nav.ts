@@ -172,6 +172,20 @@ export function oneOf(...texts: string[]): RegExp {
 }
 
 /**
+ * A regular expression that finds one of the given texts anywhere in a
+ * larger text. `oneOf()` matches the WHOLE text, which suits a label or a
+ * cell; a card or a row carries more than the one phrase, so a check on the
+ * card uses this instead.
+ *
+ * @param texts the accepted texts
+ * @return the expression
+ */
+export function someOf(...texts: string[]): RegExp {
+	const escaped = texts.map((text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+	return new RegExp(`(${escaped.join('|')})`)
+}
+
+/**
  * The signed-in menu's link to one in-site account route: one of the shell's
  * own sections (`inbox`, `cases`, `tasks`, `messages`, `news`, `access`,
  * `details`, `account`) or a contributed page as `<app>/<page id>`

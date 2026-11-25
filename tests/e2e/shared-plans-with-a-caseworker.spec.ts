@@ -30,11 +30,11 @@ import type { APIRequestContext } from '@playwright/test'
 import { expect, test } from '@playwright/test'
 import {
 	devLogin,
-	oneOf,
 	PORTAL_API,
 	seedSiteSession,
 	SITE_PORTAL,
 	siteAddress,
+	someOf,
 } from './portal-nav.ts'
 
 const PLANS = `${PORTAL_API}/plans`
@@ -253,10 +253,10 @@ test.describe('shared-plans-with-a-caseworker', () => {
 		const cards = page.getByTestId('plan-card')
 		await expect(cards).toHaveCount(2)
 		await expect(cards.filter({ hasText: 'Schuldhulp op orde' })).toContainText(
-			oneOf('Door u gemaakt', 'Made by you'),
+			someOf('Door u gemaakt', 'Made by you'),
 		)
 		await expect(cards.filter({ hasText: 'Terug naar werk' })).toContainText(
-			oneOf('Door Linda Smit met u gedeeld', 'Shared with you by Linda Smit'),
+			someOf('Door Linda Smit met u gedeeld', 'Shared with you by Linda Smit'),
 		)
 	})
 
@@ -432,7 +432,7 @@ test.describe('shared-plans-with-a-caseworker', () => {
 		await seedSiteSession(page, sanne.token)
 		await page.goto(siteAddress('/mijn/samenwerken'))
 		await expect(page.getByTestId('plan-card')).toContainText(
-			oneOf('Loopt over 12 dagen af', 'Ends in 12 days'),
+			someOf('Loopt over 12 dagen af', 'Ends in 12 days'),
 		)
 	})
 })
