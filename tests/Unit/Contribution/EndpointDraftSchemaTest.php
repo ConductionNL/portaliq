@@ -22,7 +22,10 @@ class EndpointDraftSchemaTest extends TestCase {
 		'endpoint' => '/apps/learniq/api/portal/werkproces-assessments',
 		'subjectField' => 'practicalTrainerId',
 		'fields' => ['werkprocesCode', 'assessment'],
-		'steps' => [['id' => 'one', 'title' => 'Werkproces', 'fields' => ['werkprocesCode']], ['id' => 'two', 'title' => 'Oordeel', 'fields' => ['assessment']]],
+		'steps' => [
+			['id' => 'one', 'title' => 'Werkproces', 'fields' => ['werkprocesCode']],
+			['id' => 'two', 'title' => 'Oordeel', 'fields' => ['assessment']],
+		],
 		'draft' => ['retentionDays' => 30],
 		'draftSchema' => ['register' => 'learniq', 'schema' => 'werkproces-assessment-draft'],
 	];
@@ -77,12 +80,15 @@ class EndpointDraftSchemaTest extends TestCase {
 	 */
 	public function testTheDraftIsKeptOnTheDeclaredSchemaStampedWithTheSubjectField(): void {
 		$schema = new EndpointDraftSchema();
-		$this->assertSame(expected: ['register' => 'learniq', 'schema' => 'werkproces-assessment-draft'], actual: $schema->destinationOf(action: self::ENDPOINT));
-		$this->assertTrue($schema->keepsDraftElsewhere(action: self::ENDPOINT));
+		$this->assertSame(
+			expected: ['register' => 'learniq', 'schema' => 'werkproces-assessment-draft'],
+			actual: $schema->destinationOf(action: self::ENDPOINT)
+		);
+		$this->assertTrue(condition: $schema->keepsDraftElsewhere(action: self::ENDPOINT));
 		$this->assertSame(expected: 'practicalTrainerId', actual: $schema->scopeFieldOf(action: self::ENDPOINT));
 		$this->assertSame(expected: 'subjectRef', actual: $schema->scopeFieldOf(action: ['id' => 'x']));
 		$this->assertSame(expected: 'ownerRef', actual: $schema->scopeFieldOf(action: ['scopeField' => 'ownerRef']));
-		$this->assertNull($schema->destinationOf(action: array_merge(self::ENDPOINT, ['type' => 'create'])));
-		$this->assertFalse($schema->keepsDraftElsewhere(action: ['id' => 'x', 'endpoint' => '/e']));
+		$this->assertNull(actual: $schema->destinationOf(action: array_merge(self::ENDPOINT, ['type' => 'create'])));
+		$this->assertFalse(condition: $schema->keepsDraftElsewhere(action: ['id' => 'x', 'endpoint' => '/e']));
 	}//end testTheDraftIsKeptOnTheDeclaredSchemaStampedWithTheSubjectField()
 }//end class

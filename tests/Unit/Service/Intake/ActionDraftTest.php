@@ -137,7 +137,7 @@ class ActionDraftTest extends TestCase {
 		$subject   = ['subjectRef' => 'trainer-1', 'trust' => 'low', 'organisation' => 'org-1'];
 
 		$this->assertSame(expected: ['action' => $endpoint, 'app' => 'learniq'], actual: $drafts->actionFor(subject: $subject, appId: 'learniq', actionId: 'assess'));
-		$this->assertNull($drafts->actionFor(subject: $subject, appId: 'learniq', actionId: 'plain'));
+		$this->assertNull(actual: $drafts->actionFor(subject: $subject, appId: 'learniq', actionId: 'plain'));
 		$this->assertSame(expected: ['register' => 'learniq', 'schema' => 'werkproces-assessment-draft'], actual: $drafts->destinationOf(action: $endpoint));
 		$this->assertSame(
 			expected: ['werkprocesCode' => 'WP1', 'practicalTrainerId' => 'trainer-1', 'organisation' => 'org-1'],

@@ -63,7 +63,7 @@ class ContributionControllerForwardDraftTest extends TestCase {
 	 * @return void
 	 */
 	public function testAnAcceptedBodyDiscardsTheDraft(): void {
-		$destinations = $this->createMock(DestinationDraftInterface::class);
+		$destinations = $this->createMock(originalClassName: DestinationDraftInterface::class);
 		$destinations->expects($this->once())->method('discardDraft')
 			->with(['register' => 'learniq', 'schema' => 'werkproces-assessment-draft'], 'trainer-1', 'd-1')
 			->willReturn(true);
@@ -79,14 +79,15 @@ class ContributionControllerForwardDraftTest extends TestCase {
 	 * @return void
 	 */
 	public function testARefusedBodyOrAnActionWithoutADraftSchemaKeepsIt(): void {
-		$destinations = $this->createMock(DestinationDraftInterface::class);
+		$destinations = $this->createMock(originalClassName: DestinationDraftInterface::class);
 		$destinations->expects($this->never())->method('discardDraft');
 
 		$refused = $this->controller(action: self::ACTION, status: 422, destinations: $destinations, found: ['id' => 'd-1'])->action('learniq', 'assess');
 		$this->assertSame(expected: 422, actual: $refused->getStatus());
 
 		$plain = array_diff_key(self::ACTION, ['draftSchema' => true]);
-		$this->assertSame(expected: 201, actual: $this->controller(action: $plain, status: 201, destinations: $destinations, found: ['id' => 'd-1'])->action('learniq', 'assess')->getStatus());
+		$sent = $this->controller(action: $plain, status: 201, destinations: $destinations, found: ['id' => 'd-1'])->action('learniq', 'assess');
+		$this->assertSame(expected: 201, actual: $sent->getStatus());
 	}//end testARefusedBodyOrAnActionWithoutADraftSchemaKeepsIt()
 
 	/**
@@ -95,8 +96,8 @@ class ContributionControllerForwardDraftTest extends TestCase {
 	 * @return void
 	 */
 	public function testAFailingDiscardNeverChangesTheAnswer(): void {
-		$destinations = $this->createMock(DestinationDraftInterface::class);
-		$destinations->method('discardDraft')->willThrowException(new \RuntimeException('down'));
+		$destinations = $this->createMock(originalClassName: DestinationDraftInterface::class);
+		$destinations->method('discardDraft')->willThrowException(new \RuntimeException(message: 'down'));
 
 		$response = $this->controller(action: self::ACTION, status: 201, destinations: $destinations, found: ['id' => 'd-1'])->action('learniq', 'assess');
 
@@ -115,27 +116,31 @@ class ContributionControllerForwardDraftTest extends TestCase {
 	 */
 	private function controller(array $action, int $status, DestinationDraftInterface $destinations, ?array $found): ContributionController {
 		$params  = ['werkprocesCode' => 'WP1'];
-		$request = $this->createMock(IRequest::class);
+		$request = $this->createMock(originalClassName: IRequest::class);
 		$request->method('getHeader')->willReturn('Bearer token');
-		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null) => ($params[$key] ?? $default));
+		$request->method('getParam')->willReturnCallback(
+			callback: static fn (string $key, mixed $default = null) => ($params[$key] ?? $default)
+		);
 		$request->method('getParams')->willReturn($params);
 
-		$registry = $this->createMock(PortalContributionRegistry::class);
-		$registry->method('aggregateFor')->willReturn(['contributions' => [['app' => 'learniq', 'collections' => [], 'actions' => [$action]]]]);
+		$registry = $this->createMock(originalClassName: PortalContributionRegistry::class);
+		$registry->method('aggregateFor')->willReturn(
+			value: ['contributions' => [['app' => 'learniq', 'collections' => [], 'actions' => [$action]]]]
+		);
 
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(originalClassName: PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn(self::SUBJECT);
 
-		$reader = $this->createMock(PortalObjectReader::class);
+		$reader = $this->createMock(originalClassName: PortalObjectReader::class);
 		$reader->method('resolveScopeValue')->willReturn('trainer-1');
 
-		$answer = $this->createMock(IResponse::class);
+		$answer = $this->createMock(originalClassName: IResponse::class);
 		$answer->method('getStatusCode')->willReturn($status);
-		$forwarder = $this->createMock(PortalActionForwarder::class);
+		$forwarder = $this->createMock(originalClassName: PortalActionForwarder::class);
 		$forwarder->method('forward')->willReturn($answer);
 		$forwarder->method('decodeBody')->willReturn(['ok' => $status < 300]);
 
-		$drafts = $this->createMock(ActionDraft::class);
+		$drafts = $this->createMock(originalClassName: ActionDraft::class);
 		$drafts->method('find')->willReturn($found);
 		$drafts->method('destinationOf')->willReturn(['register' => 'learniq', 'schema' => 'werkproces-assessment-draft']);
 
@@ -144,17 +149,17 @@ class ContributionControllerForwardDraftTest extends TestCase {
 			registry: $registry,
 			session: $session,
 			reader: $reader,
-			writer: $this->createMock(PortalObjectWriter::class),
-			fileWriter: $this->createMock(PortalFileWriter::class),
-			fileReader: $this->createMock(PortalFileReader::class),
-			schemaReader: $this->createMock(PortalSchemaReader::class),
-			inboxReader: $this->createMock(PortalInboxReader::class),
-			auditHook: $this->createMock(PortalAuditHook::class),
+			writer: $this->createMock(originalClassName: PortalObjectWriter::class),
+			fileWriter: $this->createMock(originalClassName: PortalFileWriter::class),
+			fileReader: $this->createMock(originalClassName: PortalFileReader::class),
+			schemaReader: $this->createMock(originalClassName: PortalSchemaReader::class),
+			inboxReader: $this->createMock(originalClassName: PortalInboxReader::class),
+			auditHook: $this->createMock(originalClassName: PortalAuditHook::class),
 			forwarder: $forwarder,
-			auditor: $this->createMock(AuditTrailService::class),
-			receiptService: $this->createMock(SubmissionReceiptService::class),
-			notificationDispatch: $this->createMock(NotificationDispatchService::class),
-			logger: $this->createMock(LoggerInterface::class),
+			auditor: $this->createMock(originalClassName: AuditTrailService::class),
+			receiptService: $this->createMock(originalClassName: SubmissionReceiptService::class),
+			notificationDispatch: $this->createMock(originalClassName: NotificationDispatchService::class),
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
 			drafts: $drafts,
 			destinations: $destinations,
 			caseRowMarker: new CaseRowMarker(),
