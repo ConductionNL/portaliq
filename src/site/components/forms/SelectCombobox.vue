@@ -100,17 +100,29 @@ export default {
 	},
 
 	computed: {
-		/** @return {string} The popup's id. */
+		/**
+		 * @return {string} The popup's id.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
 		listId() {
 			return `${this.id}-listbox`
 		},
 
-		/** @return {Array<string>} The options the typed text leaves. */
+		/**
+		 * @return {Array<string>} The options the typed text leaves.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
 		shown() {
 			return filterOptions(this.options, this.labelOf, this.query)
 		},
 
-		/** @return {string} The live region's words while the popup is open. */
+		/**
+		 * @return {string} The live region's words while the popup is open.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
 		status() {
 			if (!this.open) {
 				return ''
@@ -124,6 +136,14 @@ export default {
 	},
 
 	watch: {
+		/**
+		 * Follow a value set from outside: a chosen option shows its words, a
+		 * cleared form an empty box.
+		 *
+		 * @param {string} value The new value.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
 		modelValue(value) {
 			const named = value ? this.labelOf(value) : ''
 			if (fold(named) !== fold(this.query) && this.options.includes(value)) {
