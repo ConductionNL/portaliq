@@ -858,7 +858,8 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 	// 0.128.0: moved past development's 0.127.0 (submission-row-actions); portal 0.38.0.
 	// 0.129.0: portalCase carries closedAt and its public outcome (case-outcome-on-the-case-page e2e).
 	// 0.130.0: portalCase carries decisionSentAt and againstCaseId (case-page-objection-and-complaint e2e).
-	assert.equal(register.info.version, '0.130.0')
+	// 0.132.0: portalPage 0.12.0, a rows block's statusNotes (rows-status-note-per-state).
+	assert.equal(register.info.version, '0.132.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example

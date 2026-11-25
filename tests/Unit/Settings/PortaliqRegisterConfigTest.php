@@ -453,8 +453,10 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.129.0: portalCase carries closedAt, resultPublicLabel and resultPublicDescription,
 		// the fields a cases collection names for its outcome (case-outcome-on-the-case-page).
 		// 0.130.0 (portalCase 0.5.0): decisionSentAt and againstCaseId (case-page-objection-and-complaint).
-		$this->assertSame(expected: '0.130.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.130.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.132.0 (portalPage 0.12.0): a rows block's `statusNotes` (rows-status-note-per-state).
+		// 0.131.0 is form-governance T04's.
+		$this->assertSame(expected: '0.132.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.132.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: '0.5.0', actual: self::$register['components']['schemas']['portalSubmission']['version']);
 		$this->assertSame(expected: 'uuid', actual: self::$register['components']['schemas']['portalSubmission']['properties']['formBinding']['format']);
 		$this->assertNotContains(needle: 'formBinding', haystack: self::$register['components']['schemas']['portalSubmission']['required']);
@@ -493,8 +495,10 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.129.0: portalCase carries closedAt, resultPublicLabel and resultPublicDescription,
 		// the fields a cases collection names for its outcome (case-outcome-on-the-case-page).
 		// 0.130.0 (portalCase 0.5.0): decisionSentAt and againstCaseId (case-page-objection-and-complaint).
-		$this->assertSame(expected: '0.130.0', actual: self::$register['info']['version']);
-		$this->assertSame(expected: '0.130.0', actual: self::$register['components']['registers']['portaliq']['version']);
+		// 0.132.0 (portalPage 0.12.0): a rows block's `statusNotes` (rows-status-note-per-state).
+		// 0.131.0 is form-governance T04's.
+		$this->assertSame(expected: '0.132.0', actual: self::$register['info']['version']);
+		$this->assertSame(expected: '0.132.0', actual: self::$register['components']['registers']['portaliq']['version']);
 		$this->assertSame(expected: 'string', actual: self::$register['components']['schemas']['portalPage']['properties']['pages']['items']['properties']['blocks']['items']['properties']['messageTo']['type']);
 		$this->assertContains(needle: 'yivi', haystack: self::$register['components']['schemas']['portalAccount']['properties']['identityType']['enum']);
 		$this->assertSame(expected: 'date-time', actual: self::$register['components']['schemas']['guardianMessage']['properties']['readAt']['format']);
@@ -505,7 +509,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(expected: 'integer', actual: self::$register['components']['schemas']['media']['properties']['usedOn']['type']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['form']['version']);
 		$this->assertSame('object', self::$register['components']['schemas']['form']['properties']['destination']['type']);
-		$this->assertSame('0.11.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame(expected: '0.12.0', actual: self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame(200, self::$register['components']['schemas']['portalPage']['properties']['actions']['items']['properties']['summary']['maxLength']);
 		$this->assertSame('object', self::$register['components']['schemas']['portalPage']['properties']['actions']['items']['properties']['answerSummary']['type']);
 		$this->assertSame('string', self::$register['components']['schemas']['portalAccount']['properties']['claimCodeHash']['type']);
@@ -575,7 +579,7 @@ class PortaliqRegisterConfigTest extends TestCase {
 		$this->assertSame(['admin'], self::$register['components']['schemas']['portalDraft']['authorization']['read']);
 		$this->assertContains('portalDraft', self::$register['components']['registers']['portaliq']['schemas']);
 		$this->assertSame('0.19.0', self::$register['components']['schemas']['portalAccount']['version']);
-		$this->assertSame('0.11.0', self::$register['components']['schemas']['portalPage']['version']);
+		$this->assertSame(expected: '0.12.0', actual: self::$register['components']['schemas']['portalPage']['version']);
 		$this->assertSame('0.2.0', self::$register['components']['schemas']['messageThread']['version']);
 		$this->assertArrayHasKey('recordRef', self::$register['components']['schemas']['messageThread']['properties']);
 		$this->assertSame('0.4.0', self::$register['components']['schemas']['portalSession']['version']);

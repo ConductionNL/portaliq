@@ -3797,7 +3797,9 @@ OC.L10N.register(
         "Changed on": "Gewijzigd op",
         "Form submits that failed: %1$s": "Mislukte formulierinzendingen: %1$s",
         "%1$s submits on %2$s did not reach their destination in the past 24 hours. The residents kept their answers and saw the error code.": "%1$s inzendingen op %2$s zijn de afgelopen 24 uur niet aangekomen. De inwoners hielden hun antwoorden en zagen de foutcode.",
-        "Form submits that failed": "Mislukte formulierinzendingen"
+        "Form submits that failed": "Mislukte formulierinzendingen",
+        "statusNotes": "Regels onder de status per waarde",
+        "On rows: a different line under the status pill per status value, each {field, atField, template} (\"Gezien door juf Esra om 8:12 uur\" while submitted); other values keep statusNoteField.": "Bij rijen: per statuswaarde een eigen regel onder de status, elk {field, atField, template} (\"Gezien door juf Esra om 8:12 uur\" zolang de melding is ingediend); andere waarden houden statusNoteField."
     },
     "nplurals=2; plural=(n != 1);"
 )

@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.130.0"
+        "version": "0.132.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.130.0",
+                "version": "0.132.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -1919,7 +1919,7 @@
                     ]
                 },
                 "icon": "WebBox",
-                "version": "0.11.0",
+                "version": "0.12.0",
                 "title": "Portal Page",
                 "description": "A data-provisioned portal contribution (ADR-046, portal-page-provisioning). Mirrors the IPortalContributionProvider manifest shape 1:1 so Portaliq's built-in provider can read this object and hand it to the same PortalManifestNormaliser every PHP provider's output passes through. Owned by the app that provisions the page; never publicly readable — the built-in provider is the only reader, server-side.",
                 "type": "object",
@@ -2702,6 +2702,11 @@
                                                 "title": "statusNoteAtField",
                                                 "type": "string",
                                                 "description": "On rows: the moment the status was set, added to the line under the status pill (\"Meester Daan, 1 oktober 8:20 uur\")."
+                                            },
+                                            "statusNotes": {
+                                                "title": "statusNotes",
+                                                "type": "object",
+                                                "description": "On rows: a different line under the status pill per status value, each {field, atField, template} (\"Gezien door juf Esra om 8:12 uur\" while submitted); other values keep statusNoteField."
                                             },
                                             "noteField": {
                                                 "title": "noteField",
