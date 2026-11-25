@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Service;
 /**
  * A theme app stylesheet that exists on disk.
  *
- * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
  */
 class ThemeAppAsset {
 	/**
@@ -40,7 +40,7 @@ class ThemeAppAsset {
 	 *
 	 * @return string|null
 	 *
-	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
 	 */
 	public function stylesheetIfShipped(?string $root, string $name): ?string {
 		if ($root === null || is_file($root . '/css/' . $name . '.css') === false) {
