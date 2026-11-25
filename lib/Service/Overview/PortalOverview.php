@@ -54,14 +54,12 @@ class PortalOverview implements PortalOverviewInterface {
 	 * @param TrafficEventStore $traffic The daily traffic records.
 	 * @param TrafficReportNumbers $numbers Folds daily records into totals.
 	 * @param AvailabilityReport $availability The monthly availability per portal.
-	 * @param TrafficReportDefinitions $reports Reads a portal's `traffic.rollupOf`.
 	 */
 	public function __construct(
 		private readonly PublishedPortals $portals,
 		private readonly TrafficEventStore $traffic,
 		private readonly TrafficReportNumbers $numbers,
 		private readonly AvailabilityReport $availability,
-		private readonly TrafficReportDefinitions $reports = new TrafficReportDefinitions(),
 	) {
 	}//end __construct()
 
@@ -87,7 +85,7 @@ class PortalOverview implements PortalOverviewInterface {
 		$to    = $today->format('Y-m-d');
 
 		$folds = [];
-		foreach ($this->published(withRollups: false) as $owner) {
+		foreach ($this->measured() as $owner) {
 			$folds[] = [$owner, $this->numbers->fold(records: $this->traffic->dailyBetween(portal: $owner['portal'], from: $from, to: $to))];
 		}
 
@@ -103,33 +101,54 @@ class PortalOverview implements PortalOverviewInterface {
 	 * Every published portal with a slug, as its `portal` and `title`; a
 	 * portal without a title is named by its slug.
 	 *
-	 * @param bool $withRollups Whether roll-up portals (a non-empty
-	 *                          `traffic.rollupOf`) are listed too.
+	 * @return array<int, array{portal: string, title: string}>
+	 */
+	private function published(): array {
+		return array_column(array: $this->publishedRecords(), column_key: 0);
+	}//end published()
+
+	/**
+	 * The published portals that measure their own visitors: every one but
+	 * a roll-up (a non-empty `traffic.rollupOf`), whose record is the sum of
+	 * its members.
 	 *
 	 * @return array<int, array{portal: string, title: string}>
 	 *
 	 * @spec openspec/specs/dashboard-page/spec.md#requirement-the-dashboard-shows-traffic-and-availability-of-all-portals-together-req-dfp-001
 	 */
-	private function published(bool $withRollups = true): array {
-		$owners = [];
-		foreach ($this->portals->allPublishedPortals() as $portal) {
-			$slug = (string)($portal['slug'] ?? '');
-			if ($slug === '') {
-				continue;
-			}
-
+	private function measured(): array {
+		$reports = new TrafficReportDefinitions();
+		$owners  = [];
+		foreach ($this->publishedRecords() as [$owner, $portal]) {
 			$traffic = $portal['traffic'] ?? null;
-			if ($withRollups === false && is_array($traffic) === true
-				&& $this->reports->rollupOf(value: ($traffic['rollupOf'] ?? null), self: $slug) !== []
+			if (is_array($traffic) === true
+				&& $reports->rollupOf(value: ($traffic['rollupOf'] ?? null), self: $owner['portal']) !== []
 			) {
 				continue;
 			}
 
-			$owners[] = ['portal' => $slug, 'title' => (string)($portal['title'] ?? $slug)];
+			$owners[] = $owner;
 		}
 
 		return $owners;
-	}//end published()
+	}//end measured()
+
+	/**
+	 * Every published portal with a slug, as [owner, record] pairs.
+	 *
+	 * @return array<int, array{0: array{portal: string, title: string}, 1: array<string, mixed>}>
+	 */
+	private function publishedRecords(): array {
+		$records = [];
+		foreach ($this->portals->allPublishedPortals() as $portal) {
+			$slug = (string)($portal['slug'] ?? '');
+			if ($slug !== '') {
+				$records[] = [['portal' => $slug, 'title' => (string)($portal['title'] ?? $slug)], $portal];
+			}
+		}
+
+		return $records;
+	}//end publishedRecords()
 
 	/**
 	 * The page views, sessions, visitors and engaged sessions of every portal, added.
