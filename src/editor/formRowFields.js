@@ -38,7 +38,7 @@ export function boundFormId(props) {
 /**
  * Why a read or a write of the row did not go through.
  *
- * @param {*} error The failure.
+ * @param {unknown} error The failure.
  * @return {string} `conflict` (someone else saved the row), `forbidden`
  *   (OpenRegister refused this user), `missing` (no such row) or `failed`.
  *
@@ -79,10 +79,10 @@ export function formRowEditable(formRow) {
  * stored, so the inspector never shows a list the submit does not accept.
  *
  * @param {object} deps The collaborators.
- * @param {Function} deps.get (url) => Promise<{data}>
- * @param {Function} deps.put (url, payload, config) => Promise
- * @param {Function} deps.url (formId) => the `form` object URL
- * @return {{load: Function, save: Function}} The client.
+ * @param {(url: string) => Promise<{data: object}>} deps.get Reads an object.
+ * @param {(url: string, payload: object, config: object) => Promise<object>} deps.put Writes an object.
+ * @param {(formId: string) => string} deps.url The `form` object URL.
+ * @return {object} The client: `load(formId)` and `save(current, fields)`.
  *
  * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
  */

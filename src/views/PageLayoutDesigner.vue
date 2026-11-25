@@ -285,6 +285,7 @@ export default {
 				url: (id) =>
 					generateUrl(`/apps/openregister/api/objects/portaliq/form/${encodeURIComponent(id)}`),
 			}),
+
 			paletteOpen: false,
 			historyOpen: false,
 			mediaOpen: false,

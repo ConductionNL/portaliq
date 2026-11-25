@@ -258,6 +258,7 @@ export default {
 				url: (id) =>
 					instanceUrl(`/apps/openregister/api/objects/portaliq/form/${encodeURIComponent(id)}`),
 			}),
+
 			editor: createPageEditor({
 				saver: createPageSaver({
 					get: (url) => axios.get(url),

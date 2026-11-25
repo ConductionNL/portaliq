@@ -477,7 +477,7 @@ export default {
 		 * accepts only the row's field ids (decision 24 Nov 2026, T11b
 		 * option b). Without it, the list is the widget's own.
 		 *
-		 * @type {{load: Function, save: Function}|null}
+		 * @type {object|null}
 		 */
 		formRows: {
 			type: Object,
