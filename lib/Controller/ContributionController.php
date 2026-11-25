@@ -3144,11 +3144,34 @@ class ContributionController extends Controller implements PortalProtected {
 		// the raw request body as-is (contract v2, A6).
 		$whitelisted = null;
 		if (array_key_exists('fields', $action) === true) {
-			$whitelisted = $this->whitelist(fields: (array)$action['fields']);
+			$whitelisted = $this->whitelist(fields: $this->declaredFields(action: $action));
 		}
 
 		return $whitelisted;
 	}//end declaredWhitelist()
+
+	/**
+	 * The fields an endpoint action declares, with the field it takes a task's
+	 * uuid in (`taskField`) when it names one. The task page presets that field
+	 * when it opens the action from a task; left off the whitelist it never
+	 * reached the app, which then refused the completion ("taskId is
+	 * required"). The app checks the uuid against the task's own party.
+	 *
+	 * @param array<string, mixed> $action The endpoint action.
+	 *
+	 * @return array<int, mixed> The fields to keep.
+	 *
+	 * @spec openspec/changes/a-task-opens-the-app-action-that-completes-it/specs/site-portal-parity/spec.md#requirement-a-task-that-names-its-app-action-must-open-that-action
+	 */
+	private function declaredFields(array $action): array {
+		$fields    = (array)$action['fields'];
+		$taskField = ($action['taskField'] ?? null);
+		if (is_string($taskField) === true && $taskField !== '' && in_array($taskField, $fields, true) === false) {
+			$fields[] = $taskField;
+		}
+
+		return $fields;
+	}//end declaredFields()
 
 	/**
 	 * Audit an authorised forward.
