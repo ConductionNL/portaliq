@@ -37,7 +37,7 @@
   - `docs/portal-parity.md` carries the re-measured baseline; its 2026-08-15 figures were stale by 84% gzipped
   - An e2e run asserts a search returns rows AND that a row names a directory, against a live instance
 - [x] Implement
-- [ ] Test — not run: needs a live instance (the demo rig)
+- [x] Test — `tests/e2e/site-federated-search.spec.ts` 7/7 green on 25 Nov 2026 against a sandbox Nextcloud 34.0.6 (MariaDB, php -S) seeded by `tests/e2e/fixtures/seed-cms.sh`, the catalogue answered by the spec's stub as the file header explains: S30 returns rows, S31 names `venray.example.org` and `horst.example.org` on their rows and no source on the portal's own. First run 4/7: the stub's substring match dropped three 'parkeer' fixtures ("parkeren" holds no "parkeer"), and the kinds test read Dutch names in an en-US browser on a portal that offers English; both fixed in the spec, not the app.
 
 > Task 3's e2e box stays open until the spec runs green against the demo rig.
 > Ticking it before then would be the phantom tick ADR-029 exists to stop.

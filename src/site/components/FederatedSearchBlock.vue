@@ -543,7 +543,7 @@ import { CnSiteSearch } from '@conduction/nextcloud-vue/public'
  * control, so the directory is shown per result and cannot be filtered on
  * until the API supports it.
  *
- * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+ * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
  */
 import { defineAsyncComponent } from 'vue'
 import SearchSuggestions from './SearchSuggestions.vue'
@@ -1089,7 +1089,7 @@ export default {
 		 *
 		 * @return {string} The status line.
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		status() {
 			if (this.loading === true) {
@@ -1140,7 +1140,7 @@ export default {
 		 * The loaded-results sentence of the live region.
 		 *
 		 * @return {string}
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		countSentence() {
 			if (this.total === 0) {
@@ -1169,7 +1169,7 @@ export default {
 		 *
 		 * @return {Array<number>} Page numbers.
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		pageWindow() {
 			return pageWindow(this.page, this.pages)
@@ -1180,7 +1180,7 @@ export default {
 		 *
 		 * @return {Array<number|string>} The pagination row.
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		paginationRow() {
 			return paginationItems(this.page, this.pages)
@@ -1191,7 +1191,7 @@ export default {
 		 *
 		 * @return {string} e.g. "11 resultaten".
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		countLabel() {
 			if (this.total === 1) {
@@ -1209,7 +1209,7 @@ export default {
 		 *
 		 * @return {Array<object>} `{value, label}` options.
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 * @spec openspec/changes/search-sort-by-relevance/tasks.md#t01
 		 */
 		sortOptions() {
@@ -1222,7 +1222,7 @@ export default {
 	 *
 	 * @return {void}
 	 *
-	 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+	 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 	 */
 	mounted() {
 		this.readLocation()
@@ -1248,7 +1248,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		readLocation() {
 			const state = readSearchState(window.location.search, this.fields)
@@ -1271,7 +1271,7 @@ export default {
 		 * @param {boolean} push Whether to add a history entry.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		writeLocation(push) {
 			const url = writeSearchState(
@@ -1292,7 +1292,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		onPopState() {
 			this.readLocation()
@@ -1304,7 +1304,7 @@ export default {
 		 *
 		 * @return {string} The request URL.
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		requestUrl() {
 			return buildRequestUrl({
@@ -1329,7 +1329,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when the state has been updated.
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-a-superseded-request-must-not-overwrite-newer-results
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-superseded-request-must-not-overwrite-newer-results
 		 */
 		async search() {
 			this.sequence++
@@ -1461,7 +1461,7 @@ export default {
 		 * @param {string} term The submitted term.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		onSearch(term) {
 			this.spellingSuggestion = ''
@@ -1516,7 +1516,7 @@ export default {
 		 * @param {string} value A `field:DIRECTION` pair, or '' for the default.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		onSort(value) {
 			this.sort = value || ''
@@ -1610,7 +1610,7 @@ export default {
 		 * @param {object} result A view-model row with an id.
 		 * @return {string} The path, with the id appended.
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-a-visitors-search-reaches-the-text-inside-public-documents-req-pfs-content-001
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-a-visitors-search-reaches-the-text-inside-public-documents-req-pfs-content-001
 		 */
 		detailPath(result) {
 			if (result.kind === 'subject' && result.slug) {
@@ -1627,7 +1627,7 @@ export default {
 		 * @param {object} result A view-model row.
 		 * @return {string} The href.
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-every-result-must-name-the-catalogue-it-came-from
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-result-from-another-catalogue-must-name-that-catalogue-req-snf-001
 		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-link-to-a-record-or-a-search-result-keeps-the-portal-and-the-route-req-rsl-001
 		 */
 		detailHref(result) {
@@ -1656,7 +1656,7 @@ export default {
 		 * @param {object} result A view-model row.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-every-result-must-name-the-catalogue-it-came-from
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-result-from-another-catalogue-must-name-that-catalogue-req-snf-001
 		 */
 		openDetail(result) {
 			if (!result.id && !(result.kind === 'subject' && result.slug)) {
@@ -1676,7 +1676,7 @@ export default {
 		 * @param {string} field The facet field, the first one by default.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-facet-buckets-must-be-read-in-both-dialects-the-endpoint-speaks
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-facet-buckets-must-be-read-in-both-dialects-the-endpoint-speaks
 		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-the-search-block-must-filter-on-information-category-and-organisation-req-wsd-001
 		 */
 		toggleFacet(value, field = this.fields[0]) {
@@ -1742,7 +1742,7 @@ export default {
 		 * @param {number} entry The page number.
 		 * @return {string} The href.
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		hrefForPage(entry) {
 			const url = new URL(window.location.href)
@@ -1762,7 +1762,7 @@ export default {
 		 * @param {number} entry The page number.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-an-anonymous-visitor-must-be-able-to-search-federated-publications
 		 */
 		goToPage(entry) {
 			this.page = entry

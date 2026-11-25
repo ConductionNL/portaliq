@@ -6703,7 +6703,7 @@
 					"openspec/specs/portaliq-cms/spec.md :: A page may carry a hero image reference",
 					"openspec/specs/portaliq-cms/spec.md :: A public page may embed a lead-capture form widget",
 					"openspec/specs/portaliq-cms/spec.md :: The glossary and the contributed services are blocks an editor places (REQ-CRG-006)",
-					"openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md :: An anonymous visitor MUST be able to search federated publications",
+					"openspec/specs/portal-federated-search/spec.md :: An anonymous visitor MUST be able to search federated publications",
 					"openspec/specs/portal-federated-search/spec.md :: The publication page must show what a visitor needs, in words"
 				],
 				"plan": [
@@ -7583,8 +7583,8 @@
 				"origin": "sibling",
 				"change": "portal-federated-search",
 				"requirement": [
-					"openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md :: Every result MUST name the catalogue it came from",
-					"openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md :: An anonymous visitor MUST be able to search federated publications"
+					"openspec/specs/portal-federated-search/spec.md :: Every result MUST name the catalogue it came from",
+					"openspec/specs/portal-federated-search/spec.md :: An anonymous visitor MUST be able to search federated publications"
 				],
 				"plan": "search-names-only-a-foreign-source"
 			},
@@ -7871,7 +7871,7 @@
 				"note": "Re-confirmed the portaliq-side wiring. Matches source rating (opencatalogi matrix, id srch-plain).",
 				"origin": "sibling",
 				"change": "portal-federated-search",
-				"requirement": "openspec/changes/portal-federated-search/specs/portal-federated-search/spec.md :: An anonymous visitor MUST be able to search federated publications",
+				"requirement": "openspec/specs/portal-federated-search/spec.md :: An anonymous visitor MUST be able to search federated publications",
 				"plan": "site-catalogue-follows-the-school-boards"
 			},
 			"provider": "opencatalogi",
