@@ -1,6 +1,6 @@
 # docusaurus-plugin-portaliq Delta: docusaurus-plugin-portaliq
 
-**Status**: in-progress
+**Status**: archived
 **Scope**: docusaurus-plugin-portaliq (new project), portaliq (contract owner)
 **OpenSpec changes**:
 
