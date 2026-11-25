@@ -68,7 +68,7 @@ say so in the PR body. Write in the PR body the exact keys the merged routes ans
   answers the REQ-SUB-002 projection without a `featured` key, so the widget showed "no featured
   subjects" (`subjects.js` isFeaturedRow, `tests/subject-landing.spec.mjs`); (2) a subject count links
   to `f.themes`, which the search placement did not facet on, so the search listed everything
-  (`withAddressFields`, `tests/federated-search.spec.mjs`). Screenshots are in the PR. The subject
+  (`withAddressFields`, `tests/federated-search.spec.mjs`). The screenshots were read in the sandbox and are described in the PR body (the API used here cannot attach images). The subject
   image came from an external host the site's CSP blocks: a sandbox seed choice, not an app red.
 
 ## 6. Verify and deliver
