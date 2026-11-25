@@ -29,6 +29,7 @@ import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import {
+	devLogin,
 	oneOf,
 	PORTAL_API,
 	seedSiteSession,
@@ -96,14 +97,9 @@ async function resident(
 	expect(provisioned.ok()).toBeTruthy()
 	const { subjectRef } = await provisioned.json()
 
-	const login = await request.post(`${PORTAL_API}/session/dev-login`, {
-		data: { subjectRef, audience: 'client', organisation: ORGANISATION },
-	})
-	expect(
-		login.ok(),
-		'dev-login must be enabled (see tests/e2e/ci-seed.sh)',
-	).toBeTruthy()
-	const { token } = await login.json()
+	// The shared helper waits out dev-login's per-minute limit: this file signs
+	// in two residents per test.
+	const token = await devLogin(request, subjectRef, 'client', ORGANISATION)
 	return { subjectRef, token, headers: { Authorization: `Bearer ${token}` } }
 }
 
