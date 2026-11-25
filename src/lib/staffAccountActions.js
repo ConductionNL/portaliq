@@ -301,7 +301,7 @@ export function createStaffAccountActions({
 		 *
 		 * @param {object} row The invitation row.
 		 * @return {Promise<{ok: boolean, message: string}>}
-		 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
 		 */
 		async resendInvitation(row) {
 			const id = idOf(row)
@@ -357,6 +357,14 @@ export function createStaffAccountActions({
 }
 
 /**
+ * The object-store list each staff action changes, handed to `reload` so the
+ * host can fetch that list again in place (a full page reload would drop the
+ * toast that says what happened, REQ-ISA-011).
+ */
+export const INVITATION_LIST = 'portaliq-portalInvitation'
+export const ACCOUNT_LIST = 'portaliq-portalAccount'
+
+/**
  * The header and row actions the manifest names by handler.
  *
  * Issue and invite open a dialog that submits itself, so a refusal is shown
@@ -370,7 +378,7 @@ export function createStaffAccountActions({
  * @param {(row: object) => Promise<boolean>} deps.confirmWithdrawInvitation Asks before withdrawing.
  * @param {(text: string) => void} deps.notify Success toast.
  * @param {(text: string) => void} deps.notifyError Error toast.
- * @param {() => void} deps.reload Reloads the list.
+ * @param {(list: string) => void} deps.reload Fetches the named list (INVITATION_LIST, ACCOUNT_LIST) again.
  * @return {{issueAccount: Function, inviteSomeone: Function, resendInvitation: Function, withdrawInvitation: Function}}
  * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-see-and-withdraw-invitations-req-isa-002
  */
@@ -387,14 +395,16 @@ export function createStaffAccountHandlers({
 	 * Report a dialog's outcome.
 	 *
 	 * @param {string|null} message The success sentence, or null.
+	 * @param {string} list The list the action changed.
 	 * @return {boolean}
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
 	 */
-	function closed(message) {
+	function closed(message, list) {
 		if (typeof message !== 'string' || message === '') {
 			return false
 		}
 		notify(message)
-		reload()
+		reload(list)
 		return true
 	}
 
@@ -406,7 +416,7 @@ export function createStaffAccountHandlers({
 		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-issue-and-withdraw-accounts-through-the-validated-actions-req-isa-003
 		 */
 		async issueAccount() {
-			return closed(await openIssue((fields) => actions.issue(fields)))
+			return closed(await openIssue((fields) => actions.issue(fields)), ACCOUNT_LIST)
 		},
 
 		/**
@@ -416,7 +426,7 @@ export function createStaffAccountHandlers({
 		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-invite-an-address-and-portaliq-mails-it-req-isa-001
 		 */
 		async inviteSomeone() {
-			return closed(await openInvite((fields) => actions.invite(fields)))
+			return closed(await openInvite((fields) => actions.invite(fields)), INVITATION_LIST)
 		},
 
 		/**
@@ -424,7 +434,7 @@ export function createStaffAccountHandlers({
 		 *
 		 * @param {{item: object}} payload The row action payload.
 		 * @return {Promise<boolean>}
-		 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
 		 */
 		async resendInvitation({ item }) {
 			const outcome = await actions.resendInvitation(item)
@@ -433,7 +443,7 @@ export function createStaffAccountHandlers({
 				return false
 			}
 			notify(outcome.message)
-			reload()
+			reload(INVITATION_LIST)
 			return true
 		},
 
@@ -454,7 +464,7 @@ export function createStaffAccountHandlers({
 				return false
 			}
 			notify(outcome.message)
-			reload()
+			reload(INVITATION_LIST)
 			return true
 		},
 	}

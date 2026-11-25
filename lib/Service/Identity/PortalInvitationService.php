@@ -429,7 +429,7 @@ class PortalInvitationService implements PortalInvitationServiceInterface {
 	 *         The new secret to mail with its address and expiry, or an `error`
 	 *         of `not_found`, `already_accepted`, `withdrawn` or `not_saved`.
 	 *
-	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
 	 */
 	public function resend(string $id, string $organisation, string $ttl = ''): array {
 		$row = $this->findById(id: $id, organisation: $organisation);

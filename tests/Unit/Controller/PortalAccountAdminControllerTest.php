@@ -353,7 +353,7 @@ class PortalAccountAdminControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
 	 */
 	public function testAnInvitationIsSentAgainOnlyByAClerkWithTheAction(): void {
 		$resent = ['token' => 'secret-2', 'email' => 'ans@example.org', 'expiresAt' => '2026-10-27T09:00:00+00:00'];
@@ -371,7 +371,7 @@ class PortalAccountAdminControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/staff-resend-an-invitation/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
 	 */
 	public function testAResendThatCannotBeDoneSaysWhy(): void {
 		$accepted = $this->resending(allowed: true, resent: ['error' => 'already_accepted'])->resendInvitation(id: 'inv-1', organisation: 'gemeente-x');

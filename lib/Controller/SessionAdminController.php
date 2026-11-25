@@ -147,7 +147,7 @@ class SessionAdminController extends Controller {
 	 *       absence of an opt-out attribute, checked by Nextcloud before this
 	 *       method runs.
 	 *
-	 * @spec openspec/changes/staff-revoke-one-session/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-revoke-one-portal-session-req-isa-010
 	 */
 	public function revokeSession(string $jti = ''): JSONResponse {
 		if ($jti === '') {

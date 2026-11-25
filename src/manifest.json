@@ -1978,6 +1978,8 @@
             }
           }
         ],
+        "showCopyAction": false,
+        "showDeleteAction": false,
         "showTitle": true,
         "showTitleIcon": false,
         "countText": "{shown} of {total} invitations",

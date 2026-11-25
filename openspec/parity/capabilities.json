@@ -2114,7 +2114,7 @@
 				"evidence": "src/dialogs/InviteDialog.vue via the 'Invite someone' handler (src/lib/staffAccountActions.js invite -> POST /api/invitations, answer carries the expiry, never the link); manifest page Invitations over portalInvitation with 'Withdraw invitation' (POST /api/invitations/{id}/revoke, PortalInvitationService::revoke refuses an accepted one); tests/staff-account-screens.spec.mjs, PortalInvitationServiceTest, tests/e2e/identity-staff-account-screens.spec.ts",
 				"reachedOn": "admin app: Accounts and Invitations pages, 'Invite someone'; Invitations row action 'Withdraw invitation'",
 				"owner": "ConductionNL/portaliq",
-				"note": "Built 2026-09-30 (identity-staff-account-screens). The invitee's acceptance screen is identity-ways-in-screens T06.",
+				"note": "Built 2026-09-30 (identity-staff-account-screens). The invitee's acceptance screen is identity-ways-in-screens T06. Opnieuw versturen (staff-resend-an-invitation, REQ-ISA-011) checked live 25 Nov 2026.",
 				"origin": "code",
 				"change": "2026-09-30-identity-staff-account-screens",
 				"requirement": "openspec/specs/portal-account-administration/spec.md :: Staff invite an address and portaliq mails it (REQ-ISA-001)",
