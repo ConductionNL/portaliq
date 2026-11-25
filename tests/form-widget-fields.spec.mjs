@@ -27,11 +27,11 @@ import {
 	answerFields,
 	fieldList,
 	fieldSections,
-	groupFields,
-	isFieldGroup,
 	fieldSettings,
 	FORM_FIELD_TYPES,
 	formFieldGroup,
+	groupFields,
+	isFieldGroup,
 	moveField,
 	removeField,
 	updateField,
@@ -303,7 +303,7 @@ test('FormBlock draws every declared type, choice groups under one legend', () =
 		/return \['date', 'radio', 'checkboxes'\]\.includes\(field\.type\)/,
 	)
 	assert.match(block, /:role="field\.type === 'switch' \? 'switch' : undefined"/)
-	assert.match(block, /formErrors\(this\.answering, this\.values\)/)
+	assert.match(block, /formErrors\(answerFields\(this\.fields\), this\.values\)/)
 })
 
 test('a date field offers the picker and its earliest and latest date (D1 rows 22, 23)', () => {
@@ -438,7 +438,7 @@ test('FormBlock draws a searchable select as the combobox, on Utrecht CSS', () =
 
 // --- group (fieldset), D1 row 28 -------------------------------------------
 
-const addressForm = () => {
+function addressForm() {
 	let list = addField([], 'email')
 	list = addField(list, 'group')
 	list = updateField(list, 'group', 'label', 'Uw adres')

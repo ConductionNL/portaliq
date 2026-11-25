@@ -303,6 +303,7 @@ import DateInputGroup from './forms/DateInputGroup.vue'
 import ErrorSummary from './forms/ErrorSummary.vue'
 import FieldShell from './forms/FieldShell.vue'
 import SelectCombobox from './forms/SelectCombobox.vue'
+import { answerFields, fieldSections } from '../../lib/formFieldTypes.js'
 import {
 	capturedReferrer,
 	captureLanding,
@@ -318,7 +319,6 @@ import {
 	minimumErrors,
 } from '../lib/formFieldValues.js'
 import { submitLandingPageForm } from '../lib/formSubmission.js'
-import { answerFields, fieldSections } from '../../lib/formFieldTypes.js'
 import { hasHelp, mergeHelp } from '../lib/help.js'
 import {
 	DUTCH,
@@ -701,7 +701,7 @@ export default {
 		 */
 		async submit() {
 			this.status = null
-			this.errors = formErrors(this.answering, this.values)
+			this.errors = formErrors(answerFields(this.fields), this.values)
 			if (Object.keys(this.errors).length > 0) {
 				this.$nextTick(() => {
 					if (this.$refs.summary) {
