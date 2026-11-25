@@ -50,7 +50,10 @@ class DestinationRefusalTest extends TestCase {
 			'no status'             => [[], ['body' => ['error' => 'try_again_later'], 'status' => 503]],
 			'no answer at all'      => [null, ['body' => ['error' => 'try_again_later'], 'status' => 503]],
 			'an unexpected success' => [['status' => 201], ['body' => ['error' => 'try_again_later'], 'status' => 503]],
-			'with its error code'   => [['status' => 503, 'code' => 'OF-1A2B'], ['body' => ['error' => 'try_again_later', 'code' => 'OF-1A2B'], 'status' => 503]],
+			'with its error code'   => [
+				['status' => 503, 'code' => 'OF-1A2B'],
+				['body' => ['error' => 'try_again_later', 'code' => 'OF-1A2B'], 'status' => 503],
+			],
 			'an empty error code'   => [['status' => 503, 'code' => ''], ['body' => ['error' => 'try_again_later'], 'status' => 503]],
 			'a code on a refusal'   => [['status' => 404, 'code' => 'OF-1A2B'], ['body' => ['error' => 'form_not_submittable'], 'status' => 404]],
 		];

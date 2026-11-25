@@ -484,6 +484,7 @@ import RepeatingGroup from './forms/RepeatingGroup.vue'
 import ReviewList from './forms/ReviewList.vue'
 import SignatureField from './forms/SignatureField.vue'
 import StatementsBlock from './forms/StatementsBlock.vue'
+import { newSubmissionKey } from '../../shared/submissionKey.js'
 import { adoptSessionToken, authBaseFrom } from '../lib/authApi.js'
 import { resolveApiBase } from '../lib/contentApi.js'
 import { hasHelp, mergeHelp } from '../lib/help.js'
@@ -497,7 +498,6 @@ import {
 	loadForm,
 	lookUpApplicant as lookUpApplicantOnServer,
 	lookUpStatus,
-	newSubmissionKey,
 	payIntake,
 	submitIntake,
 } from '../lib/intakeApi.js'

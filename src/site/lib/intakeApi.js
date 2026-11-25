@@ -16,6 +16,7 @@
  * a recorder.
  */
 
+import { submissionHeaders } from '../../shared/submissionKey.js'
 import { solveChallenge } from './waysIn.js'
 
 /**
@@ -90,12 +91,9 @@ function fetcher(fetchImpl) {
  * @return {Promise<object>} The response.
  */
 function postIntake(conn, request) {
-	const headers = headersFor(conn.token, true)
 	// One key per filled-in form: a retry after an answer that got lost
 	// creates no second case (REQ-FGV-003).
-	if (typeof request.idempotencyKey === 'string' && request.idempotencyKey !== '') {
-		headers['Idempotency-Key'] = request.idempotencyKey
-	}
+	const headers = { ...headersFor(conn.token, true), ...submissionHeaders({ submissionKey: request.idempotencyKey }) }
 	return fetcher(conn.fetchImpl)(intakeUrl(conn.base, request.path), {
 		method: 'POST',
 		headers,
@@ -935,27 +933,3 @@ export async function challengeProof(challenge, subtle = globalThis.crypto?.subt
 	}
 }
 
-/**
- * A new key for one filled-in form, sent as its Idempotency-Key: the same on
- * every retry of that form, so a retry after an answer that got lost creates
- * no second case.
- *
- * @param {{randomUUID?: () => string, getRandomValues?: (array: Uint8Array) => Uint8Array}} [random] The random source; the browser's crypto by default.
- * @return {string} The key.
- *
- * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
- */
-export function newSubmissionKey(random = globalThis.crypto) {
-	if (typeof random?.randomUUID === 'function') {
-		return random.randomUUID()
-	}
-	const bytes = new Uint8Array(16)
-	if (typeof random?.getRandomValues === 'function') {
-		random.getRandomValues(bytes)
-	} else {
-		for (let i = 0; i < bytes.length; i++) {
-			bytes[i] = Math.floor(Math.random() * 256)
-		}
-	}
-	return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('')
-}

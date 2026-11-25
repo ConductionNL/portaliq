@@ -129,15 +129,19 @@ class DestinationIntakeTest extends TestCase {
 	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
 	 */
 	public function testAnUnansweredSubmitGetsAnErrorCodeAndALogLine(): void {
-		$logger = $this->createMock(LoggerInterface::class);
-		$logger->expects($this->once())->method('warning')->with($this->stringContains('gemeente-x/bezwaar answered 503'));
-		$failures = new SubmitFailureLog($this->createMock(IAppConfig::class), $logger, $this->createMock(ITimeFactory::class));
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with($this->stringContains(string: 'gemeente-x/bezwaar answered 503'));
+		$failures = new SubmitFailureLog(
+			appConfig: $this->createMock(originalClassName: IAppConfig::class),
+			logger: $logger,
+			time: $this->createMock(originalClassName: ITimeFactory::class)
+		);
 
 		$result = $this->intake(fake: new FormSubmitFake(outcome: new \RuntimeException('down')), failures: $failures)
 			->submit(binding: $this->binding(), render: ['fields' => $this->fields()], answers: ['title' => 'x']);
 
-		$this->assertSame(503, $result['status']);
-		$this->assertMatchesRegularExpression('/^OF-[0-9A-F]{4}$/', $result['code']);
+		$this->assertSame(expected: 503, actual: $result['status']);
+		$this->assertMatchesRegularExpression(pattern: '/^OF-[0-9A-F]{4}$/', string: $result['code']);
 	}//end testAnUnansweredSubmitGetsAnErrorCodeAndALogLine()
 
 	/**
@@ -148,9 +152,13 @@ class DestinationIntakeTest extends TestCase {
 	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
 	 */
 	public function testARefusalAndASuccessCarryNoErrorCode(): void {
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->never())->method('warning');
-		$failures = new SubmitFailureLog($this->createMock(IAppConfig::class), $logger, $this->createMock(ITimeFactory::class));
+		$failures = new SubmitFailureLog(
+			appConfig: $this->createMock(originalClassName: IAppConfig::class),
+			logger: $logger,
+			time: $this->createMock(originalClassName: ITimeFactory::class)
+		);
 
 		$refused = $this->intake(fake: new FormSubmitFake(outcome: FormSubmitFake::refusal(status: 422, findings: [])), failures: $failures)
 			->submit(binding: $this->binding(), render: ['fields' => $this->fields()], answers: ['title' => 'x']);
@@ -159,10 +167,10 @@ class DestinationIntakeTest extends TestCase {
 		$noLog = $this->intake(fake: new FormSubmitFake(outcome: new \RuntimeException('down')))
 			->submit(binding: $this->binding(), render: ['fields' => $this->fields()], answers: ['title' => 'x']);
 
-		$this->assertArrayNotHasKey('code', $refused);
-		$this->assertArrayNotHasKey('code', $accepted);
-		$this->assertSame(503, $noLog['status']);
-		$this->assertArrayNotHasKey('code', $noLog);
+		$this->assertArrayNotHasKey(key: 'code', array: $refused);
+		$this->assertArrayNotHasKey(key: 'code', array: $accepted);
+		$this->assertSame(expected: 503, actual: $noLog['status']);
+		$this->assertArrayNotHasKey(key: 'code', array: $noLog);
 	}//end testARefusalAndASuccessCarryNoErrorCode()
 
 	/**
@@ -173,20 +181,33 @@ class DestinationIntakeTest extends TestCase {
 	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
 	 */
 	public function testABindingWithoutADestinationIsALoggedFailure(): void {
-		$logger = $this->createMock(LoggerInterface::class);
-		$logger->expects($this->once())->method('warning')->with($this->stringContains('The form names no destination.'));
-		$failures = new SubmitFailureLog($this->createMock(IAppConfig::class), $logger, $this->createMock(ITimeFactory::class));
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with($this->stringContains(string: 'The form names no destination.'));
+		$failures = new SubmitFailureLog(
+			appConfig: $this->createMock(originalClassName: IAppConfig::class),
+			logger: $logger,
+			time: $this->createMock(originalClassName: ITimeFactory::class)
+		);
 
 		$result = $this->intake(fake: new FormSubmitFake(outcome: ['reference' => 'r']), failures: $failures)
 			->submit(binding: ['portal' => 'gemeente-x'], render: ['fields' => []], answers: []);
 
-		$this->assertSame(503, $result['status']);
-		$this->assertStringStartsWith('OF-', $result['code']);
+		$this->assertSame(expected: 503, actual: $result['status']);
+		$this->assertStringStartsWith(prefix: 'OF-', string: $result['code']);
 	}//end testABindingWithoutADestinationIsALoggedFailure()
 
+	/**
+	 * The intake over the fake submit service and the dossiq case schema.
+	 *
+	 * @param FormSubmitFake        $fake          The submit service.
+	 * @param bool                  $realValidator Whether OpenRegister's real validator checks the binding.
+	 * @param SubmitFailureLog|null $failures      The failure log, or none.
+	 *
+	 * @return DestinationIntake The intake.
+	 */
 	private function intake(FormSubmitFake $fake, bool $realValidator = false, ?SubmitFailureLog $failures = null): DestinationIntake {
 		$schema  = json_decode((string)file_get_contents(__DIR__ . '/../../../Fixtures/dossiq-case-schema-d179.json'), true)['schema'];
-		$schemas = $this->createMock(PortalSchemaReader::class);
+		$schemas = $this->createMock(originalClassName: PortalSchemaReader::class);
 		$schemas->method('readSchema')->willReturn($schema);
 
 		$more = [];

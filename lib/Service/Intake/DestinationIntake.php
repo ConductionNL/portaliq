@@ -89,7 +89,10 @@ class DestinationIntake implements DestinationIntakeInterface {
 	): array {
 		$destination = $this->mapping->destinationOf(binding: $binding);
 		if ($destination === null) {
-			return $this->failed(binding: $binding, result: ['ok' => false, 'status' => 503, 'answer' => [], 'message' => 'The form names no destination.', 'errors' => []]);
+			return $this->failed(
+				binding: $binding,
+				result: ['ok' => false, 'status' => 503, 'answer' => [], 'message' => 'The form names no destination.', 'errors' => []]
+			);
 		}
 
 		$mapping = $this->mapping->mappingFor(
@@ -132,9 +135,10 @@ class DestinationIntake implements DestinationIntakeInterface {
 	 * be sent (403, 404) pass unchanged.
 	 *
 	 * @param array<string, mixed> $binding The binding.
-	 * @param array{ok: bool, status: int, answer: array<string, mixed>, message: string, errors: array<string, string>} $result What the submit answered.
+	 * @param array{ok: bool, status: int, answer: array, message: string, errors: array} $result  What the submit answered.
 	 *
-	 * @return array{ok: bool, status: int, answer: array<string, mixed>, message: string, errors: array<string, string>, code?: string} The answer, with `code` on a failure.
+	 * @return array{ok: bool, status: int, answer: array<string, mixed>, message: string, errors: array<string, string>, code?: string}
+	 *         The answer, with `code` on a failure.
 	 *
 	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
 	 */

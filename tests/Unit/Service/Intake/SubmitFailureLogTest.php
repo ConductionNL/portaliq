@@ -59,7 +59,7 @@ class SubmitFailureLogTest extends TestCase {
 	 * @return SubmitFailureLog The log.
 	 */
 	private function log(?LoggerInterface $logger = null, bool $broken = false): SubmitFailureLog {
-		$config = $this->createMock(IAppConfig::class);
+		$config = $this->createMock(originalClassName: IAppConfig::class);
 		$config->method('getValueString')->willReturnCallback(fn (): string => $this->stored);
 		$config->method('setValueString')->willReturnCallback(
 			function (string $app, string $key, string $value) use ($broken): bool {
@@ -67,16 +67,16 @@ class SubmitFailureLogTest extends TestCase {
 					throw new RuntimeException('config down');
 				}
 
-				$this->assertSame('portaliq', $app);
-				$this->assertSame(SubmitFailureLog::CONFIG_KEY, $key);
+				$this->assertSame(expected: 'portaliq', actual: $app);
+				$this->assertSame(expected: SubmitFailureLog::CONFIG_KEY, actual: $key);
 				$this->stored = $value;
 				return true;
 			}
 		);
-		$time = $this->createMock(ITimeFactory::class);
+		$time = $this->createMock(originalClassName: ITimeFactory::class);
 		$time->method('getTime')->willReturnCallback(fn (): int => $this->now);
 
-		return new SubmitFailureLog($config, $logger ?? $this->createMock(LoggerInterface::class), $time);
+		return new SubmitFailureLog(appConfig: $config, logger: $logger ?? $this->createMock(originalClassName: LoggerInterface::class), time: $time);
 	}//end log()
 
 	/**
@@ -85,18 +85,19 @@ class SubmitFailureLogTest extends TestCase {
 	 * @return void
 	 */
 	public function testAFailureIsLoggedUnderItsCodeAndKeptForTheDigest(): void {
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with(
-			$this->matchesRegularExpression('/form submit failed OF-[0-9A-F]{4}: zuid\/woo answered 503: down/'),
-			$this->callback(static fn (array $context): bool => $context['route'] === 'woo' && $context['status'] === 503)
+			$this->matchesRegularExpression(pattern: '/form submit failed OF-[0-9A-F]{4}: zuid\/woo answered 503: down/'),
+			$this->callback(callback: static fn (array $context): bool => $context['route'] === 'woo' && $context['status'] === 503)
 		);
 
-		$code = $this->log(logger: $logger)->record(binding: ['portal' => 'zuid', 'route' => 'woo', 'title' => 'Woo-verzoek'], status: 503, message: 'down');
+		$binding = ['portal' => 'zuid', 'route' => 'woo', 'title' => 'Woo-verzoek'];
+		$code    = $this->log(logger: $logger)->record(binding: $binding, status: 503, message: 'down');
 
-		$this->assertMatchesRegularExpression('/^OF-[0-9A-F]{4}$/', $code);
+		$this->assertMatchesRegularExpression(pattern: '/^OF-[0-9A-F]{4}$/', string: $code);
 		$this->assertSame(
-			[['code' => $code, 'portal' => 'zuid', 'route' => 'woo', 'title' => 'Woo-verzoek', 'status' => 503, 'at' => $this->now]],
-			$this->log()->since(from: $this->now - 60)
+			expected: [['code' => $code, 'portal' => 'zuid', 'route' => 'woo', 'title' => 'Woo-verzoek', 'status' => 503, 'at' => $this->now]],
+			actual: $this->log()->since(from: $this->now - 60)
 		);
 	}//end testAFailureIsLoggedUnderItsCodeAndKeptForTheDigest()
 
@@ -112,14 +113,14 @@ class SubmitFailureLogTest extends TestCase {
 		$this->now += 86_400;
 		$day = $log->record(binding: ['route' => 'b'], status: 500, message: '');
 
-		$this->assertSame([$day], array_column($log->since(from: $this->now - 3_600), 'code'));
-		$this->assertSame([$old, $day], array_column($log->since(from: 0), 'code'));
+		$this->assertSame(expected: [$day], actual: array_column($log->since(from: $this->now - 3_600), 'code'));
+		$this->assertSame(expected: [$old, $day], actual: array_column($log->since(from: 0), 'code'));
 		// The title falls back to the route.
-		$this->assertSame('b', $log->since(from: $this->now)[0]['title']);
+		$this->assertSame(expected: 'b', actual: $log->since(from: $this->now)[0]['title']);
 
 		$this->now += SubmitFailureLog::KEEP_SECONDS;
 		$last = $log->record(binding: ['route' => 'c'], status: 503, message: '');
-		$this->assertSame([$last], array_column($log->since(from: 0), 'code'));
+		$this->assertSame(expected: [$last], actual: array_column($log->since(from: 0), 'code'));
 	}//end testOldEntriesFallOutAndSinceReadsItsWindow()
 
 	/**
@@ -137,9 +138,9 @@ class SubmitFailureLogTest extends TestCase {
 		$code         = $this->log()->record(binding: [], status: 503, message: '');
 		$kept         = array_column($this->log()->since(from: 0), 'code');
 
-		$this->assertCount(SubmitFailureLog::MAX_ENTRIES, $kept);
-		$this->assertSame('OF-1', $kept[0]);
-		$this->assertSame($code, $kept[SubmitFailureLog::MAX_ENTRIES - 1]);
+		$this->assertCount(expectedCount: SubmitFailureLog::MAX_ENTRIES, haystack: $kept);
+		$this->assertSame(expected: 'OF-1', actual: $kept[0]);
+		$this->assertSame(expected: $code, actual: $kept[SubmitFailureLog::MAX_ENTRIES - 1]);
 	}//end testTheListIsCapped()
 
 	/**
@@ -149,10 +150,10 @@ class SubmitFailureLogTest extends TestCase {
 	 */
 	public function testABrokenValueReadsAsNone(): void {
 		$this->stored = 'not json';
-		$this->assertSame([], $this->log()->since(from: 0));
+		$this->assertSame(expected: [], actual: $this->log()->since(from: 0));
 
 		$this->stored = (string)json_encode([['portal' => 'x'], 'text', ['code' => 'OF-AAAA', 'at' => $this->now]]);
-		$this->assertSame(['OF-AAAA'], array_column($this->log()->since(from: 0), 'code'));
+		$this->assertSame(expected: ['OF-AAAA'], actual: array_column($this->log()->since(from: 0), 'code'));
 	}//end testABrokenValueReadsAsNone()
 
 	/**
@@ -161,10 +162,10 @@ class SubmitFailureLogTest extends TestCase {
 	 * @return void
 	 */
 	public function testACodeComesBackWhenTheDigestCannotKeepIt(): void {
-		$logger = $this->createMock(LoggerInterface::class);
-		$logger->expects($this->once())->method('info')->with($this->stringContains('config down'));
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->once())->method('info')->with($this->stringContains(string: 'config down'));
 
-		$this->assertStringStartsWith('OF-', $this->log(logger: $logger, broken: true)->record(binding: [], status: 503, message: ''));
+		$this->assertStringStartsWith(prefix: 'OF-', string: $this->log(logger: $logger, broken: true)->record(binding: [], status: 503, message: ''));
 	}//end testACodeComesBackWhenTheDigestCannotKeepIt()
 
 	/**
@@ -176,9 +177,9 @@ class SubmitFailureLogTest extends TestCase {
 		$codes = array_map(static fn (): string => SubmitFailureLog::newCode(), range(1, 20));
 
 		foreach ($codes as $code) {
-			$this->assertMatchesRegularExpression('/^OF-[0-9A-F]{4}$/', $code);
+			$this->assertMatchesRegularExpression(pattern: '/^OF-[0-9A-F]{4}$/', string: $code);
 		}
 
-		$this->assertGreaterThan(1, count(array_unique($codes)));
+		$this->assertGreaterThan(expected: 1, actual: count(array_unique($codes)));
 	}//end testCodesHaveTheirShape()
 }//end class

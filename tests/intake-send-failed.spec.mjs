@@ -14,7 +14,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { DUTCH } from '../src/site/components/forms/fields.js'
-import { newSubmissionKey, submitIntake } from '../src/site/lib/intakeApi.js'
+import { submitIntake } from '../src/site/lib/intakeApi.js'
 import { loadSfc } from './support/render-sfc.mjs'
 
 globalThis.window = globalThis.window || {
@@ -56,21 +56,15 @@ test('submitIntake throws with the error code of a submit the destination did no
 
 test('submitIntake sends the key of the filled-in form as Idempotency-Key, never in the body', async () => {
 	const { fetchImpl, calls } = answering([{ status: 201, body: { reference: 'WOO-1' } }])
-	await submitIntake({ base: '/api', portal: '', token: '', fetchImpl }, { route: 'woo', answers: {}, idempotencyKey: 'k-1' })
+	const key = 'f3a1c2d4-0000-4000-8000-000000000001'
+	await submitIntake({ base: '/api', portal: '', token: '', fetchImpl }, { route: 'woo', answers: {}, idempotencyKey: key })
 
-	assert.equal(calls[0].init.headers['Idempotency-Key'], 'k-1')
+	assert.equal(calls[0].init.headers['Idempotency-Key'], key)
 	assert.equal('idempotencyKey' in JSON.parse(calls[0].init.body), false)
 
 	const none = answering([{ status: 201, body: { reference: 'WOO-2' } }])
 	await submitIntake({ base: '/api', portal: '', token: '', fetchImpl: none.fetchImpl }, { route: 'woo', answers: {} })
 	assert.equal('Idempotency-Key' in none.calls[0].init.headers, false)
-})
-
-test('newSubmissionKey takes the browser UUID, else 16 random bytes as hex', () => {
-	assert.equal(newSubmissionKey({ randomUUID: () => 'uuid-1' }), 'uuid-1')
-	assert.equal(newSubmissionKey({ getRandomValues: (bytes) => bytes.fill(171) }), 'ab'.repeat(16))
-	assert.match(newSubmissionKey({}), /^[0-9a-f]{32}$/)
-	assert.match(newSubmissionKey(), /^[0-9a-f-]{32,36}$/)
 })
 
 /**
