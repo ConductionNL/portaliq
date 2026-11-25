@@ -1259,6 +1259,47 @@ class ContributionControllerTest extends TestCase {
 
 	}//end testActionWithDeclaredFieldsForwardsOnlyThoseFieldsIgnoringSmuggledOnes()
 
+	/**
+	 * An action opened from a task takes the task's uuid in its `taskField`;
+	 * the declared whitelist keeps that field, so the app receives it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-task-opens-the-app-action-that-completes-it/specs/site-portal-parity/spec.md#requirement-a-task-that-names-its-app-action-must-open-that-action
+	 */
+	public function testActionWithDeclaredFieldsAlsoForwardsItsTaskField(): void {
+		$aggregate = $this->aggregate(
+			actions: [
+				['id' => 'completeChecklistTask', 'endpoint' => '/apps/demo/api/portal/checklist', 'method' => 'POST', 'fields' => ['reason'], 'taskField' => 'title'],
+			]
+		);
+
+		$captured = [];
+		$response = $this->createMock(IResponse::class);
+		$response->method('getBody')->willReturn('{}');
+		$response->method('getStatusCode')->willReturn(200);
+
+		$client = $this->createMock(IClient::class);
+		$client->method('post')->willReturnCallback(
+			function (string $uri, array $options) use (&$captured, $response) {
+				$captured = $options;
+				return $response;
+			}
+		);
+
+		$clientService = $this->createMock(IClientService::class);
+		$clientService->method('newClient')->willReturn($client);
+
+		// The request fixture carries 'title' => 'X': named as the task field,
+		// it is forwarded; the undeclared 'claims' still is not.
+		$controller = $this->controller(aggregate: $aggregate, clientService: $clientService);
+		$result = $controller->action('portaliq', 'completeChecklistTask');
+
+		$this->assertSame(200, $result->getStatus());
+		$this->assertSame('{"title":"X"}', $captured['body']);
+
+	}//end testActionWithDeclaredFieldsAlsoForwardsItsTaskField()
+
 	public function testActionWithoutDeclaredFieldsForwardsTheRawBodyUnchanged(): void {
 		// Backward compatible: an action with no `fields` declaration (e.g.
 		// the demo's GET-method actions) keeps relaying the raw request body.
