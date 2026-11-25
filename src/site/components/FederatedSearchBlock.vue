@@ -1494,7 +1494,7 @@ export default {
 		 * @param {object} result A view-model row.
 		 * @return {Array<object>} `{key, text, prefix, testid}` items.
 		 *
-		 * @spec openspec/changes/search-names-only-a-foreign-source/specs/portal-federated-search/spec.md#requirement-every-result-from-another-catalogue-must-name-that-catalogue-req-snf-001
+		 * @spec openspec/specs/portal-federated-search/spec.md#requirement-every-result-from-another-catalogue-must-name-that-catalogue-req-snf-001
 		 */
 		metaItems(result) {
 			const counted = result.kind === 'subject' && result.publicationCount > 0
