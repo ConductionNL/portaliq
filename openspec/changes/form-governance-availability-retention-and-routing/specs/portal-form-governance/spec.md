@@ -22,15 +22,19 @@ A form binding SHALL accept `availability` with `activeFrom`, `activeUntil`, `li
 
 ### Requirement: Each form names where its submissions go (REQ-FGV-002)
 
-A form binding SHALL accept `delivery` with a default target and rules that pick another target from the answers. The target kinds SHALL be `caseType`, `email` and `integriq`. The first rule whose condition holds SHALL decide the target; with no match the default SHALL apply. A binding without `delivery` SHALL deliver to its case type's app, as today.
+Rewritten onto the direct submit (Ruben, 25 Nov 2026: form-governance T04-T08 rewritten onto the direct submit). A form binding names its `destination { register, schema }` (REQ-PIFO-007) and MAY name `destinationRules`, a list of `{ when, destination }`. `when` SHALL use the local `visibleWhen` grammar of the form's conditional questions. Before the submit, the first rule whose `when` holds over the answers SHALL decide the destination; with no match the binding's own `destination` SHALL apply. The submit then creates the object at that destination in the same request; there is no routing step after it. A rule without a condition, with a condition the portal cannot check, or without a register and schema SHALL never route and SHALL be a finding that stops the binding from being published, and every rule's destination SHALL be checked against its schema like the binding's own. A mailbox or an external system (ZGW, StUF, a JSON endpoint) is reached through a destination schema whose app forwards it (integriq), not by portaliq.
 
-#### Scenario: An environment question goes to the mailbox
-- **WHEN** a Woo request answers `onderwerp: milieu` and the binding has a rule to `milieu@zuiddrecht.nl`
-- **THEN** the submission is mailed to that address and no case is created in dossiq
+#### Scenario: An environment question goes to the environment register
+- **WHEN** a Woo request answers `onderwerp: milieu` and the binding has a rule `{when: {field: onderwerp, op: eq, value: milieu}, destination: {register: milieu, schema: melding}}`
+- **THEN** the submit creates a `milieu/melding` object and no dossiq case
 
-#### Scenario: An external target through integriq
-- **WHEN** the default target is `{kind: "integriq", source: "zgw-zaken"}`
-- **THEN** portaliq hands the submission to that integriq connection and records the reference integriq returns
+#### Scenario: No rule holds
+- **WHEN** the same form answers `onderwerp: verkeer`
+- **THEN** the submit creates the object at the binding's own destination
+
+#### Scenario: A broken rule stops publishing
+- **WHEN** a binding has a rule without register or schema
+- **THEN** the binding cannot be published and the finding names `destinationRules.<n>`
 
 ### Requirement: A failed registration is retried and reported (REQ-FGV-003)
 
