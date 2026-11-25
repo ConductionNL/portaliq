@@ -20,6 +20,7 @@ import {
 	navKeyFor,
 	OPEN_STORAGE_KEY,
 	parseOpenFragment,
+	recordPageForRow,
 	rowFor,
 } from '../src/shared/openRecord.js'
 
@@ -253,4 +254,39 @@ test("site: the contribution page selects the row from the resident's own rows, 
 		loader,
 		/rowFor\(loaded\.objects, target\.id\) \|\| target\.row \|\| null/,
 	)
+})
+
+// list-row-opens-its-record-page: learniq's assessor overview lists
+// eaSharedPortfolios; its record page eaShare is out of the menu.
+const OVERVIEW = {
+	key: 'learniq:eaHome',
+	contribution: { app: 'learniq' },
+	page: { id: 'eaHome', blocks: [{ type: 'collection', collection: 'eaSharedPortfolios' }] },
+}
+const SHARE = {
+	key: 'learniq:eaShare',
+	contribution: { app: 'learniq' },
+	page: { id: 'eaShare', menu: false, record: { collection: 'eaSharedPortfolios' }, blocks: [{ type: 'collection', collection: 'eaSharedPortfolioEntries' }] },
+}
+
+test('a list row opens its collection\'s record page when that is another page of the app', () => {
+	const nav = [OVERVIEW, SHARE]
+	const target = { app: 'learniq', collection: 'eaSharedPortfolios' }
+	assert.equal(recordPageForRow(nav, OVERVIEW, null, target), SHARE)
+	assert.equal(recordPageForRow(nav, SHARE, null, target), null, 'on the record page itself the row opens there')
+	assert.equal(recordPageForRow(nav, OVERVIEW, null, { app: 'dossiq', collection: 'eaSharedPortfolios' }), null, 'only a page of the same app')
+	assert.equal(recordPageForRow(nav, OVERVIEW, null, { app: 'learniq', collection: 'eaExams' }), null, 'no record page: the row is only marked')
+	const withDetail = { ...OVERVIEW, page: { ...OVERVIEW.page, blocks: [...OVERVIEW.page.blocks, { type: 'detail', collection: 'eaSharedPortfolios' }] } }
+	assert.equal(recordPageForRow([withDetail, SHARE], withDetail, null, target), null, 'a page that shows the row in a detail block keeps it')
+	const listing = { ...SHARE, page: { ...SHARE.page, blocks: [{ type: 'collection', collection: 'eaSharedPortfolios' }] } }
+	assert.equal(recordPageForRow([OVERVIEW, listing], OVERVIEW, null, target), null, 'a page that also lists the collection is no record page to open')
+	assert.equal(recordPageForRow(nav, null, OVERVIEW.page, target), SHARE, 'a page handed in without its entry')
+})
+
+test('the page opens a chosen row on the other page\'s record route', () => {
+	const source = readFileSync(new URL('../src/site/pages/collections/ContributionPage.vue', import.meta.url), 'utf8')
+	const select = source.slice(source.indexOf('\t\tselect(collection, row) {'))
+	assert.match(select, /recordPageForRow\(/)
+	assert.match(select, /\$emit\(\s*'navigate',\s*`\$\{routeForNav\(elsewhere\)\}\/\$\{encodeURIComponent\(id\)\}`/)
+	assert.ok(select.indexOf('return') < select.indexOf('this.selected = '), 'it navigates instead of marking')
 })
