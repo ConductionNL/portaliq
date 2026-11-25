@@ -34,6 +34,13 @@ const LABEL = 'Vergunning verleend'
 const EXPLANATION = 'Uw aanvraag voldoet aan het bestemmingsplan.'
 
 /**
+ * What the current test seeded, removed after it. The portal reads ONE active
+ * portalPage per audience and takes the lowest id when several are active, so
+ * a page left behind can shadow the page the next test (or spec) seeds.
+ */
+const created: string[] = []
+
+/**
  * Create one object through OpenRegister's own object API, as the dev admin
  * (seeding only; the browser never holds these credentials).
  *
@@ -56,7 +63,9 @@ async function seed(
 		`OpenRegister objects#create must be reachable for ${schema}`,
 	).toBeTruthy()
 	const body = await res.json()
-	return (body.id ?? body['@self']?.id) as string
+	const id = (body.id ?? body['@self']?.id) as string
+	created.push(`${schema}/${id}`)
+	return id
 }
 
 /**
@@ -169,6 +178,14 @@ async function openCase(
 }
 
 test.describe('case-outcome-on-the-case-page', () => {
+	test.afterEach(async ({ request }) => {
+		for (const ref of created.splice(0).reverse()) {
+			await request.delete(`${OR_OBJECTS_BASE}/portaliq/${ref}`, {
+				headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
+			})
+		}
+	})
+
 	// @e2e citizen-writes-on-their-own-case::a-granted-permit
 	test('an ended case shows its outcome and the explanation above the status steps', async ({
 		page,
