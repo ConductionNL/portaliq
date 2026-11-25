@@ -203,7 +203,7 @@ class TrafficDimensionCounts {
 	 *
 	 * @return array{rows: array<int, array{term: string, count: int}>, withoutCount: int} The ranked terms, and the searches with no count.
 	 *
-	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
 	 */
 	public function zeroResults(array $sessions): array {
 		$searches = $this->searches(sessions: $sessions);

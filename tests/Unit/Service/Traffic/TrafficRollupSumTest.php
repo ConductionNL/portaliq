@@ -215,7 +215,7 @@ class TrafficRollupSumTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
 	 */
 	public function testARollupPortalSumsItsMembers(): void {
 		$summed = (new TrafficRollupSum())->sum(

@@ -1298,7 +1298,7 @@ function list(value) {
  * @param {(path: string) => string} generateUrlFn Nextcloud's URL generator.
  * @return {string} The URL, or '' when there is no portal or term.
  *
- * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-traffic-page-shows-what-the-public-did-not-find-req-pzr-002
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-traffic-page-shows-what-the-public-did-not-find-req-pzr-002
  */
 export function searchLinkOf(portal, term, generateUrlFn) {
 	const slug = String((portal && portal.slug) || '')

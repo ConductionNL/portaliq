@@ -14234,7 +14234,7 @@
 			"built": {
 				"state": "built",
 				"evidence": "lib/Service/Traffic/TrafficRollup.php; lib/Service/Traffic/TrafficRollupSum.php; lib/Service/Traffic/TrafficExport.php; src/widgets/TrafficSources.vue; src/lib/trafficSummary.js",
-				"requirement": "openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md :: The Traffic page shows what the public did not find (REQ-PZR-002)",
+				"requirement": "openspec/specs/portal-traffic-reporting/spec.md :: The Traffic page shows what the public did not find (REQ-PZR-002)",
 				"plan": "portal-traffic-zero-result-searches",
 				"note": "Row added 2026-11-12 in the closing round: the open change portal-traffic-zero-result-searches had no capability row (decision 395)."
 			},
