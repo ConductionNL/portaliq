@@ -559,6 +559,7 @@ import { asksInput } from '../../../shared/actionInput.js'
 import {
 	anyGrouped,
 	groupFieldOf,
+	groupOrderOf,
 	groupLabelCollection,
 	groupRows,
 } from '../../../shared/collectionGroups.js'
@@ -1496,6 +1497,7 @@ export default {
 		 * @return {Array<{value: string, label: string, rows: Array<object>}>}
 		 *
 		 * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T3
+		 * @spec openspec/changes/collection-group-order/tasks.md#T1
 		 */
 		groupsOf(item) {
 			if (this.activeRecord && item.block?.recordField) {
@@ -1510,6 +1512,7 @@ export default {
 				),
 				groupFieldOf(item.collection),
 				source ? this.store[source.id]?.objects || [] : [],
+				groupOrderOf(item.collection),
 			)
 		},
 

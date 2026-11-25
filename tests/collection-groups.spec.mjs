@@ -6,7 +6,9 @@
 // `groupByField` (collection-group-by-field T1, T3). A guardian with two
 // children sees one table per child, headed by the child's name from the
 // contribution's `guardianAudience.children` collection; one child, or no
-// group field, renders as before. The wiring test reads the site's page.
+// group field, renders as before. A collection that declares
+// `groupOrder: 'rows'` keeps its groups where their first rows stand
+// (collection-group-order T1). The wiring test reads the site's page.
 //
 // Usage:
 //   node --test tests/collection-groups.spec.mjs
@@ -20,6 +22,7 @@ import {
 	anyGrouped,
 	groupFieldOf,
 	groupLabelCollection,
+	groupOrderOf,
 	groupRows,
 	nameOf,
 } from '../src/shared/collectionGroups.js'
@@ -116,4 +119,62 @@ test('the site page groups a collection that declares groupByField', () => {
 	)
 	assert.match(page, /from '\.\.\/\.\.\/\.\.\/shared\/collectionGroups\.js'/)
 	assert.match(page, /groupRows\(/)
+})
+
+const courses = [
+	{ id: 'c1', courseName: 'BRL 6000-21', expiresAt: '2028-03-01' },
+	{ id: 'c2', courseName: 'F-gassen', expiresAt: '2027-01-15' },
+	{ id: 'c3', courseName: 'BRL 6000-21', expiresAt: '2029-06-01' },
+	{ id: 'c4', courseName: 'Asbest', expiresAt: '2027-09-30' },
+]
+
+test("groupOrder 'rows': the group of the first row comes first", () => {
+	// The rows arrive sorted on expiresAt asc, as defaultSort asks.
+	const sorted = [...courses].sort((a, b) => a.expiresAt.localeCompare(b.expiresAt))
+	const groups = groupRows(sorted, 'courseName', [], 'rows')
+	assert.deepEqual(
+		groups.map((group) => [group.label, group.rows.map((row) => row.id)]),
+		[
+			['F-gassen', ['c2']],
+			['Asbest', ['c4']],
+			['BRL 6000-21', ['c1', 'c3']],
+		],
+	)
+})
+
+test('without groupOrder the groups read in the order of their headings', () => {
+	const sorted = [...courses].sort((a, b) => a.expiresAt.localeCompare(b.expiresAt))
+	assert.deepEqual(
+		groupRows(sorted, 'courseName', []).map((group) => group.label),
+		['Asbest', 'BRL 6000-21', 'F-gassen'],
+	)
+})
+
+test("groupOrder 'rows' still puts rows without a value last", () => {
+	const groups = groupRows(
+		[{ courseName: '' }, { courseName: 'F-gassen' }, { courseName: 'Asbest' }],
+		'courseName',
+		[],
+		'rows',
+	)
+	assert.deepEqual(
+		groups.map((group) => group.value),
+		['F-gassen', 'Asbest', ''],
+	)
+})
+
+test("groupOrderOf reads 'rows' only, everything else is 'heading'", () => {
+	assert.equal(groupOrderOf({ groupOrder: 'rows' }), 'rows')
+	assert.equal(groupOrderOf({ groupOrder: 'heading' }), 'heading')
+	assert.equal(groupOrderOf({ groupOrder: 'ROWS' }), 'heading')
+	assert.equal(groupOrderOf({}), 'heading')
+	assert.equal(groupOrderOf(null), 'heading')
+})
+
+test('the site page passes the collection group order to groupRows', () => {
+	const page = readFileSync(
+		join(ROOT, 'src/site/pages/collections/ContributionPage.vue'),
+		'utf8',
+	)
+	assert.match(page, /groupOrderOf\(item\.collection\)/)
 })

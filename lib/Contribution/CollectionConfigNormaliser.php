@@ -343,8 +343,39 @@ class CollectionConfigNormaliser {
 			unset($collection['groupByField']);
 		}
 
-		return $collection;
+		return $this->normaliseGroupOrder(collection: $collection);
 	}//end normaliseGroupByField()
+
+	/**
+	 * Keep `groupOrder` only as 'rows' or 'heading', and only beside a kept
+	 * `groupByField`.
+	 *
+	 * 'rows' puts each group where its first row stands in the sorted rows
+	 * (learniq's employer certificates: sorted on expiry, grouped per
+	 * course, the course that expires first on top); 'heading', the default,
+	 * orders the groups by their heading. Any other value, or a group order
+	 * without a group field, is dropped.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/collection-group-order/tasks.md#T2
+	 */
+	private function normaliseGroupOrder(array $collection): array {
+		if (array_key_exists('groupOrder', $collection) === false) {
+			return $collection;
+		}
+
+		$order = $collection['groupOrder'];
+		if (array_key_exists('groupByField', $collection) === false
+			|| in_array($order, ['rows', 'heading'], true) === false
+		) {
+			unset($collection['groupOrder']);
+		}
+
+		return $collection;
+	}//end normaliseGroupOrder()
 
 	/**
 	 * Coerce the opt-in file flags to strict booleans.
