@@ -452,7 +452,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 	 * The proof log names the action by the title the resident read; the
 	 * receipt message itself does not carry it.
 	 *
-	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 */
 	public function testTheProofLogNamesTheActionByItsTitle(): void {
 		$writes = [];
@@ -470,7 +470,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 	 * A blank title, a title that is no string, and no title at all write no
 	 * `actionTitle` key, so the list falls back to the action id.
 	 *
-	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 */
 	public function testABlankTitleIsNotWritten(): void {
 		foreach (['   ', ['nl' => 'Melding'], null] as $title) {
@@ -490,7 +490,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 	/**
 	 * A title is trimmed and kept to 200 characters.
 	 *
-	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 */
 	public function testATitleIsTrimmedAndKeptShort(): void {
 		$writes = [];
@@ -504,7 +504,7 @@ class SubmissionReceiptServiceTest extends TestCase {
 	 * The minimal fallback record keeps the title, so the failed row is named
 	 * in the list too.
 	 *
-	 * @spec openspec/changes/submission-records-its-action-title/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 */
 	public function testTheFallbackRecordKeepsTheTitle(): void {
 		$writes = [];
