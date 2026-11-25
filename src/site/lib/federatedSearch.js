@@ -355,7 +355,7 @@ export function withKindField(fields, hideKind = false) {
  * @param {string} search `window.location.search`.
  * @return {Array<string>} The fields, the placement's first.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 export function withAddressFields(fields, search) {
 	const own = Array.isArray(fields) ? [...fields] : []
@@ -847,7 +847,7 @@ function copyOfFirst(list, alias) {
  * @param {object} state The search state.
  * @return {Record<string, Array<string>>} Field to values; empty without locks.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 export function lockedFiltersOf(state) {
 	const raw = state && state.lockedFilters
@@ -897,7 +897,7 @@ function addLock(locked, entry) {
  * @param {Record<string, Array<string>>} locked The locked filters.
  * @return {Array<string>} The fields the visitor may filter on.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 export function withoutLocked(fields, locked) {
 	return (fields || []).filter((field) => !Object.hasOwn(locked || {}, field))

@@ -13,7 +13,7 @@
  * signed-in officer sees what the public sees. Pure helpers first, so a node
  * test runs them; the fetches take the fetch to use.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 
 import { hasValueList, valueLabel } from './facetLabels.js'
@@ -54,7 +54,7 @@ function text(value) {
  * @param {string} title The subject's title, the alt text when none is given.
  * @return {{url: string, alt: string}|null} The image.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 export function imageOf(image, title = '') {
 	const url = imageUrl(image)
@@ -104,7 +104,7 @@ function imageAlt(image) {
  * @param {object} row One row of the answer.
  * @return {object|null} `{id, slug, title, summary, description, image, publicationCount, featuredOrder, featured}`.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 export function subjectFrom(row) {
 	if (!row || typeof row !== 'object') {
@@ -149,13 +149,13 @@ function shownSubject(row, title) {
  * @param {object} row One row of the answer.
  * @return {boolean}
  *
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 function isFeaturedRow(row) {
-	if (Object.prototype.hasOwnProperty.call(row, 'featured')) {
+	if (Object.hasOwn(row, 'featured')) {
 		return row.featured === true
 	}
-	return Object.prototype.hasOwnProperty.call(row, 'featuredOrder')
+	return Object.hasOwn(row, 'featuredOrder')
 }
 
 /**
@@ -191,7 +191,7 @@ function featuredOrderOf(row) {
  * @param {number} count The most to show.
  * @return {Array<object>} The subjects.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 export function featuredFrom(body, count = 6) {
 	const rows = Array.isArray(body?.results) ? body.results : []
@@ -243,7 +243,7 @@ function featuredLimit(count) {
  * @param {string} route The route the page lives under.
  * @return {string} The address.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 export function subjectHref(slug, route = '/onderwerp') {
 	return `${route.replace(/\/$/, '')}/${encodeURIComponent(slug)}`
@@ -317,7 +317,7 @@ async function readAnswer(read, request) {
  * @param {string} [options.endpoint] The subjects route.
  * @return {Promise<{state: string, subjects: Array<object>}>} `state` is `ok`, `absent` (opencatalogi is not there) or `failed`.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 export async function fetchFeatured({
 	count = 6,
@@ -343,7 +343,7 @@ export async function fetchFeatured({
  * @param {string} [options.endpoint] The subjects route.
  * @return {Promise<{state: string, subject: object|null}>} `state` is `ok`, `notFound` (unknown, not public, or opencatalogi absent) or `failed`.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 export async function fetchSubject(
 	slug,
@@ -391,7 +391,7 @@ function subjectAnswer(subject) {
  * @param {string} [origin] The origin to resolve a relative endpoint against.
  * @return {string} The request address.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 export function countsUrl(
 	by,
@@ -422,7 +422,7 @@ export function countsUrl(
  * @param {string} [locale] The language category names are given in.
  * @return {Array<{value: string, label: string, count: number, href: string}>} The counts, most first.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 export function countsFrom(body, by, searchRoute = '/zoeken', locale = 'nl') {
 	const field = COUNT_FIELDS[by] || COUNT_FIELDS.category
@@ -477,7 +477,7 @@ function labelOf(field, bucket, value, locale) {
  * @param {string} [options.locale] The language category names are given in.
  * @return {Promise<{state: string, counts: Array<object>}>} `state` is `ok`, `absent` or `failed`.
  *
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 export async function fetchCounts(
 	by,

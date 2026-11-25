@@ -9,7 +9,7 @@
 // Usage:
 //   node --test tests/subject-landing.spec.mjs
 //
-// @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+// @spec openspec/specs/portal-federated-search/spec.md
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
@@ -135,7 +135,7 @@ test('the featured widget asks for featured rows anonymously and tells when the 
 	assert.match(html, /Uitgelichte onderwerpen/)
 })
 
-// @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+// @spec openspec/specs/portal-federated-search/spec.md
 test('the grid hands the subject page its slug from the route, and a placement cannot pin one', async () => {
 	const grid = await loadSfc('src/site/components/WidgetGrid.vue', {
 		'@conduction/nextcloud-vue/public': [
@@ -158,7 +158,7 @@ test('the grid hands the subject page its slug from the route, and a placement c
 	assert.equal(bare.routeParam, '', 'no route segment hands over no slug')
 })
 
-// @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+// @spec openspec/specs/portal-federated-search/spec.md
 test('a result link on the subject page is handed on to the grid', async () => {
 	const component = await loadSfc(LANDING)
 	assert.deepEqual(component.emits, ['navigate'])

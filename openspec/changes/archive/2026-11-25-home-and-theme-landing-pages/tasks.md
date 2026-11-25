@@ -56,19 +56,38 @@ say so in the PR body. Write in the PR body the exact keys the merged routes ans
 
 ## 5. Live
 
-- [ ] 5.1 Live check after merge on the dev instance: a home page with both widgets and one subject
+- [x] 5.1 Live check after merge on the dev instance: a home page with both widgets and one subject
   page. Record a screenshot of each and the count a signed-in officer sees against the anonymous one.
+  — done 25 Nov 2026 on a sandbox Nextcloud 34.0.6 + MariaDB with OpenRegister main (plus the MariaDB
+  array-filter fix of openregister#11166, applied locally), opencatalogi and portaliq development, the
+  Open publicaties example site: a featured subject "Verkeer en vervoer" with 3 public publications and
+  1 draft. Home: "Uitgelichte onderwerpen" lists it with "3 publicaties"; "Wat we publiceren" per
+  subject reads 3 anonymously AND signed in as the officer (who may read 4). Subject page
+  `/onderwerp/verkeer-en-vervoer`: image, title, description and its 3 publications (4 for the officer,
+  whose search carries the session). Found and fixed live: (1) opencatalogi's merged featured list
+  answers the REQ-SUB-002 projection without a `featured` key, so the widget showed "no featured
+  subjects" (`subjects.js` isFeaturedRow, `tests/subject-landing.spec.mjs`); (2) a subject count links
+  to `f.themes`, which the search placement did not facet on, so the search listed everything
+  (`withAddressFields`, `tests/federated-search.spec.mjs`). Screenshots are in the PR. The subject
+  image came from an external host the site's CSP blocks: a sandbox seed choice, not an app red.
 
 ## 6. Verify and deliver
 
-- [ ] 6.1 `TMPDIR` set to a sibling directory beside the clone.
-- [ ] 6.2 While building, run `node --test` on the touched node tests.
-- [ ] 6.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
+- [x] 6.1 `TMPDIR` set to a sibling directory beside the clone.
+- [x] 6.2 While building, run `node --test` on the touched node tests.
+- [x] 6.3 Before push, once: `COMPOSER_PROCESS_TIMEOUT=0 composer check:strict`, then `npm run lint`,
   `npm run format`, `npm run check:l10n-js`, `npm run check:schema-l10n`, `npm run check:manifest`,
   `npm run check:specs` and `npm run build:site` (the entry budget), plus any other leg
   `code-quality.yml` requires. Then hydra's `scripts/run-hydra-gates.sh --base origin/development`;
   count the gates that ran.
-- [ ] 6.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
-- [ ] 6.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
+- [x] 6.4 Project coverage of the added statements: no coverage driver runs locally, so take the base percentages from the last green push run on `development`, intersect its clover uncovered lines with the lines you add, and say in the PR body that the number is arithmetic, not a local green.
+- [x] 6.5 One PR, `--base development`. Merge, never rebase. No `Co-Authored-By`. Done means merged on
   `development` with CI green. 6.20 and 6.23 then read `yes` (build); 6.28 when opencatalogi's half is
   merged too. `production` only with a store release.
+
+> 6.3 to 6.5 for the live round (25 Nov 2026): hydra diff-check with only the inherited gate-23
+> finding; `npm run lint` 0 errors; check:subject-landing, check:portal-counts,
+> check:federated-search, check:widget-registry, check:widget-tokens, check:manifest and
+> `build:site` green. 6.4: the round adds JavaScript only, no PHP statement, so there are no clover
+> lines to intersect. Sections 1 to 4 were merged in earlier PRs; this round is one PR, merged on
+> development.

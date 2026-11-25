@@ -67,7 +67,7 @@ import '@utrecht/link-css/dist/index.css'
 import '@utrecht/paragraph-css/dist/index.css'
 
 /**
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 export default {
 	name: 'NlFeaturedSubjects',
@@ -88,7 +88,7 @@ export default {
 	/**
 	 * Read the featured subjects once the widget is on the page.
 	 *
-	 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+	 * @spec openspec/specs/portal-federated-search/spec.md
 	 */
 	async mounted() {
 		const answer = await fetchFeatured({
@@ -102,7 +102,7 @@ export default {
 		/**
 		 * @param {string} key A string key.
 		 * @return {string} The words in the page language.
-		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+		 * @spec openspec/specs/portal-federated-search/spec.md
 		 */
 		say(key) {
 			return (strings[pageLocale()] || strings.nl)[key]
@@ -111,7 +111,7 @@ export default {
 		/**
 		 * @param {{slug: string}} subject The subject.
 		 * @return {string} Its page, in the site's own addressing.
-		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+		 * @spec openspec/specs/portal-federated-search/spec.md
 		 * @spec openspec/changes/hero-links-follow-the-site-address/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
 		 */
 		hrefOf(subject) {
@@ -125,7 +125,7 @@ export default {
 		/**
 		 * @param {{publicationCount: number}} subject The subject.
 		 * @return {string} How many publications it holds.
-		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+		 * @spec openspec/specs/portal-federated-search/spec.md
 		 */
 		countText(subject) {
 			return subject.publicationCount === 1
