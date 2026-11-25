@@ -482,9 +482,28 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 			'minTrust' => ($form['minTrust'] ?? null),
 			// Whether the maker opened the form to visitors without a session
 			// (buildiq-registration-form `isPublic`); null when the form does not say.
-			'isPublic' => (is_bool($form['isPublic'] ?? null) === true ? $form['isPublic'] : null),
+			'isPublic' => $this->publicFlag(form: $form),
 		];
 	}//end hostedPayload()
+
+	/**
+	 * Whether the form says it opens for visitors without a session: its
+	 * `isPublic` when that is a boolean, else null (the form does not say).
+	 *
+	 * @param array<string, mixed> $form The published form.
+	 *
+	 * @return bool|null
+	 *
+	 * @spec openspec/changes/competitor-parity-2026-09/tasks.md#17
+	 */
+	private function publicFlag(array $form): ?bool {
+		$flag = ($form['isPublic'] ?? null);
+		if (is_bool($flag) === false) {
+			return null;
+		}
+
+		return $flag;
+	}//end publicFlag()
 
 	/**
 	 * The settings with the form's own confirmation text, when it has one.
