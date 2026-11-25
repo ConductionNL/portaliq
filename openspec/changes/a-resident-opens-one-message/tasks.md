@@ -15,6 +15,7 @@
   - node test: an unread message calls mark-read once; a read one never does
 - [x] **T08**: Reply form and action button on the page when declared, reusing `InboxReply` and `actionOf()` (REQ-ROM-006)
 - [x] **T09**: Strings in `src/site/pages/inbox/strings.js` and `l10n/` (en, nl): "Terug naar berichten", "Ontvangen op {date} om {time}", "Over dit bericht", "Bijlagen", "Naar uw zaak", "Gelezen", "Dit bericht bestaat niet of is niet voor u."
-- [ ] **T10**: Playwright on the example resident: Sanne opens the Woo decision from Berichten, sees "Gelezen" and both attachments, follows "Naar uw zaak"; a foreign id shows the not-found text (REQ-ROM-001 to REQ-ROM-005)
+- [x] **T10**: Playwright on the example resident: Sanne opens the Woo decision from Berichten, sees "Gelezen" and both attachments, follows "Naar uw zaak"; a foreign id shows the not-found text (REQ-ROM-001 to REQ-ROM-005)
   - Spec written: `tests/e2e/site-message-page.spec.ts` (seeds its own contribution, case, message with two files and a foreign message). Not ticked: not yet run against a live instance with dev-login.
+  - Run live 25 Nov 2026 (sandbox Nextcloud 35.0.3 on MariaDB, OpenRegister main, portaliq development, `tests/e2e/ci-seed.sh`): 2 passed, after two fixes. The seed now makes `dev-org` the admin's active OpenRegister organisation, because rows the spec creates as admin were stamped with the default organisation and a `dev-org` resident's inbox listed none of them. The spec held its whole-text `oneOf('Bijlagen', ...)` against the section and now checks the section's heading.
 - [ ] **T11**: Add the BerichtDetail row to the PT measurement set once the page is live, and pixel-compare it with the board
