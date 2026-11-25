@@ -17,8 +17,8 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
  */
 
 declare(strict_types=1);
@@ -36,7 +36,7 @@ use stdClass;
  * Reads and writes through portaliq's OpenRegister reader and writer, scoped
  * by the portal's slug.
  *
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
 class AccessibilityMeasurements implements AccessibilityMeasurementsInterface {
 
@@ -73,7 +73,7 @@ class AccessibilityMeasurements implements AccessibilityMeasurementsInterface {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	public function portalBySlug(string $slug): ?array {
 		return (new PortalSlugLookup(reader: $this->reader))->find(slug: $slug);
@@ -87,7 +87,7 @@ class AccessibilityMeasurements implements AccessibilityMeasurementsInterface {
 	 *
 	 * @return list<string> Site routes, each once.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	public function pagesFor(array $portal): array {
 		$search = trim((string)(((array)($portal['headerSearch'] ?? []))['route'] ?? ''));
@@ -110,7 +110,7 @@ class AccessibilityMeasurements implements AccessibilityMeasurementsInterface {
 	 *
 	 * @return array<string, mixed>|null The stored measurement, or null when the write failed.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	public function store(array $portal, array $run, string $userId, DateTimeImmutable $now): ?array {
 		// The writer stamps `portal` too; naming it here keeps the record
@@ -138,7 +138,7 @@ class AccessibilityMeasurements implements AccessibilityMeasurementsInterface {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 	 */
 	public function latest(string $slug): ?array {
 		if ($slug === '') {
@@ -165,7 +165,7 @@ class AccessibilityMeasurements implements AccessibilityMeasurementsInterface {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 	 */
 	private function newestOf(array $rows, string $slug): array|null {
 		$latest = null;
@@ -190,7 +190,7 @@ class AccessibilityMeasurements implements AccessibilityMeasurementsInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 	 */
 	private function isNewer(array $row, array|null $latest): bool {
 		return $latest === null || strcmp((string)($row['measuredAt'] ?? ''), (string)($latest['measuredAt'] ?? '')) > 0;
@@ -209,7 +209,7 @@ class AccessibilityMeasurements implements AccessibilityMeasurementsInterface {
 	 *
 	 * @return array<string, mixed> `['error' => reason]`, or the saved portal.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 	 */
 	public function saveSettings(array $portal, array $audit, string $registerUrl, array $pages, DateTimeImmutable $now): array {
 		$clean   = self::auditOf(audit: $audit);
@@ -239,7 +239,7 @@ class AccessibilityMeasurements implements AccessibilityMeasurementsInterface {
 	 *
 	 * @return array{error: string}|null
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 	 */
 	private function auditRefusal(array $clean, DateTimeImmutable $now): array|null {
 		if (in_array($clean['result'] ?? '', ['A', 'B'], true) === true) {
@@ -262,7 +262,7 @@ class AccessibilityMeasurements implements AccessibilityMeasurementsInterface {
 	 *
 	 * @return array<string, mixed>|null The saved portal, or null.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 	 */
 	private function writeSettings(array $portal, array $clean, string $registerUrl, array $pages): array|null {
 		return $this->writer->updateObject(

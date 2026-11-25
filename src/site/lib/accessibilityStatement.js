@@ -14,7 +14,7 @@
 // It is in the site entry, so it holds only the route and the footer link; the
 // lines of the page itself live in statementLines.js, loaded with the page.
 //
-// @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+// @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 
 /** The in-site route of the statement, the same on every portal. */
 export const STATEMENT_ROUTE = '/toegankelijkheid'
@@ -24,7 +24,7 @@ export const STATEMENT_ROUTE = '/toegankelijkheid'
  *
  * @param {string} route The in-site route.
  * @return {boolean}
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
  */
 export function isStatementRoute(route) {
 	return String(route || '').replace(/\/+$/, '') === STATEMENT_ROUTE
@@ -38,7 +38,7 @@ export function isStatementRoute(route) {
  * @param {string} label The link's text in the visitor's language.
  * @param {Array<{items?: Array<{link?: string}>}>} [columns] The footer's link columns.
  * @return {Array<{label: string, href: string}>}
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
  */
 export function withStatementLink(links, label, columns = []) {
 	const list = Array.isArray(links) ? links : []
@@ -63,7 +63,7 @@ export function withStatementLink(links, label, columns = []) {
  *
  * @param {() => Promise<object|null>} read Reads the CMS page at the route.
  * @return {Promise<object|null>}
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
  */
 export async function authoredStatement(read) {
 	try {
@@ -80,7 +80,7 @@ export async function authoredStatement(read) {
  * @param {string} route The in-site route.
  * @param {{loading: boolean, authored: boolean}} state The read's state.
  * @return {boolean}
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
  */
 export function showsGeneratedStatement(route, { loading, authored }) {
 	return isStatementRoute(route) && !loading && !authored

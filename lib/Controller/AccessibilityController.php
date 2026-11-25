@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
 
 declare(strict_types=1);
@@ -46,7 +46,7 @@ use OCA\Portaliq\Kernel\StaffAction;
 /**
  * Three guarded routes on a portal.
  *
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
 class AccessibilityController extends Controller {
 
@@ -83,7 +83,7 @@ class AccessibilityController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 	 */
 	#[NoAdminRequired]
 	public function index(string $slug): JSONResponse {
@@ -110,7 +110,7 @@ class AccessibilityController extends Controller {
 	 *
 	 * @return JSONResponse 422 with the reason when an A or B claim lacks its audit.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 	 */
 	#[NoAdminRequired]
 	public function update(string $slug, array $audit = [], string $registerUrl = '', array $pages = []): JSONResponse {
@@ -148,7 +148,7 @@ class AccessibilityController extends Controller {
 	 *
 	 * @return JSONResponse 201 with the measurement, or the refusal.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	#[NoAdminRequired]
 	public function store(string $slug, string $axeVersion = '', array $tags = [], string $theme = '', array $pages = []): JSONResponse {

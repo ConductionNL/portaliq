@@ -17,8 +17,8 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
  */
 
 declare(strict_types=1);
@@ -35,7 +35,7 @@ use Throwable;
  * younger than three years; without one the status is at most C and the
  * statement says the automated measurement does not establish compliance.
  *
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
  */
 class AccessibilityStatement implements AccessibilityStatementInterface {
 
@@ -85,7 +85,7 @@ class AccessibilityStatement implements AccessibilityStatementInterface {
 	 *
 	 * @return array<string, mixed> The statement model.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 	 */
 	public function build(array $portal, ?array $measurement, string $locale, DateTimeImmutable $now): array {
 		$audit   = (array)($portal['accessibilityAudit'] ?? []);
@@ -162,7 +162,7 @@ class AccessibilityStatement implements AccessibilityStatementInterface {
 	 *
 	 * @return string One of the AUDIT_* verdicts.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 	 */
 	public function verdict(array $audit, DateTimeImmutable $now): string {
 		return self::auditVerdict(audit: $audit, now: $now);
@@ -175,7 +175,7 @@ class AccessibilityStatement implements AccessibilityStatementInterface {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 	 */
 	public function https(string $url): string {
 		return self::httpsOrEmpty(url: $url);
@@ -190,7 +190,7 @@ class AccessibilityStatement implements AccessibilityStatementInterface {
 	 *
 	 * @return string One of the AUDIT_* verdicts.
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 	 */
 	public static function auditVerdict(array $audit, DateTimeImmutable $now): string {
 		$party  = trim((string)($audit['party'] ?? ''));
@@ -424,7 +424,7 @@ class AccessibilityStatement implements AccessibilityStatementInterface {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
 	 */
 	public static function httpsOrEmpty(string $url): string {
 		$url = trim($url);
