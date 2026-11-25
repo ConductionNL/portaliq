@@ -70,3 +70,10 @@ change is archived.
     `forms-fee-on-submit` T05) as `portalFee` when the case type declares
     none. Waits for a decision (money): the served fee has no `payAction`,
     and the pay route (D3 of `intake-pay-on-submit`) needs one.
+  - [x] 17.5 Count the use of hosted forms too: `IntakeFormBlock`'s form now
+    carries `data-portaliq-form` (the served form id, else the binding route),
+    so `portal-traffic-outcomes` counts starts, submits, abandons, the
+    completion rate and the field people leave on for buildiq's registration
+    forms (buildiq `capability-requirements-backfill` T20, REQ-BQCV-020).
+    Before, the form had no id, name or action and the traffic client skipped
+    it. Test: `tests/intake-form-traffic-id.spec.mjs`.
