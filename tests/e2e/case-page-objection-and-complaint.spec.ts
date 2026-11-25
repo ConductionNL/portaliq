@@ -219,7 +219,8 @@ test.describe('case-page-objection-and-complaint', () => {
 			.locator('textarea, input[type="text"]')
 			.first()
 			.fill('Het besluit is onjuist.')
-		await form.getByRole('button', { name: /verstuur|versturen|send/i }).click()
+		// The submit names its action, as the board draws it ("Bezwaar maken").
+		await form.getByRole('button', { name: /bezwaar maken|verstuur|versturen|send/i }).click()
 
 		await expect(page.getByTestId('case-action-receipt')).toContainText(
 			'Mijn zaken',
