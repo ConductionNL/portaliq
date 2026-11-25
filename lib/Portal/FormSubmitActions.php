@@ -155,25 +155,78 @@ final class FormSubmitActions {
 	}//end serverValues()
 
 	/**
-	 * A form's declared field ids, in order.
+	 * A form's declared field ids, in order. A `group` (fieldset) answers
+	 * nothing itself: its fields stand in its place, each under its own id,
+	 * one level deep.
 	 *
 	 * @param array<string, mixed> $row The `form` row.
 	 *
 	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
 	 */
 	private function fieldIdsOf(array $row): array {
 		$fieldIds = [];
 		foreach ((array)($row['fields'] ?? []) as $field) {
-			$fieldId = null;
-			if (is_array($field) === true) {
-				$fieldId = ($field['id'] ?? null);
+			if (is_array($field) === true && ($field['type'] ?? null) === 'group') {
+				$fieldIds = array_merge($fieldIds, $this->groupFieldIds(group: $field));
+				continue;
 			}
 
-			if (is_string($fieldId) === true && $fieldId !== '') {
+			$fieldId = $this->fieldIdOf(field: $field);
+			if ($fieldId !== null) {
 				$fieldIds[] = $fieldId;
 			}
 		}
 
 		return $fieldIds;
 	}//end fieldIdsOf()
+
+	/**
+	 * The ids of the fields inside a group; a group inside a group is not a
+	 * field and adds nothing.
+	 *
+	 * @param array<string, mixed> $group The `group` field.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+	 */
+	private function groupFieldIds(array $group): array {
+		$fieldIds = [];
+		foreach ((array)($group['fields'] ?? []) as $field) {
+			if (is_array($field) === true && ($field['type'] ?? null) === 'group') {
+				continue;
+			}
+
+			$fieldId = $this->fieldIdOf(field: $field);
+			if ($fieldId !== null) {
+				$fieldIds[] = $fieldId;
+			}
+		}
+
+		return $fieldIds;
+	}//end groupFieldIds()
+
+	/**
+	 * One field's id, or null when the entry is not a field with an id.
+	 *
+	 * @param mixed $field One entry of a field list.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+	 */
+	private function fieldIdOf(mixed $field): ?string {
+		if (is_array($field) === false) {
+			return null;
+		}
+
+		$fieldId = ($field['id'] ?? null);
+		if (is_string($fieldId) === true && $fieldId !== '') {
+			return $fieldId;
+		}
+
+		return null;
+	}//end fieldIdOf()
 }//end class

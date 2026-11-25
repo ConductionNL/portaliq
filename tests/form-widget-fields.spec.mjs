@@ -24,7 +24,11 @@ import { readFileSync } from 'node:fs'
 import { test } from 'node:test'
 import {
 	addField,
+	answerFields,
 	fieldList,
+	fieldSections,
+	groupFields,
+	isFieldGroup,
 	fieldSettings,
 	FORM_FIELD_TYPES,
 	formFieldGroup,
@@ -260,7 +264,7 @@ test("the inspector edits a form's fields as a list and the palette adds to it",
 	// A field from the palette goes through the same write as an inspector
 	// edit: onto the bound form row when there is one, else onto the widget
 	// (T11b, tests/form-row-fields.spec.mjs).
-	assert.match(editor, /this\.writeFormFields\(addField\(this\.formFieldsShown, type\)\)/)
+	assert.match(editor, /this\.writeFormFields\(addField\(this\.formFieldsShown, type, this\.formFieldInto\)\)/)
 	assert.match(editor, /if \(!this\.formRow\) \{\s*this\.editor\.setProp\('fields', list\)/)
 	const catalogue = source('src/lib/pageWidgetCatalogue.js')
 	assert.match(
@@ -299,7 +303,7 @@ test('FormBlock draws every declared type, choice groups under one legend', () =
 		/return \['date', 'radio', 'checkboxes'\]\.includes\(field\.type\)/,
 	)
 	assert.match(block, /:role="field\.type === 'switch' \? 'switch' : undefined"/)
-	assert.match(block, /formErrors\(this\.fields, this\.values\)/)
+	assert.match(block, /formErrors\(this\.answering, this\.values\)/)
 })
 
 test('a date field offers the picker and its earliest and latest date (D1 rows 22, 23)', () => {
@@ -430,4 +434,106 @@ test('FormBlock draws a searchable select as the combobox, on Utrecht CSS', () =
 	assert.match(combobox, /import '@utrecht\/combobox-css\/dist\/index\.css'/)
 	assert.match(combobox, /import '@utrecht\/listbox-css\/dist\/index\.css'/)
 	assert.match(combobox, /event\.key === 'Escape'/)
+})
+
+// --- group (fieldset), D1 row 28 -------------------------------------------
+
+const addressForm = () => {
+	let list = addField([], 'email')
+	list = addField(list, 'group')
+	list = updateField(list, 'group', 'label', 'Uw adres')
+	list = addField(list, 'text', 'group')
+	list = addField(list, 'text', 'group')
+	list = addField(list, 'checkbox')
+	return list
+}
+
+test('a group is a declared type with a legend and a description, never required', () => {
+	const group = FORM_FIELD_TYPES.find((entry) => entry.type === 'group')
+	assert.equal(group.nlds, 'Fieldset')
+	assert.deepEqual(
+		fieldSettings('group').map((setting) => setting.name),
+		['label', 'id', 'description'],
+	)
+	const [added] = addField([], 'group')
+	assert.deepEqual(added, { id: 'group', type: 'group', label: 'Groep van velden', fields: [] })
+	assert.ok(isFieldGroup(added))
+	assert.equal(updateField([added], 'group', 'required', true)[0].required, undefined)
+})
+
+test('a field added into a group goes at the end of that group, named over the whole form', () => {
+	const list = addressForm()
+	assert.deepEqual(list.map((field) => field.id), ['email', 'group', 'checkbox'])
+	assert.deepEqual(groupFields(list[1]).map((field) => field.id), ['text', 'text2'])
+	// The next text field outside the group still gets a name nobody carries.
+	const more = addField(list, 'text')
+	assert.equal(more[more.length - 1].id, 'text3')
+})
+
+test('a group never goes inside a group, and an unknown target adds to the form', () => {
+	const list = addressForm()
+	const nested = addField(list, 'group', 'group')
+	assert.equal(groupFields(nested[1]).length, 2)
+	assert.equal(nested[nested.length - 1].type, 'group')
+	assert.equal(nested[nested.length - 1].id, 'group2')
+	const lost = addField(list, 'email', 'gone')
+	assert.equal(lost[lost.length - 1].id, 'email2')
+	// A group smuggled inside a group is not one of its fields.
+	assert.deepEqual(groupFields({ type: 'group', fields: [{ id: 'x', type: 'group' }, { id: 'y' }] }).map((f) => f.id), ['y'])
+})
+
+test('a field in a group is edited, renamed, moved and removed in its place', () => {
+	let list = addressForm()
+	list = updateField(list, 'text', 'label', 'Straat')
+	assert.equal(groupFields(list[1])[0].label, 'Straat')
+	// A rename to a name used outside the group is refused.
+	assert.deepEqual(updateField(list, 'text', 'id', 'email'), list)
+	list = updateField(list, 'text', 'id', 'street')
+	assert.equal(groupFields(list[1])[0].id, 'street')
+	// It moves among the group's fields only.
+	list = moveField(list, 'text2', -1)
+	assert.deepEqual(groupFields(list[1]).map((f) => f.id), ['text2', 'street'])
+	assert.deepEqual(moveField(list, 'text2', -1), list)
+	list = removeField(list, 'street')
+	assert.deepEqual(groupFields(list[1]).map((f) => f.id), ['text2'])
+	// Removing the group removes its fields with it.
+	assert.deepEqual(removeField(list, 'group').map((f) => f.id), ['email', 'checkbox'])
+	// The group itself moves among the form's own fields.
+	assert.deepEqual(moveField(list, 'group', 1).map((f) => f.id), ['email', 'checkbox', 'group'])
+})
+
+test('a form answers with its loose fields and the fields of its groups, in order', () => {
+	const list = addressForm()
+	assert.deepEqual(answerFields(list).map((field) => field.id), ['email', 'text', 'text2', 'checkbox'])
+	const sections = fieldSections(list)
+	assert.equal(sections.length, 3)
+	assert.equal(sections[0].group, null)
+	assert.equal(sections[1].group.label, 'Uw adres')
+	assert.deepEqual(sections[1].fields.map((f) => f.id), ['text', 'text2'])
+	assert.deepEqual(sections[2].fields.map((f) => f.id), ['checkbox'])
+	// A form without groups is one part, drawn as before.
+	assert.equal(fieldSections([{ id: 'a' }, { id: 'b' }]).length, 1)
+	// A field in a group is checked like any other.
+	const required = updateField(list, 'text', 'required', true)
+	assert.ok(answerFields(required).find((field) => field.id === 'text').required)
+})
+
+test('FormBlock draws a group as a fieldset with its legend and checks its fields', () => {
+	const block = source('src/site/components/FormBlock.vue')
+	assert.match(block, /:is="section\.group \? 'fieldset' : 'div'"/)
+	assert.match(block, /v-for="field in section\.fields"/)
+	assert.match(block, /utrecht-form-fieldset__legend/)
+	assert.match(block, /return answerFields\(this\.fields\)/)
+	assert.match(block, /explainsOptional\(this\.answering\.map/)
+	assert.match(block, /v-if="!answering\.length"/)
+})
+
+test('the inspector lists a group\'s fields under it and adds into the group', () => {
+	const list = source('src/editor/FormFieldList.vue')
+	assert.match(list, /v-for="\(field, index\) in rows"/)
+	assert.match(list, /@click="\$emit\('add', field\.id\)"/)
+	assert.match(list, /:disabled="readonly \|\| field\.\$first"/)
+	const editor = source('src/editor/PageGridEditor.vue')
+	assert.match(editor, /@add="openFieldPalette"/)
+	assert.match(editor, /this\.formFieldInto = ''/)
 })

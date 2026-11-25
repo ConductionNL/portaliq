@@ -154,6 +154,54 @@ class FormSubmitActionsTest extends TestCase {
 	}//end testAMinimalFormGetsTheDefaults()
 
 	/**
+	 * A group's fields are accepted under their own ids, in the group's place;
+	 * the group's own id, a group inside a group and a non-field are not.
+	 *
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+	 *
+	 * @return void
+	 */
+	public function testAGroupsFieldsAreAcceptedInItsPlace(): void {
+		$random = $this->createMock(ISecureRandom::class);
+		$random->method('generate')->willReturn('n');
+
+		$fields = [
+			['id' => 'email'],
+			[
+				'id' => 'address',
+				'type' => 'group',
+				'fields' => [
+					['id' => 'street'],
+					'not-a-field',
+					['id' => 'inner', 'type' => 'group', 'fields' => [['id' => 'deep']]],
+					['id' => 'city'],
+				],
+			],
+			['id' => 'note'],
+		];
+
+		$action = (new FormSubmitActions($random, $this->createMock(LoggerInterface::class)))->action(row: $this->row(fields: $fields), formId: 'f-3');
+		$this->assertIsArray($action);
+		$this->assertSame(['email', 'street', 'city', 'note', 'utmFirstTouch', 'utmLastTouch', 'referrer'], $action['fields']);
+	}//end testAGroupsFieldsAreAcceptedInItsPlace()
+
+	/**
+	 * A form whose only field is an empty group has nothing to submit.
+	 *
+	 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+	 *
+	 * @return void
+	 */
+	public function testAFormWithOnlyAnEmptyGroupGetsNoAction(): void {
+		$random = $this->createMock(ISecureRandom::class);
+		$random->expects($this->never())->method('generate');
+
+		$fields = [['id' => 'address', 'type' => 'group', 'fields' => []]];
+		$action = (new FormSubmitActions($random, $this->createMock(LoggerInterface::class)))->action(row: $this->row(fields: $fields), formId: 'f-4');
+		$this->assertNull($action);
+	}//end testAFormWithOnlyAnEmptyGroupGetsNoAction()
+
+	/**
 	 * A `form` row.
 	 *
 	 * @param array<int, mixed>|null    $fields      The fields, or null for two usable ones.

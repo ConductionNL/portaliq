@@ -3782,6 +3782,7 @@ OC.L10N.register(
         "Move up": "Omhoog",
         "Move down": "Omlaag",
         "Remove field": "Veld verwijderen",
+        "Add field to this group": "Veld aan deze groep toevoegen",
         "Add field": "Veld toevoegen",
         "Reading the fields of this form…": "De velden van dit formulier worden gelezen…",
         "Only someone who may change this form can change its fields. What an anonymous visitor may send is set on the form, not on the page.": "Alleen wie dit formulier mag wijzigen, kan de velden ervan wijzigen. Wat een anonieme bezoeker mag versturen, staat op het formulier, niet op de pagina.",
