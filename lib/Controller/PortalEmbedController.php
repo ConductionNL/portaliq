@@ -150,7 +150,7 @@ class PortalEmbedController extends Controller {
 		// The origin list is checked BEFORE the form is resolved. A disallowed
 		// origin therefore causes no schema read and consults no contribution
 		// provider: it gets a message and nothing else.
-		if ($this->guard->allows(binding: $binding, origin: (string)$this->request->getHeader('Origin')) === false) {
+		if ($this->guard->allows(binding: $binding, origin: $this->framingOrigin()) === false) {
 			return $this->refusal(binding: $binding, reason: 'origin_not_allowed');
 		}
 
@@ -235,7 +235,7 @@ class PortalEmbedController extends Controller {
 			return $found;
 		}
 
-		$origin = (string)$this->request->getHeader('Origin');
+		$origin = $this->framingOrigin();
 		$refusal = $this->gateRefusal(binding: $found['binding'], origin: $origin, honeypot: $_hp);
 		if ($refusal !== null) {
 			return $refusal;
@@ -243,6 +243,38 @@ class PortalEmbedController extends Controller {
 
 		return $this->validatedSend(site: $found['site'], binding: $found['binding'], answers: $answers, origin: $origin);
 	}//end submit()
+
+	/**
+	 * The origin of the page that frames or submits the form.
+	 *
+	 * The `Origin` header when the request carries one. A browser sends no
+	 * `Origin` on an iframe's document GET, only a `Referer`, so without one
+	 * the origin of the `Referer` stands in for it (decision 25 Nov 2026
+	 * 15:15 CET). The same allow-list judges either, and a request with
+	 * neither header has no origin, which no list allows.
+	 *
+	 * @return string `scheme://host[:port]`, or '' when the request names no origin.
+	 *
+	 * @spec openspec/changes/embed-frame-reads-the-referer-origin/specs/embedded-intake-form/spec.md
+	 */
+	private function framingOrigin(): string {
+		$origin = trim((string)$this->request->getHeader('Origin'));
+		if ($origin !== '') {
+			return $origin;
+		}
+
+		$referer = parse_url(trim((string)$this->request->getHeader('Referer')));
+		if (is_array($referer) === false || isset($referer['scheme'], $referer['host']) === false) {
+			return '';
+		}
+
+		$port = '';
+		if (isset($referer['port']) === true) {
+			$port = ':' . (int)$referer['port'];
+		}
+
+		return strtolower((string)$referer['scheme']) . '://' . strtolower((string)$referer['host']) . $port;
+	}//end framingOrigin()
 
 	/**
 	 * The portal and the binding of its form page, or the 404.

@@ -222,7 +222,7 @@ test.describe('site renderer — accessibility', () => {
  * Two rows from two catalogues and two facet groups, because a facet column
  * with one bare checkbox is not the page a visitor gets.
  *
- * @spec openspec/changes/public-site-meets-wcag-aa/specs/portaliq-cms/spec.md#requirement-the-public-site-meets-wcag-21-aa-on-every-page-state-it-serves-req-pwa-001
+ * @spec openspec/changes/archive/2026-11-25-public-site-meets-wcag-aa/specs/portaliq-cms/spec.md#requirement-the-public-site-meets-wcag-21-aa-on-every-page-state-it-serves-req-pwa-001
  */
 const FEDERATION = '**/apps/opencatalogi/api/federation/publications**'
 const PUBLICATION_ID = '7a1b2c3d-0000-4000-a000-00000000a11y'
