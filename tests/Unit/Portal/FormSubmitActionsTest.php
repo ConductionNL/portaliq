@@ -207,6 +207,39 @@ class FormSubmitActionsTest extends TestCase {
 	}//end testAFormWithOnlyAnEmptyGroupGetsNoAction()
 
 	/**
+	 * A file field is whitelisted, and declares its normalised file config,
+	 * also inside a group; a form without one declares none.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/anonymous-form-file-upload/specs/landing-page-provisioning/spec.md
+	 */
+	public function testAFileFieldDeclaresItsFileConfig(): void {
+		$random = $this->createMock(originalClassName: ISecureRandom::class);
+		$random->method('generate')->willReturn('nonce');
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+
+		$fields = [
+			['id' => 'name'],
+			['id' => 'photo', 'type' => 'file', 'accept' => ['.JPG', 'image/png', 'not an accept'], 'maxSizeMb' => 80],
+			['id' => 'papers', 'type' => 'group', 'fields' => [['id' => 'permit', 'type' => 'file', 'multiple' => true]]],
+		];
+		$action = (new FormSubmitActions(random: $random, logger: $logger))->action(row: $this->row(fields: $fields), formId: 'f-5');
+
+		$this->assertSame(expected: ['name', 'photo', 'permit', 'utmFirstTouch', 'utmLastTouch', 'referrer'], actual: $action['fields']);
+		$this->assertSame(
+			expected: [
+				'photo' => ['type' => 'file', 'multiple' => false, 'accept' => ['.jpg', 'image/png'], 'maxSizeMb' => 50],
+				'permit' => ['type' => 'file', 'multiple' => true],
+			],
+			actual: $action['fieldConfigs']
+		);
+
+		$plain = (new FormSubmitActions(random: $random, logger: $logger))->action(row: $this->row(), formId: 'f-6');
+		$this->assertArrayNotHasKey(key: 'fieldConfigs', array: $plain);
+	}//end testAFileFieldDeclaresItsFileConfig()
+
+	/**
 	 * A `form` row.
 	 *
 	 * @param array<int, mixed>|null    $fields      The fields, or null for two usable ones.

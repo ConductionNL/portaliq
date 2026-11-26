@@ -117,7 +117,7 @@ final class FormSubmitActions {
 	 * @return array<string, mixed> The action.
 	 */
 	private function submitAction(array $row, array $target): array {
-		return [
+		$action = [
 			'id' => ('submit-' . $target['formId']),
 			'type' => 'create',
 			'anonymous' => true,
@@ -130,8 +130,17 @@ final class FormSubmitActions {
 			'destination' => $target['destination'],
 			'intakeScope' => (string)($row['portal'] ?? '') . '/' . (string)($row['pageRoute'] ?? ''),
 			'server' => $this->serverValues(row: $row, formId: $target['formId']),
-			'fieldConfigs' => $this->fileFieldConfigs(fields: (array)($row['fields'] ?? []), inGroup: false),
 		];
+
+		// A file field's answer is a file, sent after the submit with the
+		// create answer's one-time token; its config is what that upload is
+		// checked against, and it keeps its value out of the body.
+		$files = $this->fileFieldConfigs(fields: (array)($row['fields'] ?? []), inGroup: false);
+		if ($files !== []) {
+			$action['fieldConfigs'] = $files;
+		}
+
+		return $action;
 	}//end submitAction()
 
 	/**
