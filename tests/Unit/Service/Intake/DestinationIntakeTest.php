@@ -7,8 +7,11 @@ namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\Intake\DestinationMapping;
 use OCA\Portaliq\Service\Intake\DestinationSubmit;
+use OCA\Portaliq\Service\Intake\SubmitFailureLog;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\FormSubmitFake;
+use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IAppConfig;
 use OCP\IL10N;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
@@ -117,9 +120,94 @@ class DestinationIntakeTest extends TestCase {
 	 *
 	 * @return DestinationIntake
 	 */
-	private function intake(FormSubmitFake $fake, bool $realValidator = false): DestinationIntake {
+	/**
+	 * A destination that does not answer gives the submit an error code and
+	 * one evidence line; a refused field and an accepted submit do not.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
+	 */
+	public function testAnUnansweredSubmitGetsAnErrorCodeAndALogLine(): void {
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with($this->stringContains(string: 'gemeente-x/bezwaar answered 503'));
+		$failures = new SubmitFailureLog(
+			appConfig: $this->createMock(originalClassName: IAppConfig::class),
+			logger: $logger,
+			time: $this->createMock(originalClassName: ITimeFactory::class)
+		);
+
+		$result = $this->intake(fake: new FormSubmitFake(outcome: new \RuntimeException('down')), failures: $failures)
+			->submit(binding: $this->binding(), render: ['fields' => $this->fields()], answers: ['title' => 'x']);
+
+		$this->assertSame(expected: 503, actual: $result['status']);
+		$this->assertMatchesRegularExpression(pattern: '/^OF-[0-9A-F]{4}$/', string: $result['code']);
+	}//end testAnUnansweredSubmitGetsAnErrorCodeAndALogLine()
+
+	/**
+	 * A refused field, an accepted submit and a missing destination without a log are not logged failures.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
+	 */
+	public function testARefusalAndASuccessCarryNoErrorCode(): void {
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->never())->method('warning');
+		$failures = new SubmitFailureLog(
+			appConfig: $this->createMock(originalClassName: IAppConfig::class),
+			logger: $logger,
+			time: $this->createMock(originalClassName: ITimeFactory::class)
+		);
+
+		$refused = $this->intake(fake: new FormSubmitFake(outcome: FormSubmitFake::refusal(status: 422, findings: [])), failures: $failures)
+			->submit(binding: $this->binding(), render: ['fields' => $this->fields()], answers: ['title' => 'x']);
+		$accepted = $this->intake(fake: new FormSubmitFake(outcome: ['reference' => 'r', 'id' => 'u']), failures: $failures)
+			->submit(binding: $this->binding(), render: ['fields' => $this->fields()], answers: ['title' => 'x']);
+		$noLog = $this->intake(fake: new FormSubmitFake(outcome: new \RuntimeException('down')))
+			->submit(binding: $this->binding(), render: ['fields' => $this->fields()], answers: ['title' => 'x']);
+
+		$this->assertArrayNotHasKey(key: 'code', array: $refused);
+		$this->assertArrayNotHasKey(key: 'code', array: $accepted);
+		$this->assertSame(expected: 503, actual: $noLog['status']);
+		$this->assertArrayNotHasKey(key: 'code', array: $noLog);
+	}//end testARefusalAndASuccessCarryNoErrorCode()
+
+	/**
+	 * A binding without a destination is a failure too: it is logged with a code.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
+	 */
+	public function testABindingWithoutADestinationIsALoggedFailure(): void {
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
+		$logger->expects($this->once())->method('warning')->with($this->stringContains(string: 'The form names no destination.'));
+		$failures = new SubmitFailureLog(
+			appConfig: $this->createMock(originalClassName: IAppConfig::class),
+			logger: $logger,
+			time: $this->createMock(originalClassName: ITimeFactory::class)
+		);
+
+		$result = $this->intake(fake: new FormSubmitFake(outcome: ['reference' => 'r']), failures: $failures)
+			->submit(binding: ['portal' => 'gemeente-x'], render: ['fields' => []], answers: []);
+
+		$this->assertSame(expected: 503, actual: $result['status']);
+		$this->assertStringStartsWith(prefix: 'OF-', string: $result['code']);
+	}//end testABindingWithoutADestinationIsALoggedFailure()
+
+	/**
+	 * The intake over the fake submit service and the dossiq case schema.
+	 *
+	 * @param FormSubmitFake        $fake          The submit service.
+	 * @param bool                  $realValidator Whether OpenRegister's real validator checks the binding.
+	 * @param SubmitFailureLog|null $failures      The failure log, or none.
+	 *
+	 * @return DestinationIntake The intake.
+	 */
+	private function intake(FormSubmitFake $fake, bool $realValidator = false, ?SubmitFailureLog $failures = null): DestinationIntake {
 		$schema  = json_decode((string)file_get_contents(__DIR__ . '/../../../Fixtures/dossiq-case-schema-d179.json'), true)['schema'];
-		$schemas = $this->createMock(PortalSchemaReader::class);
+		$schemas = $this->createMock(originalClassName: PortalSchemaReader::class);
 		$schemas->method('readSchema')->willReturn($schema);
 
 		$more = [];
@@ -130,7 +218,8 @@ class DestinationIntakeTest extends TestCase {
 		return new DestinationIntake(
 			submitter: new DestinationSubmit($fake->container($more), $this->createMock(LoggerInterface::class)),
 			mapping: new DestinationMapping(),
-			schemas: $schemas
+			schemas: $schemas,
+			failures: $failures
 		);
 	}//end intake()
 

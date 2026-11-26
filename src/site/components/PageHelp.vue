@@ -21,7 +21,7 @@ import strings from '../lib/helpStrings.js'
 import { pageLocale } from '../pages/inbox/translate.js'
 
 /**
- * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
+ * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
  */
 export default {
 	name: 'PageHelp',
@@ -36,7 +36,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The summary line.
-		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
+		 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
 		 */
 		label() {
 			return (strings[pageLocale()] || strings.nl).page

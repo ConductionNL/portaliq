@@ -173,7 +173,7 @@ class FormBindingCounterTest extends TestCase {
 		$result = $this->counter(answer: $entity, count: 150)->forBinding(id: 'b-1', now: $this->now());
 
 		$this->assertSame(['found' => true, 'limited' => true, 'count' => 150, 'limit' => 150, 'per' => 'total'], $result);
-		$this->assertSame([], $this->counted[0]['filters']);
+		$this->assertSame(['_rbac' => false, '_multitenancy' => false], $this->counted[0]['filters']);
 	}//end testAnEntityIsReadThroughItsSerialisation()
 
 	/**

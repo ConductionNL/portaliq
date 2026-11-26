@@ -386,4 +386,19 @@ export default {
 	align-items: center;
 	gap: 8px;
 }
+
+/*
+ * A crumb link is a 24px target. As bare text it was 19px high, and WCAG 2.2
+ * SC 2.5.8 (target size, minimum) asks 24 by 24 CSS pixels or that much space;
+ * axe flagged it on every page with a trail (site-accessibility S13b, S13d,
+ * S13e and the statement case). The link keeps its text and line, only its
+ * box grows to the minimum.
+ * @spec openspec/changes/archive/2026-11-25-public-site-meets-wcag-aa/tasks.md#t03
+ */
+.ac-breadcrumb__item > .utrecht-link {
+	display: inline-flex;
+	align-items: center;
+	min-block-size: 24px;
+	min-inline-size: 24px;
+}
 </style>

@@ -114,7 +114,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
 	 * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-resident-may-start-a-conversation-only-with-a-contact-of-their-own-record
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -246,7 +246,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 * @return JSONResponse `{id}`, or 403.
 	 *
 	 * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-resident-may-start-a-conversation-only-with-a-contact-of-their-own-record
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	private function startConversation(array $subject, ?array $contact, string $title, string $body): JSONResponse {
 		$body  = trim($body);
@@ -292,7 +292,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, string>|null The contact in the shape a conversation takes.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	private function ownContact(array $subject, string $contactId): ?array {
 		$contact = $this->portalContacts?->approvedContact(
@@ -318,7 +318,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, mixed> The thread.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	private function namedForReader(array $thread, string $subjectRef, array $names): array {
 		if ((string)($thread['recordRef'] ?? '') !== '' || is_array($thread['participantRefs'] ?? null) === false) {

@@ -1508,3 +1508,207 @@ organisation type SHALL say "Van de organisatie".
 - **GIVEN** a portal without an organisation type
 - **WHEN** the same message is opened
 - **THEN** it SHALL read "Van de organisatie"
+
+### Requirement: An editor MUST be able to manage content without the API
+
+Portaliq SHALL provide admin surfaces to create, edit and publish `website`,
+`menu`, `page` and `glossaryTerm` objects, built on the shared manifest-driven
+admin components rather than hand-rolled views.
+
+#### Scenario: A site is created and published end to end
+@e2e tests/e2e/cms-admin.spec.ts "a site is checked, published, served and rendered"
+
+- **GIVEN** an administrator with no API client
+- **WHEN** they create a website, a menu, a markdown page and a glossary term
+  through the UI and publish them
+- **THEN** the public content API serves them and the site renders
+
+#### Scenario: The surfaces are the shared components
+@e2e tests/e2e/cms-admin.spec.ts "the four content surfaces are the shared index pages"
+
+- **WHEN** the admin views are inspected
+- **THEN** they use the existing index/detail components over OpenRegister
+  objects, and no parallel object store is introduced
+
+### Requirement: Publishing MUST refuse content that would render broken
+
+Publishing SHALL validate that every menu item's in-site link resolves to a
+page on the same website, and that a published website has a page at `/`.
+
+#### Scenario: A menu item pointing at nothing is refused
+@e2e exclude covered by CmsPublishValidatorTest
+
+- **GIVEN** a menu item linking to an in-site route with no page
+- **WHEN** the menu is published
+- **THEN** it is refused, naming the route
+- **AND** this is the exact defect the rig produced: `/begrippen` sat in the
+  menu with no page behind it, and the only symptom was a console 404 on a
+  page that otherwise looked correct
+
+#### Scenario: A drafted target is distinguished from a missing one
+@e2e exclude covered by CmsPublishValidatorTest
+
+- **GIVEN** a menu item pointing at a page that exists but is still a draft
+- **WHEN** the menu is published
+- **THEN** the editor is warned rather than blocked — an editorial workflow
+  routinely links to something not yet released, and refusing it would make
+  the validation the obstacle instead of the guard
+
+#### Scenario: A site with no root page is refused
+@e2e exclude covered by CmsPublishValidatorTest
+
+- **GIVEN** a website with no published page at `/`
+- **WHEN** it is published
+- **THEN** it is refused
+- **AND** this prevents a site that 404s on its own front door, which
+  `open-venray` currently does
+
+#### Scenario: Duplicate routes within a site are refused
+@e2e exclude covered by PageRouteClaimTest and PageRouteGuardListenerTest
+
+- **GIVEN** two pages on one website with the same route
+- **WHEN** the second is saved
+- **THEN** it is refused
+
+### Requirement: Domain verification MUST be triggerable from the UI
+
+The admin surface SHALL show the TXT record a tenant must publish, and allow
+verification to be run and re-run.
+
+#### Scenario: The record to publish is shown
+@e2e tests/e2e/cms-admin.spec.ts "a pending domain shows its record, and the check runs again without re-adding it"
+
+- **GIVEN** a pending domain
+- **WHEN** the administrator views it
+- **THEN** the exact record name and value are shown, copyable
+
+#### Scenario: Verification can be retried
+@e2e tests/e2e/cms-admin.spec.ts "a pending domain shows its record, and the check runs again without re-adding it"
+
+- **GIVEN** a verification that failed because DNS had not propagated
+- **WHEN** it is run again later
+- **THEN** it succeeds without re-adding the domain
+
+### Requirement: A site's theme MUST change its rendered appearance
+
+The renderer SHALL load the token set for the resolved site's themiq theme.
+Two sites referencing different themes SHALL render visibly differently.
+
+#### Scenario: Two themed sites compute different colours
+@e2e tests/e2e/site-theme.spec.ts "two sites on different themes compute different colours for the same element"
+
+- **GIVEN** two websites referencing different themiq themes
+- **WHEN** each is rendered and the SAME element is inspected
+- **THEN** its computed colour differs between them
+- **AND** the assertion is on the COMPUTED value, not on the class name, the
+  presence of a token file, or the API's theme string — all three of those
+  already pass while the sites render identically
+
+#### Scenario: The token actually resolves
+@e2e tests/e2e/site-theme.spec.ts "a theme token resolves, and not to the component fallback"
+
+- **GIVEN** a rendered themed page
+- **WHEN** a theme token is read from the root element
+- **THEN** it has a value
+- **AND** it is not the component's own hard-coded fallback
+
+#### Scenario: Only the active theme is loaded
+@e2e tests/e2e/site-theme.spec.ts "only the active theme's token set is fetched"
+
+- **GIVEN** a site rendering under one theme
+- **WHEN** the stylesheets it transferred are inspected
+- **THEN** no other site's token set was fetched
+
+### Requirement: An unresolvable theme MUST be obvious, not silently default
+
+A site whose theme reference does not resolve SHALL report the failure and
+SHALL NOT fall back to a plausible-looking default.
+
+#### Scenario: A missing theme names itself
+@e2e exclude the name is in the server log; covered by PortalThemeResolverTest::testAThemeThatDoesNotResolveIsReportedByName
+
+- **GIVEN** a website referencing a theme that does not exist
+- **WHEN** it is served
+- **THEN** the failure names the missing theme
+
+#### Scenario: The unstyled state is visibly unstyled
+@e2e tests/e2e/site-theme.spec.ts "a theme that does not resolve leaves the page visibly unthemed"
+
+- **GIVEN** a site whose token set fails to load
+- **WHEN** it renders
+- **THEN** it does not present as a correctly-branded page
+- **AND** this is the point: a page that quietly falls back to reasonable
+  colours is never reported, which is how the defect this change fixes
+  survived being looked at
+
+### Requirement: Markup MUST carry NL Design component classes
+
+Rendered components SHALL emit NL Design component classes. A React
+design-system package SHALL NOT be introduced.
+
+#### Scenario: The rendered DOM carries the classes
+@e2e tests/e2e/site-theme.spec.ts "the rendered heading, links, paragraphs and table carry NL Design classes"
+
+- **GIVEN** a rendered page under an active theme
+- **WHEN** its markup is inspected
+- **THEN** NL Design component classes are present on the heading, links,
+  paragraphs and table
+- **AND** the count is greater than zero — it is currently exactly zero
+
+#### Scenario: No React design-system dependency appears
+@e2e exclude a dependency-set property with no UI surface
+
+- **GIVEN** the dependency set after this change
+- **THEN** it contains no `*-react` design-system package
+
+### Requirement: Portaliq MUST declare its dependency on themiq
+
+`appinfo/info.xml` SHALL declare the theming app as a dependency, and a
+missing install SHALL be reported rather than rendered around.
+
+#### Scenario: The dependency is declared
+@e2e exclude app-info.xsd cannot declare an app dependency; appinfo/info.xml names thematiq in its dependencies comment (decision 25 Nov 2026)
+
+- **WHEN** `appinfo/info.xml` is inspected
+- **THEN** it names the theming app
+
+#### Scenario: A missing theming app is reported
+@e2e exclude the report is a server log line; covered by PortalThemeResolverTest::testAMissingThemeAppIsNamedAsTheCause
+
+- **GIVEN** an installation without it
+- **WHEN** a website is served
+- **THEN** the failure names the missing dependency
+
+### Requirement: The public site meets WCAG 2.1 AA on every page state it serves (REQ-PWA-001)
+
+Every page state the site serves an anonymous visitor SHALL pass axe-core (wcag2a, wcag2aa, wcag21a, wcag21aa) with no serious or critical violation, at least on a widget grid page, a markdown page, the not-found page, the search page with results and facets, and a publication detail page. Every control SHALL work by keyboard alone with a visible focus indicator, and at 320 CSS pixels wide no page SHALL scroll horizontally outside a table's own scroll container.
+
+#### Scenario: The search page with facets
+- **GIVEN** a portal whose search page shows results from two catalogues with facet checkboxes and a sort select
+- **WHEN** axe-core checks the page against the WCAG 2.1 AA tags
+- **THEN** it reports no serious or critical violation
+- e2e: `tests/e2e/site-accessibility.spec.ts`
+
+#### Scenario: A publication by keyboard
+- **GIVEN** a visitor using only the keyboard on a publication detail page
+- **WHEN** they tab through it
+- **THEN** each link and download gets a visible focus and opens with Enter
+- e2e: `tests/e2e/site-accessibility.spec.ts`
+
+### Requirement: A page can show the organisation's locations on a map (REQ-SLM-001)
+
+The site SHALL offer a block that lists authored places, numbered in the order authored, each with its name and, when given, address, opening hours, a route link and its own links, beside a map that marks each place with a coordinate by the same number. With places of two or more kinds the block SHALL offer a chip per kind and one for all, and the list and the markers SHALL show only the chosen kind. Each marker SHALL carry the place's name, and the map SHALL say under it that it is a sketch, not real map data. A place with opening hours per weekday SHALL say whether it is open now and until when. The map SHALL request nothing from another site. A link that is not a site path, http(s), mailto or tel address SHALL be left out.
+
+#### Scenario: Three places of the municipality
+@e2e tests/e2e/site-location-map.spec.ts "Three places of the municipality, and the Afval chip narrows list and map"
+- **GIVEN** the Locaties page with the Stadskantoor, the Milieustraat and the Bibliotheek
+- **THEN** the heading reads "3 locaties" and the map shows markers 1, 2 and 3
+- **WHEN** the visitor chooses the chip "Afval"
+- **THEN** only the Milieustraat is listed and marked
+
+#### Scenario: A place says whether it is open now
+@e2e tests/e2e/site-location-map.spec.ts "A place says whether it is open now"
+- **GIVEN** the Stadskantoor with hours Monday to Friday 8.30 to 17.00
+- **WHEN** a visitor opens the page on a Monday at 10.15
+- **THEN** the Stadskantoor's card reads "Nu open tot 17:00 uur"
+- **AND** on a Sunday it reads "Nu gesloten"

@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Throwable;
 /**
  * Sends the reminder before an action's end date.
  *
- * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
  */
 class ActionReminderService implements ActionReminderServiceInterface {
 	use RowAsArray;
@@ -82,7 +82,7 @@ class ActionReminderService implements ActionReminderServiceInterface {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
 	 */
 	public static function isDue(array $action, string $today): bool {
 		$end = substr((string)($action['endDate'] ?? ''), 0, 10);
@@ -113,7 +113,7 @@ class ActionReminderService implements ActionReminderServiceInterface {
 	 *
 	 * @return int How many reminders were sent.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
 	 */
 	public function remindDue(?string $today = null): int {
 		$today ??= (new DateTimeImmutable('now', new DateTimeZone('Europe/Amsterdam')))->format('Y-m-d');
@@ -137,7 +137,7 @@ class ActionReminderService implements ActionReminderServiceInterface {
 	 *
 	 * @return int How many reminders were sent.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
 	 */
 	private function remindRows(object $objectService, mixed $rows, string $today): int {
 		$sent = 0;
@@ -218,7 +218,7 @@ class ActionReminderService implements ActionReminderServiceInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
 	 */
 	private function tellAssignee(object $objectService, array $action, string $title): void {
 		$objectService->saveObject(
@@ -243,7 +243,7 @@ class ActionReminderService implements ActionReminderServiceInterface {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
 	 */
 	private function reminderMessage(array $action, string $title): array {
 		return [
@@ -266,7 +266,7 @@ class ActionReminderService implements ActionReminderServiceInterface {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
 	 */
 	private function markReminded(object $objectService, array $action, string $id): void {
 		$objectService->saveObject(

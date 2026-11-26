@@ -50,7 +50,7 @@ interface PortalDomainVerifierInterface {
 	 * @return array<int, array<string, mixed>>|null Per domain: hostname, name, value, verified and the certificate dates.
 	 *                                               Null for an unknown portal.
 	 *
-	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
+	 * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-3
 	 */
 	public function records(string $slug): ?array;
 
@@ -64,7 +64,7 @@ interface PortalDomainVerifierInterface {
 	 * @return string|null `verified`, `pending`, or `not_found` for a domain the portal does not list;
 	 *                     null when the portal is unknown or the save failed.
 	 *
-	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-3
+	 * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-3
 	 */
 	public function verify(string $slug, string $hostname): ?string;
 }//end interface

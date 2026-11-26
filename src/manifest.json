@@ -6968,10 +6968,11 @@
             "id": "new-article",
             "label": "New article",
             "icon": "Plus",
-            "handler": "navigate",
-            "route": "ArticleNew"
+            "href": "/apps/portaliq/articles/new"
           }
         ],
+        "_headerButtonsNote": "Board PtArtikelen draws Downloaden and the primary Nieuw artikel beside the title; headerActions alone put New article inside the Actions menu, and a header button follows only an href action, not a router navigate (live check 25 Nov 2026).",
+        "headerButtons": [{"action": "export", "label": "Download"}, {"action": "new-article", "variant": "primary", "label": "New article", "icon": "Plus"}],
         "quickFilters": [
           {
             "label": "All",

@@ -114,6 +114,41 @@ class ActionDraftTest extends TestCase {
 		);
 	}//end testTheBodyHoldsDeclaredAnswersDefaultsAndTheCreatesStamps()
 
+	/**
+	 * endpoint-forward-draft-schema T2: an endpoint action that declares
+	 * `draftSchema` holds a draft there, stamped with its subject field.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T2
+	 */
+	public function testAnEndpointActionHoldsItsDraftOnItsDraftSchema(): void {
+		$endpoint  = [
+			'id' => 'assess',
+			'type' => 'endpoint-forward',
+			'endpoint' => '/apps/learniq/api/portal/werkproces-assessments',
+			'subjectField' => 'practicalTrainerId',
+			'fields' => ['werkprocesCode', 'assessment'],
+			'draft' => ['retentionDays' => 30],
+			'draftSchema' => ['register' => 'learniq', 'schema' => 'werkproces-assessment-draft'],
+		];
+		$withoutIt = array_merge($endpoint, ['id' => 'plain', 'draftSchema' => null]);
+		$drafts    = $this->drafts(aggregate: ['contributions' => [['app' => 'learniq', 'actions' => [$endpoint, $withoutIt]]]]);
+		$subject   = ['subjectRef' => 'trainer-1', 'trust' => 'low', 'organisation' => 'org-1'];
+
+		$match     = ['action' => $endpoint, 'app' => 'learniq'];
+		$this->assertSame(expected: $match, actual: $drafts->actionFor(subject: $subject, appId: 'learniq', actionId: 'assess'));
+		$this->assertNull(actual: $drafts->actionFor(subject: $subject, appId: 'learniq', actionId: 'plain'));
+		$this->assertSame(
+			expected: ['register' => 'learniq', 'schema' => 'werkproces-assessment-draft'],
+			actual: $drafts->destinationOf(action: $endpoint)
+		);
+		$this->assertSame(
+			expected: ['werkprocesCode' => 'WP1', 'practicalTrainerId' => 'trainer-1', 'organisation' => 'org-1'],
+			actual: $drafts->bodyOf(match: $match, subject: $subject, answers: ['werkprocesCode' => 'WP1', 'other' => 'x'])
+		);
+	}//end testAnEndpointActionHoldsItsDraftOnItsDraftSchema()
+
 	public function testALiveDraftIsFoundByItsScalarDefaultsWithItsExpiry(): void {
 		$drafts            = $this->drafts();
 		$this->fake->found = ['id' => 'd-1', 'status' => 'draft', 'data' => ['title' => 'Half', 'subjectRef' => 'sub-1'], 'updatedAt' => '2026-10-01T10:00:00+00:00'];

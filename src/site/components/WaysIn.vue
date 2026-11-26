@@ -251,7 +251,7 @@ export default {
 	 *
 	 * @return {Promise<void>}
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	async mounted() {
 		this.contactInvitation = keptContactInvitation(sessionStore())

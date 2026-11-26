@@ -85,7 +85,7 @@ export function toneOf(row, block) {
  * @param {Array<object>} rows The rows.
  * @param {object} block The block.
  * @param {object} [collection] The collection, for its value labels.
- * @return {Array<object>} `{key, row, date, title, subtitle, quote, status, tone, statusNote, statusNoteAt}`.
+ * @return {Array<object>} `{key, row, date, title, subtitle, quote, status, tone, statusNote, statusNoteAt, statusNoteTemplate}`.
  * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-when-its-status-was-set
  */
 export function dateRows(rows, block, collection = null) {
@@ -98,9 +98,46 @@ export function dateRows(rows, block, collection = null) {
 		quote: textOf(row, block?.quoteField, collection),
 		status: textOf(row, block?.statusField, collection),
 		tone: toneOf(row, block),
-		statusNote: textOf(row, block?.statusNoteField, collection),
-		statusNoteAt: String(row?.[block?.statusNoteAtField] ?? '').trim(),
+		...statusNoteOf(row, block, collection),
 	}))
+}
+
+/**
+ * The note under a row's status: the entry of `statusNotes` for the row's
+ * stored status value when the block declares one, else `statusNoteField`
+ * and `statusNoteAtField`.
+ *
+ * @param {object} row The row.
+ * @param {object} block The block.
+ * @param {object} [collection] The collection, for its value labels.
+ * @return {{statusNote: string, statusNoteAt: string, statusNoteTemplate: string}}
+ * @spec openspec/changes/rows-status-note-per-state/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-a-different-note-per-status
+ */
+export function statusNoteOf(row, block, collection = null) {
+	const own = ownStatusNote(row, block)
+	const field = own ? own.field : block?.statusNoteField
+	const atField = own ? own.atField : block?.statusNoteAtField
+	return {
+		statusNote: textOf(row, field, collection),
+		statusNoteAt: atField ? String(row?.[atField] ?? '').trim() : '',
+		statusNoteTemplate: typeof own?.template === 'string' ? own.template : '',
+	}
+}
+
+/**
+ * The block's own `statusNotes` entry for the row's stored status value.
+ *
+ * @param {object} row The row.
+ * @param {object} block The block.
+ * @return {object|null} `{field, atField, template}`, or null.
+ */
+function ownStatusNote(row, block) {
+	const notes = block?.statusNotes
+	if (!notes || typeof notes !== 'object') {
+		return null
+	}
+	const value = String(row?.[block?.statusField] ?? '')
+	return Object.hasOwn(notes, value) ? notes[value] : null
 }
 
 /**

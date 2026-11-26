@@ -7506,13 +7506,13 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "src/site/widgets/nlLocationMap/NlLocationMap.vue (the locations as a numbered list beside a sketch map, filter per kind) with its editor description src/site/widgets/nlLocationMap/meta.js (key nlLocationMap, group content, label \"Locaties op een kaart\"), registered in src/site/widgets/index.js:60,111 and lazy-loaded in src/site/widgets/loaders.js:32, so an editor places it on any public /site page. Built by openspec/changes/site-location-map (only its live check T03 is open). Before: no map library or component under src/site.",
+				"evidence": "src/site/widgets/nlLocationMap/NlLocationMap.vue (the locations as a numbered list beside a sketch map, filter per kind) with its editor description src/site/widgets/nlLocationMap/meta.js (key nlLocationMap, group content, label \"Locaties op een kaart\"), registered in src/site/widgets/index.js:60,111 and lazy-loaded in src/site/widgets/loaders.js:32, so an editor places it on any public /site page. Built by openspec/changes/archive/2026-11-26-site-location-map (T03 run live 25 Nov, T04 board gaps closed 26 Nov). Before: no map library or component under src/site.",
 				"reachedOn": "/site renderer: a public page with the nlLocationMap block (board LocatiesKaart)",
 				"owner": "ConductionNL/portaliq",
 				"note": "Decided built on 2026-11-12 (decision 399): the map block exists. Was decided-no in the build-all pass 2026-09-28 (single competitor, no demand).",
 				"origin": "competitor",
-				"change": "openspec/changes/site-location-map",
-				"requirement": "openspec/changes/site-location-map/specs/portaliq-cms/spec.md :: A page can show the organisation's locations on a map (REQ-SLM-001)"
+				"change": "openspec/changes/archive/2026-11-26-site-location-map",
+				"requirement": "openspec/changes/archive/2026-11-26-site-location-map/specs/portaliq-cms/spec.md :: A page can show the organisation's locations on a map (REQ-SLM-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -8475,7 +8475,7 @@
 				"note": "Automated axe + a keyboard test cover three page states and the phone breakpoint. The federated-search and publication-detail block templates are not named in the axe test list, so their own controls (facet checkboxes, sort select) are unverified by this suite. Matches source rating (opencatalogi matrix, id pub-wcag): evidence of AA work, not a conformance claim.",
 				"origin": "sibling",
 				"spec": "openspec/specs/portaliq-cms",
-				"requirement": "openspec/changes/public-site-meets-wcag-aa/specs/portaliq-cms/spec.md :: The public site meets WCAG 2.1 AA on every page state it serves (REQ-PWA-001)"
+				"requirement": "openspec/changes/archive/2026-11-25-public-site-meets-wcag-aa/specs/portaliq-cms/spec.md :: The public site meets WCAG 2.1 AA on every page state it serves (REQ-PWA-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -12726,7 +12726,7 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "help-texts-and-form-help",
-				"requirement": "openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md :: A page and each part of Mijn omgeving can carry a help text (REQ-HTF-002)"
+				"requirement": "openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md :: A page and each part of Mijn omgeving can carry a help text (REQ-HTF-002)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -12799,9 +12799,9 @@
 				"owner": "ConductionNL/portaliq",
 				"change": "own-contacts-and-invitations",
 				"requirement": [
-					"openspec/changes/own-contacts-and-invitations/specs/resident-contacts/spec.md :: A resident keeps a list of approved contacts (REQ-ROC-001)",
-					"openspec/changes/own-contacts-and-invitations/specs/resident-contacts/spec.md :: A resident can invite someone by e-mail (REQ-ROC-003)",
-					"openspec/changes/own-contacts-and-invitations/specs/resident-contacts/spec.md :: Someone becomes a contact only after both sides approve (REQ-ROC-002)"
+					"openspec/changes/archive/2026-11-25-own-contacts-and-invitations/specs/resident-contacts/spec.md :: A resident keeps a list of approved contacts (REQ-ROC-001)",
+					"openspec/changes/archive/2026-11-25-own-contacts-and-invitations/specs/resident-contacts/spec.md :: A resident can invite someone by e-mail (REQ-ROC-003)",
+					"openspec/changes/archive/2026-11-25-own-contacts-and-invitations/specs/resident-contacts/spec.md :: Someone becomes a contact only after both sides approve (REQ-ROC-002)"
 				]
 			},
 			"provider": "portaliq",
@@ -12842,8 +12842,8 @@
 				"owner": "ConductionNL/portaliq",
 				"change": "personal-action-list",
 				"requirement": [
-					"openspec/changes/personal-action-list/specs/resident-actions/spec.md :: A resident keeps a list of own actions (REQ-RAL-001)",
-					"openspec/changes/personal-action-list/specs/resident-actions/spec.md :: The assignee gets a reminder before the end date (REQ-RAL-003)"
+					"openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md :: A resident keeps a list of own actions (REQ-RAL-001)",
+					"openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md :: The assignee gets a reminder before the end date (REQ-RAL-003)"
 				]
 			},
 			"provider": "portaliq",
@@ -12881,7 +12881,7 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "password-reset-from-the-sign-in-page",
-				"requirement": "openspec/changes/password-reset-from-the-sign-in-page/specs/portal-ways-in/spec.md :: The sign-in page leads to Nextcloud's own password reset (REQ-PWR-001)"
+				"requirement": "openspec/changes/archive/2026-11-25-password-reset-from-the-sign-in-page/specs/portal-ways-in/spec.md :: The sign-in page leads to Nextcloud's own password reset (REQ-PWR-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
@@ -13030,7 +13030,7 @@
 				"readOn": "2026-10-08",
 				"owner": "ConductionNL/portaliq",
 				"change": "help-texts-and-form-help",
-				"requirement": "openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md :: A form offers help without losing the answers (REQ-HTF-001)"
+				"requirement": "openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md :: A form offers help without losing the answers (REQ-HTF-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",

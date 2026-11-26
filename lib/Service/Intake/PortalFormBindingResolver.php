@@ -466,9 +466,10 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 	 *
 	 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 	 * @spec openspec/changes/competitor-parity-2026-09/tasks.md#17
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t09
 	 */
 	private function hostedPayload(array $binding, array $form, array $fields, array $settings): array {
-		$fee = $this->fees?->forBinding(binding: $binding);
+		$fee = $this->fees?->forBinding(binding: $binding, form: $form);
 
 		$settings = $this->withFormConfirmation(settings: $settings, form: $form);
 
@@ -482,8 +483,9 @@ class PortalFormBindingResolver implements PortalFormBindingResolverInterface {
 			// only where they name fields the form has; [] renders one page.
 			'steps' => $this->stepsOf(form: $form, fields: $fields),
 			'settings' => $settings,
-			// What the request costs, from the case type and nowhere else
-			// (intake-pay-on-submit REQ-IPS-001). Null for a free request.
+			// What the request costs: the case type's fee, with this form's
+			// own amount when it serves one (intake-pay-on-submit REQ-IPS-001).
+			// Null for a free request.
 			'fee' => $fee,
 			// The sign-in level the maker chose for this form (buildiq#935).
 			// Carried as declared; requiredTrust() decides what it means.

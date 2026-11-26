@@ -45,4 +45,10 @@ All from decision 104.
 Amended by `submit-creates-the-case-directly` (decision 179):
 - REQ-FGV-002: a form names its destination as `portalFormBinding.destination { register, schema }`, checked against that schema when the binding is published (REQ-PIFO-007). There is no routing step after the submit.
 - REQ-FGV-003: removed. Nothing is retried, because nothing is queued: a refused submit comes back on its field (422) and an unreachable destination says try again later (503), with the answers kept in the form.
+
+## Rewritten onto the direct submit (Ruben, 25 Nov 2026)
+
+Decision (FINISH-ORDER.md DECISIONS, 25 Nov 17:55 CET): T04-T08 are rewritten onto the direct submit, not dropped.
+- REQ-FGV-003 is back in its direct-submit form: a submit the destination does not answer gets an error code `OF-xxxx`, one evidence line in the server log and the 503 carries the code; the form keeps the answers and offers "Opnieuw proberen" with the same Idempotency-Key; a daily 07:00 digest lists the forms whose submits failed. There is still no queue, no background retry and no staff retry (nothing is stored to retry).
+- REQ-FGV-002 (routing) and REQ-FGV-004 (retention) follow in their own tasks, on the destination the direct submit writes.
 - REQ-FGV-004 and REQ-FGV-005: retention and export read the destination objects (the case, the lead), by the destination app's own rules, not a portaliq submission store.

@@ -508,15 +508,23 @@ export default {
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-draft-of-a-create-action-must-be-the-record-itself-in-status-draft-and-only-its-residents-req-smf-021
 		 * @spec openspec/changes/resident-pages-live-round-3/specs/site-forms/spec.md#requirement-a-form-asks-for-a-draft-only-when-its-action-can-keep-one-req-rr3-005
+		 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T4
 		 */
 		canSaveDraft() {
 			// The server keeps a draft only of a create action that names its
 			// register and schema; an endpoint action that declares `draft`
 			// asked for one on every open and got a 404 (live round 3).
+			// An endpoint action that declares `draftSchema` keeps its draft
+			// there (endpoint-forward-draft-schema).
+			const elsewhere = this.action.draftSchema || {}
 			const draftable =
-				this.action.type === 'create'
-				&& Boolean(this.action.register)
-				&& Boolean(this.action.schema)
+				(this.action.type === 'create'
+					&& Boolean(this.action.register)
+					&& Boolean(this.action.schema))
+				|| (this.action.type !== 'create'
+					&& Boolean(this.action.endpoint)
+					&& Boolean(elsewhere.register)
+					&& Boolean(elsewhere.schema))
 			return (
 				draftable
 				&& this.draftDays > 0
@@ -754,7 +762,7 @@ export default {
 		 * @param {unknown} value The value.
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+		 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
 		 */
 		isPlainObject(value) {
 			return (

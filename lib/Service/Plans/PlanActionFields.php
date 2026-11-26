@@ -178,7 +178,7 @@ class PlanActionFields {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
 	 */
 	public function stamped(string $editor, array $data): array {
 		return $data + ['editedBy' => $editor, 'editedAt' => (new DateTimeImmutable())->format(DateTimeInterface::ATOM)];

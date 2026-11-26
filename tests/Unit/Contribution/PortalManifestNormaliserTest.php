@@ -513,6 +513,37 @@ class PortalManifestNormaliserTest extends TestCase {
 	}//end testAGroupByFieldIsKeptOnlyWhenItNamesAProjectedField()
 
 	/**
+	 * collection-group-order T2: `groupOrder` stays only as 'rows' or
+	 * 'heading', and only beside a kept `groupByField`.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/collection-group-order/tasks.md#T2
+	 */
+	public function testAGroupOrderIsKeptOnlyAsRowsOrHeadingBesideAGroupField(): void {
+		$out = $this->normaliser()->normalise(
+			[
+				'collections' => [
+					['id' => 'c1', 'schema' => 's', 'fields' => ['courseName'], 'groupByField' => 'courseName', 'groupOrder' => 'rows'],
+					['id' => 'c2', 'schema' => 's', 'groupByField' => 'courseName', 'groupOrder' => 'heading'],
+					['id' => 'c3', 'schema' => 's', 'groupByField' => 'courseName', 'groupOrder' => 'random'],
+					['id' => 'c4', 'schema' => 's', 'groupOrder' => 'rows'],
+					['id' => 'c5', 'schema' => 's', 'fields' => ['value'], 'groupByField' => 'courseName', 'groupOrder' => 'rows'],
+					['id' => 'c6', 'schema' => 's', 'groupByField' => 'courseName', 'groupOrder' => ['rows']],
+				],
+			]
+		);
+
+		$byId = array_column($out['collections'], null, 'id');
+		$this->assertSame(expected: 'rows', actual: $byId['c1']['groupOrder']);
+		$this->assertSame(expected: 'heading', actual: $byId['c2']['groupOrder']);
+		foreach (['c3', 'c4', 'c5', 'c6'] as $id) {
+			$this->assertArrayNotHasKey(key: 'groupOrder', array: $byId[$id], message: $id);
+		}
+
+	}//end testAGroupOrderIsKeptOnlyAsRowsOrHeadingBesideAGroupField()
+
+	/**
 	 * signin-eherkenning-branch REQ-SEB-002 (T03): `branchField` stays only
 	 * when it names a projected field.
 	 */

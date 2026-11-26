@@ -113,7 +113,7 @@ test('the dialog sends the trimmed address and message, and keeps the dialog ope
 	await modal.methods.submit.call(make({ ok: true, status: 200, error: '' }))
 	assert.deepEqual(emitted, ['sent'])
 	const html = await renderSfc(MODAL, { api: {}, t })
-	assert.match(html, /You become contacts once they accept/)
+	assert.match(html, /You do not have to approve anything else/)
 })
 
 test('"Send message" opens a dialog that starts the conversation with that contact, or keeps the text on a refusal (T07)', async () => {

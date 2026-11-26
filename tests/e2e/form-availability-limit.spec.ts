@@ -28,7 +28,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { oneOf, PORTAL_API, SITE_PORTAL, siteAddress } from './portal-nav.ts'
+import { devLogin, PORTAL_API, seedSiteSession, SITE_PORTAL, siteAddress, someOf } from './portal-nav.ts'
 
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 const ADMIN = Buffer.from(process.env.PORTALIQ_E2E_ADMIN || 'admin:admin').toString(
@@ -36,10 +36,26 @@ const ADMIN = Buffer.from(process.env.PORTALIQ_E2E_ADMIN || 'admin:admin').toStr
 )
 const ADMIN_HEADERS = { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' }
 
+/**
+ * A resident signed in through dev-login: the intake routes and the intake
+ * form answer only a signed-in resident (PortalProtected).
+ *
+ * @param request The request fixture.
+ * @return The resident's bearer.
+ */
+async function residentBearer(request: APIRequestContext): Promise<string> {
+	return devLogin(
+		request,
+		`e2e-voortuin-resident-${Date.now()}`,
+		'client',
+		process.env.PORTALIQ_E2E_ORGANISATION || 'dev-org',
+	)
+}
+
 /** The reopening date; 5 January 2027 is a Tuesday. */
 const REOPENS_ON = '2027-01-05'
 
-/** What this run created, as `schema/id`, to delete afterwards. */
+/** What this run created, as `register/schema/id`, to delete afterwards. */
 const created: string[] = []
 
 /**
@@ -59,12 +75,83 @@ async function seed(
 		headers: ADMIN_HEADERS,
 		data,
 	})
-	expect(res.ok(), `OpenRegister objects#create must be reachable for ${schema}`).toBeTruthy()
+	expect(res.ok(), `OpenRegister objects#create must be reachable for ${schema}: ${await res.text()}`).toBeTruthy()
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
-	created.push(`${schema}/${id}`)
+	created.push(`portaliq/${schema}/${id}`)
 	return id
+}
+
+/**
+ * Store a published form through buildiq's own form API, the way its form
+ * designer does. Forms live in buildiq's `registrationForm` now, not in
+ * portaliq; buildiq refuses a published form whose fields its destination
+ * does not declare, so the field is one `portalCase` has.
+ *
+ * @param request The request fixture.
+ * @param form The form.
+ */
+async function seedRegistrationForm(
+	request: APIRequestContext,
+	form: Record<string, unknown>,
+): Promise<void> {
+	const saved = await request.put('/apps/buildiq/api/registration-forms', {
+		headers: ADMIN_HEADERS,
+		data: form,
+	})
+	expect(saved.ok(), `buildiq must store the form: ${await saved.text()}`).toBeTruthy()
+	const found = await request.get(`${OR_OBJECTS_BASE}/buildiq/registrationForm`, {
+		headers: ADMIN_HEADERS,
+		params: { name: String(form.name), _limit: '1' },
+	})
+	const rows = ((await found.json()).results ?? []) as Array<Record<string, unknown>>
+	const id = String(rows[0]?.id ?? '')
+	expect(id, `the stored form ${String(form.name)} is listed`).not.toBe('')
+	created.push(`buildiq/registrationForm/${id}`)
+}
+
+/**
+ * The register and schema the answers go to. A portal submit is an anonymous
+ * write, and both buildiq and the binding refuse a published form whose
+ * destination a public visitor may not create in, so the spec makes its own
+ * destination (portalCase is not one) and removes it afterwards. The limit
+ * counts the objects in this destination.
+ */
+const DESTINATION = `e2e-voortuin-${Date.now()}`
+const destinationIds: { schema?: number, register?: number } = {}
+
+/**
+ * Create the destination register and schema, once for the run.
+ *
+ * @param request The request fixture.
+ */
+async function seedDestination(request: APIRequestContext): Promise<void> {
+	if (destinationIds.register) {
+		return
+	}
+	const schema = await request.post('/apps/openregister/api/schemas', {
+		headers: ADMIN_HEADERS,
+		data: {
+			title: `E2E ${DESTINATION}`,
+			slug: DESTINATION,
+			properties: {
+				caseType: { type: 'string' },
+				omschrijving: { type: 'string' },
+				reference: { type: 'string', 'x-openregister': { reference: true } },
+				subjectRef: { type: 'string' },
+			},
+			authorization: { create: ['public'], read: ['admin'] },
+		},
+	})
+	expect(schema.ok(), `the destination schema must be created: ${await schema.text()}`).toBeTruthy()
+	destinationIds.schema = (await schema.json()).id
+	const register = await request.post('/apps/openregister/api/registers', {
+		headers: ADMIN_HEADERS,
+		data: { title: `E2E ${DESTINATION}`, slug: DESTINATION, schemas: [destinationIds.schema] },
+	})
+	expect(register.ok(), `the destination register must be created: ${await register.text()}`).toBeTruthy()
+	destinationIds.register = (await register.json()).id
 }
 
 /**
@@ -80,13 +167,20 @@ async function seedFullForm(
 	const caseType = `voortuin-${stamp}`
 	const route = `aanvragen/voortuin-${stamp}`
 	const pageRoute = `/e2e/voortuin-${stamp}`
+	await seedDestination(request)
 
-	await seed(request, 'registrationForm', {
+	await seedRegistrationForm(request, {
+		targetApp: 'portaliq',
+		typeProperty: 'caseType',
+		typeValue: caseType,
 		caseType,
 		audience: 'client',
 		name: `${caseType}-client`,
 		status: 'published',
-		fields: [{ name: 'postcode', order: 1, required: true }],
+		register: DESTINATION,
+		schema: DESTINATION,
+		isPublic: true,
+		fields: [{ name: 'omschrijving', order: 1, required: true }],
 	})
 	await seed(request, 'portalFormBinding', {
 		portal: SITE_PORTAL,
@@ -95,9 +189,9 @@ async function seedFullForm(
 		typeSchema: 'portalCaseType',
 		typeId: caseType,
 		audience: 'client',
-		formRegister: 'portaliq',
+		formRegister: 'buildiq',
 		formSchema: 'registrationForm',
-		destination: { register: 'portaliq', schema: 'portalCase' },
+		destination: { register: DESTINATION, schema: DESTINATION },
 		intakeKind: 'hosted',
 		status: 'published',
 		availability: {
@@ -106,12 +200,13 @@ async function seedFullForm(
 		},
 	})
 	// One destination object, so the limit of one is reached.
-	await seed(request, 'portalCase', {
-		subjectRef: `e2e-voortuin-${stamp}`,
-		organisation: 'e2e-org',
-		reference: `Voortuinsubsidie ${stamp}`,
-		status: 'Ontvangen',
+	const filled = await request.post(`${OR_OBJECTS_BASE}/${DESTINATION}/${DESTINATION}`, {
+		headers: ADMIN_HEADERS,
+		data: { caseType, omschrijving: `Voortuinsubsidie ${stamp}`, subjectRef: `e2e-voortuin-${stamp}` },
 	})
+	expect(filled.ok(), `the destination must take one object: ${await filled.text()}`).toBeTruthy()
+	const filledBody = await filled.json()
+	created.push(`${DESTINATION}/${DESTINATION}/${String(filledBody.id ?? filledBody['@self']?.id)}`)
 	await seed(request, 'page', {
 		title: `Voortuinsubsidie ${stamp}`,
 		route: pageRoute,
@@ -142,9 +237,15 @@ async function seedFullForm(
 test.describe('form-governance: a form at its limit', () => {
 	test.afterAll(async ({ request }) => {
 		for (const ref of created.splice(0).reverse()) {
-			await request.delete(`${OR_OBJECTS_BASE}/portaliq/${ref}`, {
+			await request.delete(`${OR_OBJECTS_BASE}/${ref}`, {
 				headers: ADMIN_HEADERS,
 			})
+		}
+		if (destinationIds.register) {
+			await request.delete(`/apps/openregister/api/registers/${destinationIds.register}`, { headers: ADMIN_HEADERS })
+		}
+		if (destinationIds.schema) {
+			await request.delete(`/apps/openregister/api/schemas/${destinationIds.schema}`, { headers: ADMIN_HEADERS })
 		}
 	})
 
@@ -154,10 +255,12 @@ test.describe('form-governance: a form at its limit', () => {
 		request,
 	}) => {
 		const { route, pageRoute } = await seedFullForm(request)
+		const token = await residentBearer(request)
 
 		// The form route answers with the full situation instead of fields.
 		const form = await request.get(
 			`${PORTAL_API}/intake/form?route=${encodeURIComponent(route)}&portal=${encodeURIComponent(SITE_PORTAL)}`,
+			{ headers: { Authorization: `Bearer ${token}` } },
 		)
 		expect(form.ok(), 'the form route answers for a full form').toBeTruthy()
 		const render = await form.json()
@@ -167,20 +270,21 @@ test.describe('form-governance: a form at its limit', () => {
 		expect(render.fields).toEqual([])
 
 		// The page shows situation 3 of FormulierNietBeschikbaar, and no form.
+		await seedSiteSession(page, token)
 		await page.goto(siteAddress(pageRoute))
 		await page.waitForLoadState('domcontentloaded')
 		const unavailable = page.getByTestId('form-unavailable')
 		await expect(unavailable).toBeVisible()
 		await expect(unavailable).toHaveAttribute('data-situation', 'full')
 		await expect(unavailable).toContainText(
-			oneOf(
+			someOf(
 				'Er kunnen nu geen aanvragen meer bij',
 				'No more applications can be made right now',
 			),
 		)
 		// The reopening date, with its weekday worked out from the date.
 		await expect(unavailable).toContainText(
-			oneOf('dinsdag 5 januari 2027', 'Tuesday 5 January 2027', 'Tuesday, 5 January 2027'),
+			someOf('dinsdag 5 januari 2027', 'Tuesday 5 January 2027', 'Tuesday, 5 January 2027'),
 		)
 		await expect(page.getByTestId('widget-aanvraag').locator('form')).toHaveCount(0)
 	})
@@ -188,9 +292,11 @@ test.describe('form-governance: a form at its limit', () => {
 	// @e2e portal-form-governance::the-150-places-are-taken
 	test('the server refuses a submission to a full form', async ({ request }) => {
 		const { route } = await seedFullForm(request)
+		const token = await residentBearer(request)
 
 		const res = await request.post(`${PORTAL_API}/intake/submit`, {
-			data: { route, portal: SITE_PORTAL, answers: { postcode: '5000 AA' } },
+			headers: { Authorization: `Bearer ${token}` },
+			data: { route, portal: SITE_PORTAL, answers: { omschrijving: 'Een voortuin vol planten' } },
 		})
 		expect(res.status()).toBe(409)
 		const body = await res.json()

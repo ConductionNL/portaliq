@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t04
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use OCP\BackgroundJob\TimedJob;
 /**
  * Runs the action reminders and the plan end reminders once a day.
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t04
  */
 class ActionReminderJob extends TimedJob {
 	private const INTERVAL = 86400;
@@ -60,7 +60,7 @@ class ActionReminderJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/personal-action-list/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t04
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
 	 * the signature; dropping the parameter breaks the override.

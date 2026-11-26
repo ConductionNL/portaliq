@@ -19,7 +19,7 @@ import { test } from 'node:test'
 import { plansApi } from '../src/shared/areaApi.js'
 import { createPortalApi } from '../src/shared/portalApi.js'
 import { buildNav, shellSections } from '../src/shared/portalNav.js'
-import { chipCount, daysLine, fill, personLine, plansOfChip, planWords, versionLine } from '../src/site/lib/plans.js'
+import { chipCount, daysLine, endingSoon, fill, personLine, plansOfChip, planWords, versionLine } from '../src/site/lib/plans.js'
 import { sitePageLoader } from '../src/site/pages/registry.js'
 import { loadSfc, renderSfc } from './support/render-sfc.mjs'
 
@@ -95,7 +95,7 @@ test('the words are Dutch and English with the same keys, and no em-dash', () =>
 
 test('the menu entry is Samenwerken under /mijn/samenwerken, only when the portal switched plans on', () => {
 	const session = { subjectRef: 'a' }
-	const areaPages = [{ special: 'samenwerken', label: 'Collaborate', icon: 'ClipboardCheckOutline' }]
+	const areaPages = [{ special: 'samenwerken', label: 'My plans', icon: 'ClipboardCheckOutline' }]
 	const entry = buildNav([], t, shellSections({ session, contributions: { contributions: [], areaPages }, threads: [], news: [] })).find((e) => e.special === 'samenwerken')
 	assert.equal(entry.key, '__samenwerken__')
 	assert.equal(typeof sitePageLoader(entry), 'function', 'the entry opens the plans page')
@@ -327,4 +327,13 @@ test('an action of the plan opens the ActieBewerken dialog with the plan, its pa
 	const words = { you: 'u', once: 'Eenmalig', recurring: 'Elke maand', overdue: 'verlopen', today: 'vandaag', dayLeft: 'nog 1 dag', daysLeft: 'nog {days} dagen' }
 	assert.equal(page.methods.actionLine.call({ actionWords: words }, { kind: 'recurring', status: 'done', endDate: '2026-10-31' }), 'Elke maand')
 	assert.equal(page.methods.whoName.call({ actionWords: words, viewer: 'sanne' }, { assignee: 'sanne', assigneeName: 'Sanne' }), 'Sanne (u)')
+})
+
+test('a card warns that its plan ends only in the last 14 days, or after', () => {
+	assert.equal(endingSoon(12), true)
+	assert.equal(endingSoon(14), true)
+	assert.equal(endingSoon(15), false)
+	assert.equal(endingSoon(56), false)
+	assert.equal(endingSoon(-2), true)
+	assert.equal(endingSoon(null), false)
 })

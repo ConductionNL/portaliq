@@ -329,10 +329,13 @@ test.describe('admin SPA + admin settings + operator contracts', () => {
 		// only ever appeared in this file's COMMENTS, and the gate reads
 		// EXECUTABLE text — a mention is not coverage, which is exactly the
 		// distinction the gate exists to draw.
+		// The page's heading reads "Features & roadmap"; "Features" is now its
+		// first tab (the shell's board-look page header).
 		await expect(
-			page.getByRole('heading', { name: 'Features', exact: true }),
+			page.getByRole('heading', { name: /^\s*(Features & roadmap|Functies en roadmap)\s*$/ }),
 			'FeaturesRoadmap must render its own heading, not just the shell',
 		).toBeVisible({ timeout: 30_000 })
+		await expect(page.getByRole('tab', { name: /^\s*(Features|Functies)\s*$/ })).toBeVisible()
 	})
 
 	// REQ-UI-001 and REQ-UI-002 are two halves of one join, and the join key is

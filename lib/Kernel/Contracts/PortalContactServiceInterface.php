@@ -60,7 +60,7 @@ interface PortalContactServiceInterface {
 	 *
 	 * @return string SENT when joined, else NOT_FOUND (also for an expired or used link).
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function acceptInvitation(array $subject, string $token, string $displayName, ?DateTimeImmutable $now=null): string;
 
@@ -73,7 +73,7 @@ interface PortalContactServiceInterface {
 	 *
 	 * @return string The address, or ''.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function invitationEmail(string $token, string $organisation, ?DateTimeImmutable $now=null): string;
 
@@ -91,7 +91,7 @@ interface PortalContactServiceInterface {
 	 *
 	 * @return string One of SENT, INVALID, LIMIT, DUPLICATE or FAILED.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function invite(array $subject, string $email, string $message, ?DateTimeImmutable $now=null): string;
 
@@ -103,7 +103,7 @@ interface PortalContactServiceInterface {
 	 *
 	 * @return array<string, mixed> `incoming`, `outgoing` and `contacts` lists of rows, and `counts` per role.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function overview(string $owner, string $organisation): array;
 
@@ -115,7 +115,7 @@ interface PortalContactServiceInterface {
 	 *
 	 * @return string SENT when done, else NOT_FOUND.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function remove(array $subject, string $id): string;
 
@@ -128,7 +128,7 @@ interface PortalContactServiceInterface {
 	 *
 	 * @return string SENT, NOT_FOUND or FAILED.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function resend(array $subject, string $id, ?DateTimeImmutable $now=null): string;
 
@@ -144,7 +144,7 @@ interface PortalContactServiceInterface {
 	 *
 	 * @return string SENT when done, else NOT_FOUND.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function respond(array $subject, string $id, bool $accept): string;
 
@@ -156,7 +156,7 @@ interface PortalContactServiceInterface {
 	 *
 	 * @return string SENT when done, else NOT_FOUND.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function withdraw(array $subject, string $id): string;
 
@@ -169,7 +169,7 @@ interface PortalContactServiceInterface {
 	 *
 	 * @return array<string, string> Name by subject reference.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	public function contactNames(string $owner, string $organisation): array;
 
@@ -183,7 +183,7 @@ interface PortalContactServiceInterface {
 	 *
 	 * @return array{id: string, ref: string, displayName: string}|null The contact.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	public function approvedContact(string $owner, string $organisation, string $id): ?array;
 
@@ -198,7 +198,7 @@ interface PortalContactServiceInterface {
 	 *
 	 * @return bool Whether an open invitation was held.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function holdForRegistration(string $token, string $newRef, string $organisation, ?DateTimeImmutable $now=null): bool;
 
@@ -210,7 +210,7 @@ interface PortalContactServiceInterface {
 	 *
 	 * @return int How many invitations joined.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function joinOnActivation(array $account, ?DateTimeImmutable $now=null): int;
 }//end interface

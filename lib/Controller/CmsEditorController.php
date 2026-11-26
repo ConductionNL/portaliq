@@ -144,7 +144,7 @@ class CmsEditorController extends Controller {
 	 *
 	 * @contract exclude the read-only check is covered by CmsPublishValidatorTest; the controller only adds the editor check and the header
 	 *
-	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-2
+	 * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-2
 	 * @spec openspec/changes/operate-portals-per-organisation/tasks.md#t11
 	 */
 	#[NoAdminRequired]

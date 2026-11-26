@@ -56,6 +56,17 @@ test('lookupAddress reads the route and turns every failure into null', async ()
 	assert.match(urls[0], /\/apps\/portaliq\/portal\/api\/intake\/address\?postcode=1234\+AB&number=12$/)
 
 	assert.equal(await lookupAddress({ base: '/x', fetchImpl: async () => ({ ok: false }) }, BLOCK), null)
+
+	// The resident's bearer goes along when there is one, and none without.
+	const sent = []
+	const keep = async (url, init) => {
+		sent.push(init.headers)
+		return { ok: true, json: async () => ({ street: 'Lindelaan', town: 'Zuiddrecht' }) }
+	}
+	await lookupAddress({ base: '/x', token: 'abc', fetchImpl: keep }, BLOCK)
+	await lookupAddress({ base: '/x', fetchImpl: keep }, BLOCK)
+	assert.equal(sent[0].Authorization, 'Bearer abc')
+	assert.equal(sent[1].Authorization, undefined)
 	assert.equal(await lookupAddress({ base: '/x', fetchImpl: async () => { throw new Error('down') } }, BLOCK), null)
 	assert.equal(await lookupAddress({ base: '/x', fetchImpl: async () => ({ ok: true, json: async () => ({}) }) }, BLOCK), null)
 })

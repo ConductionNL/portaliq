@@ -31,6 +31,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Proposals;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Container\ContainerInterface;
@@ -111,6 +112,7 @@ class ReviewerObjectWriter {
 	 * @return bool True when the write landed.
 	 *
 	 * @spec openspec/specs/change-proposal-queue/spec.md
+	 * @spec openspec/changes/change-proposals-reach-the-case-page/tasks.md#t07
 	 */
 	private function saveAsReviewer(string $register, string $schema, string $id, array $values): bool {
 		$objectService = $this->objectService();
@@ -119,6 +121,23 @@ class ReviewerObjectWriter {
 		}
 
 		try {
+			if ($this->canPatch(objectService: $objectService) === true) {
+				// A merge into the stored record: a save of only the accepted
+				// properties replaced the object and OpenRegister refused it for
+				// the required properties it no longer carried (T07 live, a
+				// dossiq case: "caseType, title missing").
+				$saved = $objectService->patchObject(
+					patch: new ObjectPatch(
+						objectId: $id,
+						data: $values,
+						target: new ObjectFindTarget(register: $register, schema: $schema)
+					),
+					_rbac: true,
+					_multitenancy: true
+				);
+				return $saved !== null;
+			}
+
 			$saved = $objectService->saveObject(
 				object: $values,
 				options: new ObjectSaveOptions(
@@ -137,6 +156,19 @@ class ReviewerObjectWriter {
 
 		return $saved !== null;
 	}//end saveAsReviewer()
+
+	/**
+	 * Whether this OpenRegister merges a partial write (patchObject with its ObjectPatch contract).
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/change-proposals-reach-the-case-page/tasks.md#t07
+	 */
+	private function canPatch(object $objectService): bool {
+		return class_exists(ObjectPatch::class) === true && method_exists($objectService, 'patchObject') === true;
+	}//end canPatch()
 
 	/**
 	 * OpenRegister's object service, or null when it is not installed.

@@ -483,13 +483,23 @@ test.describe('a misspelt search still finds, and a correction is offered', () =
 				title: `Belastingen e2e ${Date.now().toString(36)}`,
 				summary: 'Alles over de hondenbelasting en hoe u die betaalt.',
 				publicationDate: new Date(Date.now() - 60_000).toISOString(),
-				status: 'published',
 			},
 		})
 		expect(publication.ok(), await publication.text()).toBe(true)
 		const publicationId = idOf(await publication.json())
 
 		try {
+			// A new publication starts in "draft" and OpenRegister refuses "published" on create
+			// (lifecycle-invalid-initial); with review required it reaches "published" only through
+			// the lifecycle: submit, approve, publish (opencatalogi publication-lifecycle-on-or).
+			for (const action of ['submit', 'approve', 'publish']) {
+				const moved = await api.post(`${OBJECTS}/${publicationId}/transition`, {
+					headers,
+					data: { action },
+				})
+				expect(moved.ok(), `${action}: ${await moved.text()}`).toBe(true)
+			}
+
 			runJob('SuggestionWordListJob')
 
 			await openSearchPage(page)

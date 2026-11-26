@@ -69,13 +69,15 @@
 				role="status"
 				data-testid="plan-alert">
 				<strong>{{
-					fill(words.alert, { days: plan.daysLeft, date: plan.endDate })
+					fill(words.alert, { days: plan.daysLeft, date: endText })
 				}}</strong>
 				<span>{{
 					fill(words.alertDetail, { count: plan.openActions })
 				}}</span>
 			</div>
 
+			<div class="pq-plan__body">
+			<div class="pq-plan__main">
 			<section aria-labelledby="pq-plan-goal">
 				<h2 id="pq-plan-goal" class="utrecht-heading-3">
 					{{ words.goal }}
@@ -348,7 +350,9 @@
 				</template>
 			</section>
 
-			<section aria-labelledby="pq-plan-people">
+			</div>
+			<aside class="pq-plan__side">
+			<section aria-labelledby="pq-plan-people" class="pq-plan__panel">
 				<h2 id="pq-plan-people" class="utrecht-heading-3">
 					{{ words.participants }}
 				</h2>
@@ -396,12 +400,13 @@
 				</div>
 			</section>
 
-			<section aria-labelledby="pq-plan-end">
+			<section aria-labelledby="pq-plan-end" class="pq-plan__panel">
 				<h2 id="pq-plan-end" class="utrecht-heading-3">
 					{{ words.endDate }}
 				</h2>
 				<p class="utrecht-paragraph" data-testid="plan-end">
-					{{ plan.endDate }} {{ daysText }}
+					<strong class="pq-plan__end-date">{{ endText }}</strong>
+					<span v-if="daysText" class="pq-plan__ending">{{ daysText }}</span>
 				</p>
 				<div v-if="plan.isOwner && plan.canEdit" class="pq-plan__add">
 					<input
@@ -420,7 +425,7 @@
 				</div>
 			</section>
 
-			<section v-if="plan.isOwner && plan.canEdit" class="pq-plan__owner">
+			<section v-if="plan.isOwner && plan.canEdit" class="pq-plan__owner pq-plan__panel">
 				<button
 					type="button"
 					class="utrecht-button utrecht-button--secondary-action"
@@ -453,6 +458,8 @@
 					</button>
 				</template>
 			</section>
+			</aside>
+			</div>
 		</template>
 	</article>
 </template>
@@ -463,11 +470,13 @@ import { plansApi } from '../../../shared/areaApi.js'
 import { actionWords, daysLeftLine, dayText } from '../../lib/actions.js'
 import {
 	daysLine,
+	endingSoon,
 	fill,
 	personLine,
 	planWords,
 	versionLine,
 } from '../../lib/plans.js'
+import { longDate, readerLocale } from './format.js'
 
 /**
  * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
@@ -557,9 +566,17 @@ export default {
 		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
 		 */
 		daysText() {
-			return this.plan.state === 'done'
+			return this.plan.state === 'done' || !endingSoon(this.plan.daysLeft)
 				? ''
 				: daysLine(this.plan.daysLeft, this.words)
+		},
+
+		/**
+		 * @return {string} The end date as "20 oktober 2026" in the reader's language.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t10
+		 */
+		endText() {
+			return longDate(this.plan.endDate, readerLocale(this.locale || this.pageLocale)) || this.plan.endDate || ''
 		},
 
 		/**
@@ -971,9 +988,67 @@ export default {
 
 .pq-plan__status {
 	display: inline-block;
-	padding-inline: var(--utrecht-space-inline-xs, 0.375rem);
-	border-radius: var(--utrecht-border-radius-sm, 0.25rem);
-	background: var(--utrecht-color-grey-95, transparent);
+	padding: 0.125rem 0.5rem;
+	border-radius: 999px;
+	background: var(--nldesign-color-primary-light, var(--utrecht-color-grey-95, transparent));
+	font-size: 0.875em;	white-space: nowrap;
+}
+
+.pq-plan__status[data-status='done'] {
+	background: var(--utrecht-feedback-success-background-color, var(--nldesign-color-success-light, transparent));
+}
+
+/*
+ * Board Plan (shared-plans-with-a-caseworker T10): the plan in a main column
+ * (goal, actions, notes, files) and a side column of panels (participants,
+ * end date, the owner's actions); one column on a narrow screen.
+ */
+.pq-plan__body {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
+	align-items: start;
+	gap: var(--utrecht-space-block-lg, 1.5rem);
+}
+
+@media (max-width: 52rem) {
+	.pq-plan__body {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.pq-plan__main > * + *,
+.pq-plan__side > * + * {
+	margin-block-start: var(--utrecht-space-block-lg, 1.5rem);
+}
+
+.pq-plan__panel {
+	padding: var(--utrecht-space-block-md, 1rem);
+	border: 1px solid var(--nldesign-color-border-light, var(--utrecht-color-grey-80, color-mix(in srgb, currentcolor 18%, transparent)));
+	border-radius: var(--utrecht-border-radius-md, 0.375rem);
+}
+
+.pq-plan__panel h2 {
+	margin-block-start: 0;
+	font-size: 1.125em;
+}
+
+.pq-plan__end-date {
+	display: block;
+	font-size: 1.25em;
+}
+
+.pq-plan__ending {
+	display: inline-block;
+	margin-block-start: 0.25rem;
+	padding: 0.125rem 0.5rem;
+	border-radius: 999px;
+	background: var(--utrecht-feedback-danger-background-color, var(--nldesign-color-error-light, transparent));
+	color: var(--utrecht-feedback-danger-color, currentcolor);
+	font-size: 0.875em;
+}
+
+.pq-plan__panel .pq-plan__add input {
+	inline-size: 100%;
 }
 
 .pq-plan__sr {

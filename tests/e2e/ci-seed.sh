@@ -488,6 +488,88 @@ if [ "$DEV_CODE" != "200" ] || ! grep -q '"token"' "$DEV_BODY"; then
 	exit 1
 fi
 
+# ── 5c. The ways-in fixtures (identity-ways-in-screens.spec.ts) ──────────────
+# "Create an account" opens only where the portal's organisation offers the
+# e-mail sign-in (an OIDC provider `generic`) and the portal's registration
+# policy is not off; "Follow your case" only where a published form binding
+# names a case type admitting `reference` (REQ-IWI-005). Nothing else seeds
+# that, so the spec read three portals that did not exist. Each fixture
+# organisation is its own, so the e-mail sign-in never shows on dev-org's
+# portals that other specs read. The provider settings are app config
+# (org_presentation_<uuid>, and the client secret in its own sensitive key),
+# which only occ can write. Tolerant: a failure here warns and leaves the
+# other specs alone.
+# How many rows a list answer holds (its query echo names the filter too, so a
+# grep for the value would always match).
+rows_in() {
+	python3 -c 'import json,sys
+try:
+    d=json.load(sys.stdin)
+except ValueError:
+    d={}
+print(len(d.get("results", [])) if isinstance(d, dict) else 0)'
+}
+seed_ways_in() {
+	local api="${BASE}/index.php/apps/openregister/api"
+	local auth=(-u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' -H 'Content-Type: application/json')
+	if [ -z "$OCC" ]; then
+		echo "::warning::occ not found; identity-ways-in-screens has no sign-in providers to read."
+		return 0
+	fi
+	local slug uuid provider
+	for pair in e2e-ways-org:generic e2e-digid-org:digid; do
+		slug="${pair%%:*}"
+		provider="${pair##*:}"
+		curl -sS -o /dev/null "${auth[@]}" -X POST \
+			--data "{\"name\":\"${slug}\",\"slug\":\"${slug}\",\"description\":\"E2E fixture organisation\"}" \
+			"${api}/organisations" || true
+		uuid="$(curl -sS "${auth[@]}" "${api}/organisations?_limit=200" | python3 -c 'import json,sys
+d=json.load(sys.stdin)
+rows=d.get("results", d) if isinstance(d, dict) else d
+print(next((o.get("uuid") for o in rows if isinstance(o, dict) and o.get("slug")==sys.argv[1]), ""))' "$slug" 2>/dev/null || true)"
+		if [ -z "$uuid" ]; then
+			echo "::warning::organisation ${slug} not found; identity-ways-in-screens will fail."
+			return 0
+		fi
+		$OCC config:app:set portaliq "org_presentation_${uuid}" \
+			--value="{\"oidc\":{\"${provider}\":{\"issuer\":\"https://${provider}.e2e.example\",\"clientId\":\"${slug}\",\"label\":\"${provider}\"}}}" >/dev/null
+		$OCC config:app:set portaliq "oidc_secret_${uuid}_${provider}" --value='e2e-not-a-secret' --sensitive >/dev/null
+		echo "[ci-seed] ways-in: ${slug} offers ${provider}"
+	done
+
+	local portal org policy
+	for row in e2e-ways-in:e2e-ways-org:activation e2e-registration-off:e2e-ways-org:off e2e-digid-only:e2e-digid-org:approval; do
+		IFS=: read -r portal org policy <<<"$row"
+		if [ "$(curl -sS "${auth[@]}" "${api}/objects/portaliq/portal?slug=${portal}" | rows_in)" != "0" ]; then
+			echo "[ci-seed] ways-in: portal ${portal} already there"
+			continue
+		fi
+		curl -sS -o /dev/null -w "[ci-seed] ways-in: portal ${portal} -> HTTP %{http_code}\n" "${auth[@]}" -X POST \
+			--data "{\"title\":\"${portal}\",\"slug\":\"${portal}\",\"status\":\"published\",\"organisation\":\"${org}\",\"theme\":\"vng\",\"authentication\":{\"modes\":[\"public\",\"oidc\"],\"registration\":{\"policy\":\"${policy}\"}}}" \
+			"${api}/objects/portaliq/portal" || true
+	done
+
+	if [ "$(curl -sS "${auth[@]}" "${api}/objects/portaliq/portalFormBinding?portal=e2e-ways-in" | rows_in)" != "0" ]; then
+		echo "[ci-seed] ways-in: reference binding already there"
+		return 0
+	fi
+	local type_id
+	type_id="$(curl -sS "${auth[@]}" -X POST \
+		--data '{"title":"E2E zaak op nummer","portalIdentityKind":["account","reference"]}' \
+		"${api}/objects/portaliq/portalCaseType" | python3 -c 'import json,sys
+d=json.load(sys.stdin)
+print(d.get("id") or (d.get("@self") or {}).get("id") or "")' 2>/dev/null || true)"
+	if [ -z "$type_id" ]; then
+		echo "::warning::the reference case type was not created; 'Follow your case' stays closed."
+		return 0
+	fi
+	# An external intake: the binding only has to declare the case type here.
+	curl -sS -o /dev/null -w '[ci-seed] ways-in: reference binding -> HTTP %{http_code}\n' "${auth[@]}" -X POST \
+		--data "{\"portal\":\"e2e-ways-in\",\"route\":\"e2e-zaak-op-nummer\",\"typeRegister\":\"portaliq\",\"typeSchema\":\"portalCaseType\",\"typeId\":\"${type_id}\",\"audience\":\"client\",\"deliverTo\":\"case\",\"intakeKind\":\"external\",\"externalUrl\":\"https://zaken.e2e.example/aanvraag\",\"allowedOrigins\":[\"https://zaken.e2e.example\"],\"challenge\":false,\"status\":\"published\"}" \
+		"${api}/objects/portaliq/portalFormBinding" || true
+}
+seed_ways_in
+
 # ── 6. Warm the site, and GATE on the site bundle serving as JavaScript ──────
 # The shared workflow serves Nextcloud with `php -S 0.0.0.0:8080`. It sets
 # PHP_CLI_SERVER_WORKERS=8, but the first hit still pays a cold opcache and the

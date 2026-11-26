@@ -73,7 +73,7 @@ class CmsSharedBlocks {
 	 * @return array The widgets, placements expanded.
 	 *
 	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
-	 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+	 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
 	 */
 	public function expand(array $widgets, string $organisation, string $portal=''): array {
 		$blocks = null;

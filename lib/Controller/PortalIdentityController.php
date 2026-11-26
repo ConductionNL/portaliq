@@ -407,7 +407,7 @@ class PortalIdentityController extends Controller {
 	 * @return JSONResponse What became of the registration.
 	 *
 	 * @spec openspec/specs/portal-identity-and-the-organisations-cases/spec.md
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -559,7 +559,7 @@ class PortalIdentityController extends Controller {
 	 * @return JSONResponse Whether the account is ready.
 	 *
 	 * @spec openspec/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -587,7 +587,7 @@ class PortalIdentityController extends Controller {
 	 *
 	 * @return JSONResponse `{email}`, or 404.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

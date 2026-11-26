@@ -734,7 +734,7 @@ test('the current menu item may sit in the line under the menu', () => {
 	)
 })
 
-test('the Zuiddrecht site offers its two ways in as the Inloggen board shows', () => {
+test('the Zuiddrecht site offers its three ways in as the Inloggen board shows', () => {
 	const site = sites.find((entry) => entry.site.id === 'zuiddrecht').site
 	const auth = site.portal.authentication
 	// A card for every way in the portal names, and for no other.
@@ -749,6 +749,11 @@ test('the Zuiddrecht site offers its two ways in as the Inloggen board shows', (
 	})
 	assert.equal(auth.modeLabels.eherkenning.title, 'Namens een bedrijf')
 	assert.equal(auth.modeLabels.eherkenning.button, 'Inloggen met eHerkenning')
+	// The third card, "Met een account", carries "Wachtwoord vergeten"
+	// (password-reset-from-the-sign-in-page, live check T04).
+	assert.ok(auth.modes.includes('nextcloud'))
+	assert.equal(auth.modeLabels.nextcloud.title, 'Met een account')
+	assert.match(auth.signInPage.intro, /een account gebruiken\.$/)
 	assert.equal(auth.signInPage.title, 'Inloggen op Mijn Zuiddrecht')
 	assert.match(auth.signInPage.intro, /^Kies hoe u inlogt\./)
 	assert.match(auth.signInPage.notice.text, /^Geen DigiD\?/)
@@ -858,7 +863,9 @@ test('the Zuiddrecht site lays out its own area as the MijnMenu and MijnZaken bo
 	// 0.128.0: moved past development's 0.127.0 (submission-row-actions); portal 0.38.0.
 	// 0.129.0: portalCase carries closedAt and its public outcome (case-outcome-on-the-case-page e2e).
 	// 0.130.0: portalCase carries decisionSentAt and againstCaseId (case-page-objection-and-complaint e2e).
-	assert.equal(register.info.version, '0.130.0')
+	// 0.132.0: portalPage 0.12.0, a rows block's statusNotes (rows-status-note-per-state).
+	// 0.133.0: portalPage 0.13.0, a propose-change action and its proposable list.
+	assert.equal(register.info.version, '0.133.0')
 })
 
 // zuiddrecht-site-details: the portal names the organisation of the example

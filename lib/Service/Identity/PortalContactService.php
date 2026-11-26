@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
  */
 
 declare(strict_types=1);
@@ -42,7 +42,7 @@ use OCP\Security\ISecureRandom;
  * @SuppressWarnings(PHPMD.TooManyPublicMethods) -- one method per action a resident takes on a contact.
  * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
  */
 class PortalContactService implements PortalContactServiceInterface {
 
@@ -129,7 +129,7 @@ class PortalContactService implements PortalContactServiceInterface {
 	 *
 	 * @return string One of SENT, INVALID, LIMIT, DUPLICATE or FAILED.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function invite(array $subject, string $email, string $message, ?DateTimeImmutable $now=null): string {
 		$owner        = (string)($subject['subjectRef'] ?? '');
@@ -166,7 +166,7 @@ class PortalContactService implements PortalContactServiceInterface {
 	 *
 	 * @return array{refusal: string, account: array<string, mixed>|null}
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	private function inviteRefusal(array $subject, array $rows, string $email, DateTimeImmutable $now): array {
 		if ($this->rows->sentToday(rows: $rows, now: $now) >= self::DAILY_LIMIT) {
@@ -194,7 +194,7 @@ class PortalContactService implements PortalContactServiceInterface {
 	 *
 	 * @return string SENT, NOT_FOUND or FAILED.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function resend(array $subject, string $id, ?DateTimeImmutable $now=null): string {
 		$row = $this->rows->ownRow(subject: $subject, id: $id, states: ['invited']);
@@ -220,7 +220,7 @@ class PortalContactService implements PortalContactServiceInterface {
 	 *
 	 * @return string SENT when done, else NOT_FOUND.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function withdraw(array $subject, string $id): string {
 		return $this->endLink(subject: $subject, id: $id, from: ['invited'], to: 'withdrawn', theirs: 'requested');
@@ -234,7 +234,7 @@ class PortalContactService implements PortalContactServiceInterface {
 	 *
 	 * @return string SENT when done, else NOT_FOUND.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function remove(array $subject, string $id): string {
 		return $this->endLink(subject: $subject, id: $id, from: ['approved'], to: 'withdrawn', theirs: 'approved');
@@ -252,7 +252,7 @@ class PortalContactService implements PortalContactServiceInterface {
 	 *
 	 * @return string SENT when done, else NOT_FOUND.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function respond(array $subject, string $id, bool $accept): string {
 		if ($accept === true) {
@@ -273,7 +273,7 @@ class PortalContactService implements PortalContactServiceInterface {
 	 *
 	 * @return string SENT when joined, else NOT_FOUND (also for an expired or used link).
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function acceptInvitation(array $subject, string $token, string $displayName, ?DateTimeImmutable $now=null): string {
 		return $this->link->accept(subject: $subject, token: $token, displayName: $displayName, now: $now);
@@ -290,7 +290,7 @@ class PortalContactService implements PortalContactServiceInterface {
 	 *
 	 * @return bool Whether an open invitation was held.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function holdForRegistration(string $token, string $newRef, string $organisation, ?DateTimeImmutable $now=null): bool {
 		return $this->link->holdForRegistration(token: $token, newRef: $newRef, organisation: $organisation, now: $now);
@@ -304,7 +304,7 @@ class PortalContactService implements PortalContactServiceInterface {
 	 *
 	 * @return int How many invitations joined.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function joinOnActivation(array $account, ?DateTimeImmutable $now=null): int {
 		return $this->link->joinOnActivation(account: $account, now: $now);
@@ -319,7 +319,7 @@ class PortalContactService implements PortalContactServiceInterface {
 	 *
 	 * @return string The address, or ''.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function invitationEmail(string $token, string $organisation, ?DateTimeImmutable $now=null): string {
 		return $this->link->invitationEmail(token: $token, organisation: $organisation, now: $now);
@@ -333,7 +333,7 @@ class PortalContactService implements PortalContactServiceInterface {
 	 *
 	 * @return array<string, mixed> `incoming`, `outgoing` and `contacts` lists of rows, and `counts` per role.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function overview(string $owner, string $organisation): array {
 		return $this->overview->overview(owner: $owner, organisation: $organisation);
@@ -362,7 +362,7 @@ class PortalContactService implements PortalContactServiceInterface {
 	 *
 	 * @return array<int, string> The other accounts' subject references.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	public function approvedRefs(string $owner, string $organisation): array {
 		return $this->overview->approvedRefs(owner: $owner, organisation: $organisation);
@@ -378,7 +378,7 @@ class PortalContactService implements PortalContactServiceInterface {
 	 *
 	 * @return array{id: string, ref: string, displayName: string}|null The contact.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	public function approvedContact(string $owner, string $organisation, string $id): ?array {
 		return $this->overview->approvedContact(owner: $owner, organisation: $organisation, id: $id);
@@ -393,7 +393,7 @@ class PortalContactService implements PortalContactServiceInterface {
 	 *
 	 * @return array<string, string> Name by subject reference.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	public function contactNames(string $owner, string $organisation): array {
 		return $this->overview->namesByRef(owner: $owner, organisation: $organisation);

@@ -73,36 +73,45 @@ test.describe('app chrome (ADR-114)', () => {
 		await dismissSetupWizard(page)
 	})
 
-	test('the footer reads Documentation, Store, Features & roadmap, each with a glyph', async ({
+	test('the footer carries Help and guidance; Documentation, Store and Features & roadmap sit under Advanced, each with a glyph', async ({
 		page,
 	}) => {
-		const footer = page.locator(
-			'[data-testid="cn-nav"] .cn-app-nav__footer-list',
-		)
+		// The boards draw the bottom of the menu as "Hulp en uitleg" and
+		// "Geavanceerd" (PtArtikelen and the other Pt index boards); the shell
+		// moved Documentation, the store and the roadmap into that foldout, so
+		// the footer list holds the help entry only.
+		const nav = page.locator('[data-testid="cn-nav"]')
+		const footer = nav.locator('.cn-app-nav__footer-list')
 		await expect(footer).toBeAttached({ timeout: 15_000 })
+		await expect(footer.locator('[data-testid="cn-nav-help"]')).toBeAttached()
+		await expect(
+			footer.locator('[data-testid="cn-nav-help"]').locator('svg, .material-design-icon').first(),
+		).toBeAttached()
 
-		const rows = footer.locator('li')
+		await nav.getByRole('button', { name: /^\s*(Advanced|Geavanceerd)\s*$/ }).first().click()
+		const rows = nav.locator('[data-testid="cn-nav-settings"] li')
 		const texts = (await rows.allInnerTexts())
 			.map((t) => t.trim())
 			.filter(Boolean)
 
 		// ORDER is the rule, not the numbers: ADR-114 fixes the sequence, and
 		// openregister runs its footer at 1/2 while pipelinq runs 160/200/230.
+		// The store entry reads "Marketplace" in the current shell.
 		const seen = texts.filter((t) =>
-			/Documentation|Store|Reports|roadmap/i.test(t),
+			/^(Documentation|Store|Marketplace|Features & roadmap)$/i.test(t),
 		)
 		expect(seen.length).toBe(3)
 		expect(seen[0]).toMatch(/Documentation/i)
-		expect(seen[1]).toMatch(/Store/i)
+		expect(seen[1]).toMatch(/Store|Marketplace/i)
 		expect(seen[2]).toMatch(/roadmap/i)
 
-		// A glyph on every row — the assertion that would have caught the
-		// unregistered-icon defect. ChartBoxOutline had to be added to
-		// src/icons.js for this very entry.
+		// A glyph on every one of them: the assertion that would have caught
+		// the unregistered-icon defect (ChartBoxOutline in src/icons.js).
 		for (const row of await rows.all()) {
-			await expect(
-				row.locator('svg, .material-design-icon').first(),
-			).toBeAttached()
+			const text = (await row.innerText()).trim()
+			if (/^(Documentation|Store|Marketplace|Features & roadmap)$/i.test(text)) {
+				await expect(row.locator('svg, .material-design-icon').first()).toBeAttached()
+			}
 		}
 	})
 
@@ -157,11 +166,11 @@ test.describe('app chrome (ADR-114)', () => {
 	test('Store opens the hosted store surface, which this app writes no backend for', async ({
 		page,
 	}) => {
-		const footer = page.locator(
-			'[data-testid="cn-nav"] .cn-app-nav__footer-list',
-		)
-		await footer
-			.getByRole('link', { name: /^Store$/ })
+		// The store entry sits under Advanced and reads "Marketplace" in the current shell.
+		const nav = page.locator('[data-testid="cn-nav"]')
+		await nav.getByRole('button', { name: /^\s*(Advanced|Geavanceerd)\s*$/ }).first().click()
+		await nav
+			.getByRole('link', { name: /^\s*(Store|Marketplace)\s*$/ })
 			.first()
 			.click()
 

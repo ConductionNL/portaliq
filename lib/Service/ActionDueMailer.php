@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
  */
 
 declare(strict_types=1);
@@ -31,7 +31,7 @@ use OCP\IL10N;
 /**
  * Mails the assignee that an action is nearly due (template `action-due`).
  *
- * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
  */
 class ActionDueMailer extends ReminderMailer {
 	/**
@@ -59,7 +59,7 @@ class ActionDueMailer extends ReminderMailer {
 	 *
 	 * @return bool Whether a mail left; false for an assignee without a usable address or with a withdrawn account.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
 	 */
 	public function send(string $subjectRef, string $organisation, string $action, string $endDate): bool {
 		return $this->deliver(subjectRef: $subjectRef, organisation: $organisation, values: ['action' => $action, 'date' => $endDate]);
@@ -73,7 +73,7 @@ class ActionDueMailer extends ReminderMailer {
 	 *
 	 * @return array{heading: string, subject: string, body: string}
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
 	 */
 	protected function text(IL10N $l10n, array $values): array {
 		return [

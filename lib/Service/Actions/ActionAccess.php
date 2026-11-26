@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t02
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use OCA\Portaliq\Service\Identity\PortalContactService;
  * owner gives an action to themself or an approved contact, a participant
  * to anyone in the plan, and an assignee to no one else.
  *
- * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
  */
 class ActionAccess {
 
@@ -56,7 +56,7 @@ class ActionAccess {
 	 * @return array<string, mixed>|null `role` (owner, assignee or member), `scopeField` and `scopeValue` to write
 	 *                                    through, `members` who may be assigned, `mayDelete`, `readOnly` and `planTitle`.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
 	 */
 	public function forAction(array $subject, array $row, ?array $membership): ?array {
 		if ($membership !== null) {
@@ -157,7 +157,7 @@ class ActionAccess {
 	 *
 	 * @return array<int, string> The subject references.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
 	 */
 	public function ownMembers(array $subject): array {
 		$ref = (string)($subject['subjectRef'] ?? '');

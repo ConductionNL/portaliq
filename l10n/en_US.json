@@ -363,6 +363,11 @@
         "This invitation was already accepted, so it cannot be withdrawn.": "This invitation was already accepted, so it cannot be withdrawn.",
         "This invitation was not found in its organisation.": "This invitation was not found in its organisation.",
         "Waiting for approval": "Waiting for approval",
+        "{name} wants to add you as a contact": "{name} wants to add you as a contact",
+        "Invitation to {email}": "Invitation to {email}",
+        "Waiting for a reply": "Waiting for a reply",
+        "Someone only becomes your contact once you have both approved each other.": "Someone only becomes your contact once you have both approved each other.",
+        "Requested on {date}": "Requested on {date}",
         "Publish this page?": "Publish this page?",
         "Anyone can read this page, without signing in.": "Anyone can read this page, without signing in.",
         "Its address:": "Its address:",
@@ -691,7 +696,10 @@
         "The form this widget is bound to no longer exists.": "The form this widget is bound to no longer exists.",
         "The fields of this form could not be read or saved.": "The fields of this form could not be read or saved.",
         "Variables": "Variables",
-        "Changed on": "Changed on"
+        "Changed on": "Changed on",
+        "Form submits that failed: %1$s": "Form submits that failed: %1$s",
+        "%1$s submits on %2$s did not reach their destination in the past 24 hours. The residents kept their answers and saw the error code.": "%1$s submits on %2$s did not reach their destination in the past 24 hours. The residents kept their answers and saw the error code.",
+        "Form submits that failed": "Form submits that failed"
     },
     "pluralForm": "nplurals=2; plural=(n != 1);"
 }

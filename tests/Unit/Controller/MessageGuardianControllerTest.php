@@ -240,7 +240,7 @@ class MessageGuardianControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	public function testAConversationStartsWithAnApprovedContact(): void {
 		$messaging = $this->createMock(GuardianMessagingLeafInterface::class);
@@ -261,7 +261,7 @@ class MessageGuardianControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	public function testAConversationWithAnyoneElseIsRefused(): void {
 		$messaging = $this->createMock(GuardianMessagingLeafInterface::class);
@@ -280,7 +280,7 @@ class MessageGuardianControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	public function testAResidentConversationShowsTheOtherPersonsName(): void {
 		$messaging = $this->createMock(GuardianMessagingLeafInterface::class);

@@ -28,9 +28,9 @@
  * and observed failing. That run needs a live instance and is not recorded
  * here.
  *
- * @spec openspec/changes/portal-theme-application/specs/portaliq-cms/spec.md#requirement-a-sites-theme-must-change-its-rendered-appearance
- * @spec openspec/changes/portal-theme-application/specs/portaliq-cms/spec.md#requirement-an-unresolvable-theme-must-be-obvious-not-silently-default
- * @spec openspec/changes/portal-theme-application/specs/portaliq-cms/spec.md#requirement-markup-must-carry-nl-design-component-classes
+ * @spec openspec/changes/archive/2026-11-25-portal-theme-application/specs/portaliq-cms/spec.md#requirement-a-sites-theme-must-change-its-rendered-appearance
+ * @spec openspec/changes/archive/2026-11-25-portal-theme-application/specs/portaliq-cms/spec.md#requirement-an-unresolvable-theme-must-be-obvious-not-silently-default
+ * @spec openspec/changes/archive/2026-11-25-portal-theme-application/specs/portaliq-cms/spec.md#requirement-markup-must-carry-nl-design-component-classes
  */
 
 import type { APIRequestContext, Page } from '@playwright/test'
@@ -237,15 +237,15 @@ test.describe('portal-theme-application', () => {
 	test("only the active theme's token set is fetched", async ({ page }) => {
 		const sheets = await open(page, SLUGS.a)
 
-		expect(sheets.some((url) => url.includes(`/css/${THEME_A}.css`))).toBe(true)
-		expect(sheets.filter((url) => url.includes(`/css/${THEME_B}.css`))).toEqual([])
+		expect(sheets.some((url) => url.includes(`/css/tokens/${THEME_A}.css`))).toBe(true)
+		expect(sheets.filter((url) => url.includes(`/css/tokens/${THEME_B}.css`))).toEqual([])
 	})
 
 	test('a theme that does not resolve leaves the page visibly unthemed', async ({ page }) => {
 		const sheets = await open(page, SLUGS.missing)
 
-		expect(sheets.filter((url) => url.includes('/css/bestaat-niet-'))).toEqual([])
-		expect(sheets.filter((url) => url.includes(`/css/${THEME_A}.css`))).toEqual([])
+		expect(sheets.filter((url) => url.includes('/bestaat-niet-'))).toEqual([])
+		expect(sheets.filter((url) => url.includes(`/css/tokens/${THEME_A}.css`))).toEqual([])
 		// No token set applies, so no theme's primary colour is defined: the
 		// page shows the neutral fallbacks, not a brand that looks right.
 		expect(await rootToken(page, '--nldesign-color-primary')).toBe('')

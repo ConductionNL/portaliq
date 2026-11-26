@@ -406,8 +406,8 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 	 *
 	 * @return array<int, array<string, mixed>> The rows, in the order first read.
 	 *
-	 * @spec openspec/changes/personal-action-list/tasks.md#t02
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-a-resident-keeps-a-list-of-own-actions-req-ral-001
 	 */
 	public function readCollectionByAnyScope(
 		string $register,
@@ -449,7 +449,7 @@ class PortalObjectReader implements ScopedCollectionReaderInterface, PortalObjec
 	 *
 	 * @return array<string, array<string, mixed>> The rows, keyed by id.
 	 *
-	 * @spec openspec/changes/personal-action-list/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t02
 	 */
 	private function withUnseenRows(array $rows, array $read): array {
 		foreach ($read as $row) {

@@ -20,7 +20,7 @@ use RuntimeException;
  * A read over several scope fields: one scoped read per field, each row
  * verified on the field it was read by, merged once by id.
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t02
  */
 class PortalObjectReaderAnyScopeTest extends TestCase {
 

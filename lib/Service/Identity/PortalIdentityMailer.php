@@ -356,7 +356,7 @@ class PortalIdentityMailer implements PortalIdentityMailerInterface {
 	 *
 	 * @return array<int, string> The lines, none when the mail names no inviter.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t04
 	 */
 	private function detailLines(\OCP\IL10N $l10n, array $details): array {
 		$lines   = [];

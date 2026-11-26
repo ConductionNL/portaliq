@@ -18,7 +18,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { test } from 'node:test'
 import { fileURLToPath } from 'node:url'
-import { createMediaLibrary, markdownReference, withMedia } from '../src/lib/mediaLibrary.js'
+import { createMediaLibrary, markdownReference, newestFileName, thumbnailPath, withMedia } from '../src/lib/mediaLibrary.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -73,4 +73,28 @@ test('the designer opens the Media dialog, the site shows the hero with its alte
 	const ids = manifest.pages.filter((p) => p.config?.schema === 'media').map((p) => p.id)
 	assert.deepEqual(ids, ['Media', 'MediaDetail'])
 	assert.ok(manifest.menu.some((m) => m.route === 'Media'))
+})
+
+// admin-dialogs-board-look 1.5: the cards show a thumbnail and the file name.
+test('a card names the newest file of its item, as the public route serves it', async () => {
+	assert.equal(newestFileName({ results: [{ id: 4, title: 'oud.jpg' }, { id: 9, title: 'stadhuis.jpg' }] }), 'stadhuis.jpg')
+	assert.equal(newestFileName({ results: [] }), '')
+	assert.equal(newestFileName(undefined), '')
+
+	const urls = []
+	const library = createMediaLibrary({
+		get: async (url) => {
+			urls.push(url)
+			return { data: { results: [{ id: 3, title: 'kalender.pdf' }] } }
+		},
+	})
+	assert.equal(await library.fileName('m 1'), 'kalender.pdf')
+	assert.deepEqual(urls, ['/apps/openregister/api/objects/portaliq/media/m%201/files'])
+	assert.equal(await createMediaLibrary({ get: async () => { throw new Error('x') } }).fileName('m1'), '', 'a failed read leaves the name empty')
+})
+
+test('an image card shows its thumbnail through the portal\'s public media route; a file has none', () => {
+	assert.equal(thumbnailPath(TOWN_HALL, 'gemeente'), '/apps/portaliq/api/content/media/m1?portal=gemeente')
+	assert.equal(thumbnailPath({ ...TOWN_HALL, kind: 'file' }, 'gemeente'), '')
+	assert.equal(thumbnailPath(null, 'gemeente'), '')
 })
