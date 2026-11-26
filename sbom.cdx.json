@@ -3812,8 +3812,8 @@
       "type": "library",
       "name": "nextcloud-vue",
       "group": "@conduction",
-      "version": "2.203.0",
-      "bom-ref": "portaliq@0.1.0|@conduction/nextcloud-vue@2.203.0",
+      "version": "2.232.2",
+      "bom-ref": "portaliq@0.1.0|@conduction/nextcloud-vue@2.232.2",
       "licenses": [
         {
           "license": {
@@ -3821,15 +3821,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40conduction/nextcloud-vue@2.203.0",
+      "purl": "pkg:npm/%40conduction/nextcloud-vue@2.232.2",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@conduction/nextcloud-vue/-/nextcloud-vue-2.203.0.tgz",
+          "url": "https://registry.npmjs.org/@conduction/nextcloud-vue/-/nextcloud-vue-2.232.2.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "b5e3f0e39ab553281a32e5e0ad40505c8d99e92fa5452897eb44caea62ac1b57e97de44bd5382723b84429504c894a9d480eae59a3229fcf35b20a4452224364"
+              "content": "a79219f086de52c4eec7fd7b174d09abaa74413fffca94c7ef8485a4da7fdd870c8ce8a607b3c964e9084f854f2f6a06d46772e200a86aa1d4b994e7db25c040"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -4261,8 +4261,8 @@
       "type": "library",
       "name": "config-array",
       "group": "@eslint",
-      "version": "0.23.5",
-      "bom-ref": "portaliq@0.1.0|@eslint/config-array@0.23.5",
+      "version": "0.23.6",
+      "bom-ref": "portaliq@0.1.0|@eslint/config-array@0.23.6",
       "licenses": [
         {
           "license": {
@@ -4270,15 +4270,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40eslint/config-array@0.23.5",
+      "purl": "pkg:npm/%40eslint/config-array@0.23.6",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@eslint/config-array/-/config-array-0.23.5.tgz",
+          "url": "https://registry.npmjs.org/@eslint/config-array/-/config-array-0.23.6.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "63790a2ef0b576f4ce4fea0696a350d572ea2ba0f51d4d985cf739d8d98094965b30c583cc66173223d127c4d80f7f66b83fce4e395998d27889beddbd2acc04"
+              "content": "5ab4c7ee78a823d40f6383591a7b32c2679cb3025d81eab804233beaaa24f558234cedbd66053352f72e24b54f61540ce2e0db68f054d0cdf747d0c8c48f17df"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -4292,6 +4292,45 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@eslint/config-array"
+        }
+      ],
+      "components": [
+        {
+          "type": "library",
+          "name": "minimatch",
+          "version": "11.0.9",
+          "bom-ref": "portaliq@0.1.0|@eslint/config-array@0.23.6|minimatch@11.0.9",
+          "licenses": [
+            {
+              "license": {
+                "id": "BlueOak-1.0.0"
+              }
+            }
+          ],
+          "purl": "pkg:npm/minimatch@11.0.9",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/minimatch/-/minimatch-11.0.9.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "2821647f28ea7ab3654acb6396120635720a64603fe8ee15e1196167e0ecafadb548f3f0d26ce5ca913d0fd64ea0f89579f1c80fe8fbfd7b8c325a9f0ff17ad1"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:development",
+              "value": "true"
+            },
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/@eslint/config-array/node_modules/minimatch"
+            }
+          ]
         }
       ]
     },
@@ -7033,40 +7072,6 @@
             {
               "name": "cdx:npm:package:path",
               "value": "node_modules/@nextcloud/vue/node_modules/vue-router"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "pinia",
-          "version": "4.1.0",
-          "bom-ref": "portaliq@0.1.0|@nextcloud/vue@9.13.1|pinia@4.1.0",
-          "scope": "optional",
-          "licenses": [
-            {
-              "license": {
-                "id": "MIT"
-              }
-            }
-          ],
-          "purl": "pkg:npm/pinia@4.1.0",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/pinia/-/pinia-4.1.0.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "fb9fc732e5636107ca9420f9c50ef37d79f5c54cd81446bba5dd0340ae5268c7d909a1514c795a1ff734d8dd45a0639d9734a2c1fe4438f809c7fff5403c3a83"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@nextcloud/vue/node_modules/pinia"
             }
           ]
         }
@@ -18985,8 +18990,8 @@
     {
       "type": "library",
       "name": "eslint",
-      "version": "10.11.0",
-      "bom-ref": "portaliq@0.1.0|eslint@10.11.0",
+      "version": "10.15.0",
+      "bom-ref": "portaliq@0.1.0|eslint@10.15.0",
       "licenses": [
         {
           "license": {
@@ -18994,15 +18999,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/eslint@10.11.0",
+      "purl": "pkg:npm/eslint@10.15.0",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/eslint/-/eslint-10.11.0.tgz",
+          "url": "https://registry.npmjs.org/eslint/-/eslint-10.15.0.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "3fb6ba50412a6fd1bde4c600b6a926b136d55c8632cc87e5e8d18e209935eb63da6a117117278672b9576054a26a0102838b049bc22c78975904a477af1e8cb1"
+              "content": "fb95a0e29fb37b7b06d5612b62050eff71f521021f141ca6554034168fd74de04e2d2e9440851e929489f2c751927eceef08e1f386f9e70feba2a6af1f669272"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -19023,7 +19028,7 @@
           "type": "library",
           "name": "ajv",
           "version": "6.15.0",
-          "bom-ref": "portaliq@0.1.0|eslint@10.11.0|ajv@6.15.0",
+          "bom-ref": "portaliq@0.1.0|eslint@10.15.0|ajv@6.15.0",
           "licenses": [
             {
               "license": {
@@ -19060,7 +19065,7 @@
           "type": "library",
           "name": "eslint-visitor-keys",
           "version": "5.0.1",
-          "bom-ref": "portaliq@0.1.0|eslint@10.11.0|eslint-visitor-keys@5.0.1",
+          "bom-ref": "portaliq@0.1.0|eslint@10.15.0|eslint-visitor-keys@5.0.1",
           "licenses": [
             {
               "license": {
@@ -19097,7 +19102,7 @@
           "type": "library",
           "name": "espree",
           "version": "11.2.0",
-          "bom-ref": "portaliq@0.1.0|eslint@10.11.0|espree@11.2.0",
+          "bom-ref": "portaliq@0.1.0|eslint@10.15.0|espree@11.2.0",
           "licenses": [
             {
               "license": {
@@ -19132,9 +19137,46 @@
         },
         {
           "type": "library",
+          "name": "minimatch",
+          "version": "11.0.9",
+          "bom-ref": "portaliq@0.1.0|eslint@10.15.0|minimatch@11.0.9",
+          "licenses": [
+            {
+              "license": {
+                "id": "BlueOak-1.0.0"
+              }
+            }
+          ],
+          "purl": "pkg:npm/minimatch@11.0.9",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/minimatch/-/minimatch-11.0.9.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "2821647f28ea7ab3654acb6396120635720a64603fe8ee15e1196167e0ecafadb548f3f0d26ce5ca913d0fd64ea0f89579f1c80fe8fbfd7b8c325a9f0ff17ad1"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:development",
+              "value": "true"
+            },
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/eslint/node_modules/minimatch"
+            }
+          ]
+        },
+        {
+          "type": "library",
           "name": "json-schema-traverse",
           "version": "0.4.1",
-          "bom-ref": "portaliq@0.1.0|eslint@10.11.0|json-schema-traverse@0.4.1",
+          "bom-ref": "portaliq@0.1.0|eslint@10.15.0|json-schema-traverse@0.4.1",
           "licenses": [
             {
               "license": {
