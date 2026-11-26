@@ -16,7 +16,7 @@
 				{{ resolved.label || resolved.id }}
 			</h2>
 			<SchemaForm
-				:action="resolved"
+				:action="formAction"
 				:api="api"
 				:t="t"
 				:send="isForm ? null : sendForward"
@@ -51,7 +51,7 @@
 					{{ formHeading }}
 				</h2>
 				<SchemaForm
-					:action="resolved"
+					:action="formAction"
 					:api="api"
 					:t="t"
 					:preset="recordPreset"
@@ -158,6 +158,24 @@ export default {
 				)
 				|| null
 			)
+		},
+
+		/**
+		 * The action as its form gets it: with the app that contributed it as
+		 * `appId`, so a draft is kept and found under that app. An endpoint
+		 * action has no register to fall back on, and its draft was asked
+		 * under "portal" and refused (endpoint-forward-draft-schema T6).
+		 *
+		 * @return {object|null} The action.
+		 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T6
+		 */
+		formAction() {
+			const action = this.resolved
+			if (!action) {
+				return null
+			}
+			const app = action.appId || action.app || (this.contribution && this.contribution.app) || ''
+			return app === '' || action.appId === app ? action : { ...action, appId: app }
 		},
 
 		/**

@@ -337,3 +337,41 @@ test('the save button reads the action\'s own draftLabel, else portaliq\'s words
 	await blank.flush()
 	assert.match(blank.textOf(blank.find('schema-form-save-draft')), /Save and continue later/)
 })
+
+test('an action block keys an endpoint action\'s draft by the app that contributed it (endpoint-forward-draft-schema T6)', async () => {
+	const asked = []
+	const api = {
+		async fetchOptions() {
+			return []
+		},
+		async getDraft(app, id) {
+			asked.push([app, id])
+			return null
+		},
+		async saveDraft() {
+			return null
+		},
+		async forwardAction() {
+			return { ok: true, status: 201, body: {} }
+		},
+	}
+	const action = {
+		...ACTION,
+		id: 'createWerkprocesAssessment',
+		appId: undefined,
+		type: 'endpoint-forward',
+		register: undefined,
+		schema: undefined,
+		endpoint: '/apps/learniq/api/portal/werkproces-assessments',
+		draftSchema: { register: 'learniq', schema: 'werkproces-assessment-draft' },
+	}
+	const block = await mountSfc('src/site/components/c/ActionBlock.vue', {
+		block: { type: 'action', action: 'createWerkprocesAssessment' },
+		contribution: { app: 'learniq', actions: [action] },
+		api,
+		t: (key) => key,
+	})
+	await block.flush()
+	assert.deepEqual(asked, [['learniq', 'createWerkprocesAssessment']], 'asked under learniq, not "portal"')
+	assert.ok(block.find('schema-form-save-draft'), 'the save button is offered')
+})

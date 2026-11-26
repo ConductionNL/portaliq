@@ -13,6 +13,12 @@ An action that is not a `create`, names an `endpoint` and keeps a `draft` MAY de
 - AND learniq's endpoint receives nothing
 - @e2e exclude covered by PHPUnit `ActionDraftTest::testAnEndpointActionHoldsItsDraftOnItsDraftSchema` and `node --test tests/site-form-drafts.spec.mjs`; the live walk is learniq's mbo-trainer-flows spec
 
+#### Scenario: The draft is kept under the app that contributed the action
+- GIVEN the trainer's form opens from an action block on her overview, and the action names no `appId` and no `register`
+- WHEN the form reads or keeps her draft
+- THEN it asks under `learniq`, the app whose contribution declared the action, not under `portal`
+- @e2e exclude covered by `node --test tests/site-form-drafts.spec.mjs`; the live walk is learniq's mbo-trainer-flows spec
+
 #### Scenario: Sending the finished assessment ends the draft
 - GIVEN the trainer resumed her draft and sends the assessment
 - WHEN learniq's endpoint answers 201

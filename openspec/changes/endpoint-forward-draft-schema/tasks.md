@@ -13,3 +13,6 @@
   - Files: src/site/components/c/SchemaForm.vue
   - Test: `node --test tests/site-form-drafts.spec.mjs` ("an endpoint action that declares draftSchema keeps its draft there")
 - [ ] **T5**: Live: a trainer on the esdoornveen portal saves a werkproces assessment halfway and finishes it later (learniq live lane, mbo-trainer-flows)
+- [x] **T6**: an action block hands its form the action with the contributing app as `appId`, so an endpoint action's draft is kept and found under that app (found live 26 Nov: it was asked as `/drafts/portal/createWerkprocesAssessment` and refused 404)
+  - Files: src/site/components/c/ActionBlock.vue
+  - Test: `node --test tests/site-form-drafts.spec.mjs` ("an action block keys an endpoint action's draft by the app that contributed it")
