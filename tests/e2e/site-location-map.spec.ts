@@ -40,6 +40,7 @@ function locationsPage(): string {
 	return `${SITE_PATH}?${params.toString()}`
 }
 
+// @e2e portaliq-cms::three-places-of-the-municipality
 test('Three places of the municipality, and the Afval chip narrows list and map', async ({ page }) => {
 	const foreign: string[] = []
 	page.on('request', (request) => {
@@ -75,6 +76,7 @@ test('Three places of the municipality, and the Afval chip narrows list and map'
 	expect(foreign, 'the map requests nothing from another site').toEqual([])
 })
 
+// @e2e portaliq-cms::a-place-says-whether-it-is-open-now
 test('A place says whether it is open now', async ({ page }) => {
 	// Monday 23 November 2026, 10.15 in the visitor's clock.
 	await page.clock.setFixedTime(new Date(2026, 10, 23, 10, 15))
