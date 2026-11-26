@@ -177,7 +177,13 @@ class FormUploadControllerTest extends TestCase {
 	private function controller(string $token = 'tok-abc'): FormUploadController {
 		$request = $this->createMock(originalClassName: IRequest::class);
 		$request->method('getHeader')->willReturnCallback(
-			static fn (string $name): string => ($name === FormUploadController::TOKEN_HEADER ? $token : '')
+			static function (string $name) use ($token): string {
+				if ($name === FormUploadController::TOKEN_HEADER) {
+					return $token;
+				}
+
+				return '';
+			}
 		);
 
 		return new FormUploadController(request: $request, grants: $this->grants, policy: $this->policy, fileWriter: $this->files);

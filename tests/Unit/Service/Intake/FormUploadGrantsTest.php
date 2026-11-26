@@ -102,7 +102,8 @@ class FormUploadGrantsTest extends TestCase {
 		$grants = $this->grants();
 
 		$this->assertSame(expected: '', actual: $grants->mint(target: $this->target(), uploads: []));
-		$this->assertSame(expected: '', actual: $grants->mint(target: ['register' => 'pipelinq', 'schema' => 'lead', 'id' => ''], uploads: ['photo' => ['type' => 'file']]));
+		$noObject = ['register' => 'pipelinq', 'schema' => 'lead', 'id' => ''];
+		$this->assertSame(expected: '', actual: $grants->mint(target: $noObject, uploads: ['photo' => ['type' => 'file']]));
 		$this->assertSame(expected: [], actual: $this->data);
 	}//end testNoTokenWithoutFilesOrObject()
 
@@ -123,31 +124,78 @@ class FormUploadGrantsTest extends TestCase {
 	private function grants(): FormUploadGrants {
 		$test  = $this;
 		$cache = new class($test) implements ICache {
+			/**
+			 * Constructor.
+			 *
+			 * @param FormUploadGrantsTest $test Holds the data.
+			 */
 			public function __construct(private FormUploadGrantsTest $test) {
 			}
 
+			/**
+			 * Read.
+			 *
+			 * @param string $key The key.
+			 *
+			 * @return mixed
+			 */
 			public function get($key) {
 				return $this->test->cacheGet(key: $key);
 			}
 
+			/**
+			 * Write.
+			 *
+			 * @param string $key   The key.
+			 * @param mixed  $value The value.
+			 * @param int    $ttl   The ttl.
+			 *
+			 * @return bool
+			 */
 			public function set($key, $value, $ttl = 0) {
 				$this->test->cacheSet(key: $key, value: $value, ttl: $ttl);
 				return true;
 			}
 
+			/**
+			 * Whether the key is set.
+			 *
+			 * @param string $key The key.
+			 *
+			 * @return bool
+			 */
 			public function hasKey($key) {
 				return $this->get(key: $key) !== null;
 			}
 
+			/**
+			 * Remove.
+			 *
+			 * @param string $key The key.
+			 *
+			 * @return bool
+			 */
 			public function remove($key) {
 				$this->test->cacheRemove(key: $key);
 				return true;
 			}
 
+			/**
+			 * Clear.
+			 *
+			 * @param string $prefix The prefix.
+			 *
+			 * @return bool
+			 */
 			public function clear($prefix = '') {
 				return true;
 			}
 
+			/**
+			 * Available.
+			 *
+			 * @return bool
+			 */
 			public static function isAvailable(): bool {
 				return true;
 			}

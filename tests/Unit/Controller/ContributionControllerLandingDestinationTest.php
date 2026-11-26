@@ -166,7 +166,12 @@ class ContributionControllerLandingDestinationTest extends TestCase {
 		$grants->expects($this->once())->method('mint')
 			->with(
 				['register' => 'pipelinq', 'schema' => 'lead', 'id' => 'l-1'],
-				$this->callback(static fn (array $uploads): bool => array_keys($uploads) === ['photo'] && $uploads['photo']['type'] === 'file' && $uploads['photo']['accept'] === ['.pdf'] && $uploads['photo']['maxSizeMb'] === 5)
+				$this->callback(
+					callback: static fn (array $uploads): bool => array_keys($uploads) === ['photo']
+						&& $uploads['photo']['type'] === 'file'
+						&& $uploads['photo']['accept'] === ['.pdf']
+						&& $uploads['photo']['maxSizeMb'] === 5
+				)
 			)
 			->willReturn('tok-abc');
 

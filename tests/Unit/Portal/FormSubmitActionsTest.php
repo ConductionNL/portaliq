@@ -222,7 +222,11 @@ class FormSubmitActionsTest extends TestCase {
 		$fields = [
 			['id' => 'name'],
 			['id' => 'photo', 'type' => 'file', 'accept' => ['.JPG', 'image/png', 'not an accept'], 'maxSizeMb' => 80],
-			['id' => 'papers', 'type' => 'group', 'fields' => [['id' => 'permit', 'type' => 'file', 'multiple' => true, 'accept' => '.pdf, image/* ', 'maxSizeMb' => '3']]],
+			[
+				'id' => 'papers',
+				'type' => 'group',
+				'fields' => [['id' => 'permit', 'type' => 'file', 'multiple' => true, 'accept' => '.pdf, image/* ', 'maxSizeMb' => '3']],
+			],
 		];
 		$action = (new FormSubmitActions(random: $random, logger: $logger))->action(row: $this->row(fields: $fields), formId: 'f-5');
 
