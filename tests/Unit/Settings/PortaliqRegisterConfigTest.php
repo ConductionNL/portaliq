@@ -335,7 +335,10 @@ class PortaliqRegisterConfigTest extends TestCase {
 		// 0.7.0: `availability` (form-governance-availability-retention-and-routing REQ-FGV-001). Additive.
 		// 0.8.0: `destinationRules` (REQ-FGV-002, rewritten onto the direct submit). Additive.
 		$this->assertSame(expected: '0.8.0', actual: self::$register['components']['schemas']['portalFormBinding']['version']);
-		$this->assertSame(expected: 'array', actual: self::$register['components']['schemas']['portalFormBinding']['properties']['destinationRules']['type']);
+		$this->assertSame(
+			expected: 'array',
+			actual: self::$register['components']['schemas']['portalFormBinding']['properties']['destinationRules']['type']
+		);
 		$this->assertSame('boolean', self::$register['components']['schemas']['portalFormBinding']['properties']['intro']['properties']['enabled']['type']);
 		$this->assertSame(['case', 'wooRequest'], self::$register['components']['schemas']['portalFormBinding']['properties']['deliverTo']['enum']);
 		$this->assertSame('0.6.0', self::$register['components']['schemas']['portalIntakeSubmission']['version']);
