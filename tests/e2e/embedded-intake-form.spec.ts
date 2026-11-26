@@ -90,6 +90,38 @@ async function seed(
 	return id
 }
 
+/**
+ * Store a published form through buildiq's own form API, the way its form
+ * designer does, and remember its id for the clean-up.
+ *
+ * Not through OpenRegister's `objects/buildiq/registrationForm` route: a form
+ * carries `register` and `schema` properties (where its answers go), and a
+ * JSON body's `register` and `schema` take the place of the route's own
+ * parameters in Nextcloud's request, so that write is refused or lands in the
+ * destination register instead (the same fix as form-flow-repeating-groups).
+ *
+ * @param request The request fixture.
+ * @param form The form.
+ */
+async function seedRegistrationForm(
+	request: APIRequestContext,
+	form: Record<string, unknown>,
+): Promise<void> {
+	const saved = await request.put('/apps/buildiq/api/registration-forms', {
+		headers: ADMIN_HEADERS,
+		data: form,
+	})
+	expect(saved.ok(), `buildiq must store the form: ${await saved.text()}`).toBeTruthy()
+	const found = await request.get(`${OR_OBJECTS_BASE}/buildiq/registrationForm`, {
+		headers: ADMIN_HEADERS,
+		params: { name: String(form.name), _limit: '1' },
+	})
+	const rows = ((await found.json()).results ?? []) as Array<Record<string, unknown>>
+	const id = String(rows[0]?.id ?? '')
+	expect(id, `the stored form ${String(form.name)} is listed`).not.toBe('')
+	created.push(`buildiq/registrationForm/${id}`)
+}
+
 /** The destination register and schema, made once for the run. */
 async function seedDestination(request: APIRequestContext): Promise<void> {
 	if (destinationIds.register) {
@@ -123,7 +155,7 @@ async function seedEmbeddableForm(
 ): Promise<void> {
 	await seedDestination(request)
 	const caseType = `embed-${Date.now()}`
-	await seed(request, 'registrationForm', {
+	await seedRegistrationForm(request, {
 		targetApp: 'portaliq',
 		register: DESTINATION,
 		schema: DESTINATION,
@@ -135,7 +167,7 @@ async function seedEmbeddableForm(
 		status: 'published',
 		fields: [{ name: 'postcode', order: 1, required: true }],
 		confirmationText: 'Bedankt. U hoort van ons.',
-	}, 'buildiq')
+	})
 	await seed(request, 'portalFormBinding', {
 		portal: SITE_PORTAL,
 		route,
