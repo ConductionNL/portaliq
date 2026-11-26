@@ -386,6 +386,29 @@ function formErrors(fields, values, files = {}) {
 }
 
 /**
+ * Send the picked files with the one-time token of the submission just
+ * created, and tell whether one of them did not arrive.
+ *
+ * @param {Array<object>} fields The answering fields.
+ * @param {Record<string, Array<File>>} files The files per file field id.
+ * @param {object} created What the submit answered.
+ * @return {Promise<boolean>} True when a file was not sent.
+ *
+ * @spec openspec/changes/anonymous-form-file-upload/specs/landing-page-provisioning/spec.md
+ */
+async function filesNotSentAfter(fields, files, created) {
+	const uploads = pendingUploads(fields, files)
+	if (uploads.length === 0) {
+		return false
+	}
+	const token = created && typeof created.uploadToken === 'string' ? created.uploadToken : ''
+	if (token === '') {
+		return true
+	}
+	return (await uploadFormFiles(token, uploads)).failed.length > 0
+}
+
+/**
  * The campaign attribution this visitor arrived with on the portal.
  *
  * @param {string} portal The portal slug.
@@ -754,25 +777,6 @@ export default {
 		},
 
 		/**
-		 * Send the picked files with the one-time token of the submission
-		 * just created; a file that does not arrive is said under the success.
-		 *
-		 * @param {object} created What the submit answered.
-		 * @return {Promise<void>}
-		 *
-		 * @spec openspec/changes/anonymous-form-file-upload/specs/landing-page-provisioning/spec.md
-		 */
-		async sendFiles(created) {
-			const uploads = pendingUploads(this.answering, this.files)
-			if (uploads.length === 0) {
-				return
-			}
-			const token = created && typeof created.uploadToken === 'string' ? created.uploadToken : ''
-			const outcome = token === '' ? { failed: uploads } : await uploadFormFiles(token, uploads)
-			this.filesNotSent = outcome.failed.length > 0
-		},
-
-		/**
 		 * Submit the collected values plus the client-observed UTM/referrer
 		 * attribution, through this form's own create action.
 		 *
@@ -798,7 +802,7 @@ export default {
 
 			try {
 				const created = await submitLandingPageForm(this.values, campaignOf(this.portal), this.formId)
-				await this.sendFiles(created)
+				this.filesNotSent = await filesNotSentAfter(answerFields(this.fields), this.files || {}, created)
 				this.status = 'success'
 				this.values = {}
 				this.files = {}

@@ -76,7 +76,7 @@ test('FormBlock draws the file input, keeps the files out of the values and says
 	assert.match(block, /v-else-if="field\.type === 'file'"/)
 	assert.match(block, /type="file"/)
 	assert.match(block, /@change="pickFiles\(field, \$event\)"/)
-	assert.match(block, /await this\.sendFiles\(created\)/)
+	assert.match(block, /this\.filesNotSent = await filesNotSentAfter\(answerFields\(this\.fields\), this\.files \|\| \{\}, created\)/)
 	assert.match(block, /data-testid="form-files-not-sent"/)
 	assert.doesNotMatch(block, /v-model="values\[field\.id\]"\s*\n\s*type="file"/)
 })
