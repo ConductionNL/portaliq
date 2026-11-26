@@ -7506,13 +7506,13 @@
 			},
 			"built": {
 				"state": "built",
-				"evidence": "src/site/widgets/nlLocationMap/NlLocationMap.vue (the locations as a numbered list beside a sketch map, filter per kind) with its editor description src/site/widgets/nlLocationMap/meta.js (key nlLocationMap, group content, label \"Locaties op een kaart\"), registered in src/site/widgets/index.js:60,111 and lazy-loaded in src/site/widgets/loaders.js:32, so an editor places it on any public /site page. Built by openspec/changes/site-location-map (only its live check T03 is open). Before: no map library or component under src/site.",
+				"evidence": "src/site/widgets/nlLocationMap/NlLocationMap.vue (the locations as a numbered list beside a sketch map, filter per kind) with its editor description src/site/widgets/nlLocationMap/meta.js (key nlLocationMap, group content, label \"Locaties op een kaart\"), registered in src/site/widgets/index.js:60,111 and lazy-loaded in src/site/widgets/loaders.js:32, so an editor places it on any public /site page. Built by openspec/changes/archive/2026-11-26-site-location-map (T03 run live 25 Nov, T04 board gaps closed 26 Nov). Before: no map library or component under src/site.",
 				"reachedOn": "/site renderer: a public page with the nlLocationMap block (board LocatiesKaart)",
 				"owner": "ConductionNL/portaliq",
 				"note": "Decided built on 2026-11-12 (decision 399): the map block exists. Was decided-no in the build-all pass 2026-09-28 (single competitor, no demand).",
 				"origin": "competitor",
-				"change": "openspec/changes/site-location-map",
-				"requirement": "openspec/changes/site-location-map/specs/portaliq-cms/spec.md :: A page can show the organisation's locations on a map (REQ-SLM-001)"
+				"change": "openspec/changes/archive/2026-11-26-site-location-map",
+				"requirement": "openspec/changes/archive/2026-11-26-site-location-map/specs/portaliq-cms/spec.md :: A page can show the organisation's locations on a map (REQ-SLM-001)"
 			},
 			"provider": "portaliq",
 			"providerHow": "read-from-code",
