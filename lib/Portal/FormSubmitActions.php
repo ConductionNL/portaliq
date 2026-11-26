@@ -22,6 +22,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Portal;
 
+use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
 use Psr\Log\LoggerInterface;
 use OCP\Security\ISecureRandom;
 
@@ -129,8 +130,43 @@ final class FormSubmitActions {
 			'destination' => $target['destination'],
 			'intakeScope' => (string)($row['portal'] ?? '') . '/' . (string)($row['pageRoute'] ?? ''),
 			'server' => $this->serverValues(row: $row, formId: $target['formId']),
+			'fieldConfigs' => $this->fileFieldConfigs(fields: (array)($row['fields'] ?? []), inGroup: false),
 		];
 	}//end submitAction()
+
+	/**
+	 * The file fields of a form, by id, with their normalised file config
+	 * (`type: file`, `multiple`, `accept`, `maxSizeMb`). The submit leaves
+	 * their values out of the body, and the create answer carries the
+	 * one-time token their files are uploaded with afterwards.
+	 *
+	 * @param array<int|string, mixed> $fields  The field list.
+	 * @param bool                     $inGroup Whether the list is a group's own.
+	 *
+	 * @return array<string, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/anonymous-form-file-upload/specs/landing-page-provisioning/spec.md
+	 */
+	private function fileFieldConfigs(array $fields, bool $inGroup): array {
+		$configs = [];
+		foreach ($fields as $field) {
+			if (is_array($field) === false) {
+				continue;
+			}
+
+			if (($field['type'] ?? null) === 'group' && $inGroup === false) {
+				$configs = array_merge($configs, $this->fileFieldConfigs(fields: (array)($field['fields'] ?? []), inGroup: true));
+				continue;
+			}
+
+			$fieldId = ($field['id'] ?? null);
+			if (($field['type'] ?? null) === FileFieldConfigNormaliser::TYPE_FILE && is_string($fieldId) === true && $fieldId !== '') {
+				$configs[$fieldId] = (new FileFieldConfigNormaliser())->apply(entry: [], config: $field, actionType: 'create');
+			}
+		}
+
+		return $configs;
+	}//end fileFieldConfigs()
 
 	/**
 	 * The values the server sets on a submission, which a client can never override.
