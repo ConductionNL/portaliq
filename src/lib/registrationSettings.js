@@ -190,10 +190,14 @@ export function createRegistrationSettings({ get, put, post, url, translate }) {
 			if (String(organisation || '') === '') {
 				return []
 			}
+			// `organisation` on OpenRegister's objects route filters the
+			// object's own tenant (an organisation uuid), never the account's
+			// `organisation` property, so a slug there matched nothing and the
+			// list always read empty. Ask for the pending self-registrations
+			// and keep this organisation's rows here.
 			const query = new URLSearchParams({
 				status: 'pending',
 				provisionedBy: 'self-registration',
-				organisation: String(organisation),
 				_limit: '100',
 			})
 			const { data } = await get(
@@ -202,7 +206,9 @@ export function createRegistrationSettings({ get, put, post, url, translate }) {
 					+ query.toString(),
 			)
 			const rows = Array.isArray(data) ? data : data?.results
-			return Array.isArray(rows) ? rows : []
+			return Array.isArray(rows)
+				? rows.filter((row) => String(row?.organisation ?? '') === String(organisation))
+				: []
 		},
 
 		/**
