@@ -43,6 +43,7 @@ namespace OCA\Portaliq\Middleware;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Auth\PortalReadOnlySessionException;
 use OCA\Portaliq\Auth\PortalUnauthorizedException;
+use OCA\Portaliq\Controller\PortalIntakeController;
 use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalRateLimitInterface;
 use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
@@ -76,6 +77,21 @@ class PortalAuthMiddleware extends Middleware {
 	 * `update`/endpoint `action` are explicitly out of scope, design.md).
 	 */
 	private const ANONYMOUS_ELIGIBLE_METHODS = ['index', 'create'];
+
+	/**
+	 * Read-only methods of a guarded controller that answer without a session.
+	 *
+	 * The intake catalogue and the address lookup serve public data (the
+	 * published catalogue, street and town from the BAG), are rate limited per
+	 * client by their own `#[AnonRateLimit]`, and are what a signed-out
+	 * visitor needs to start a form (decision 25 Nov 2026 21:50 CET). The
+	 * other intake methods keep the bearer gate.
+	 *
+	 * @var array<class-string, array<int, string>>
+	 */
+	private const PUBLIC_READS = [
+		PortalIntakeController::class => ['catalogue', 'address'],
+	];
 
 	/**
 	 * Constructor.
@@ -116,6 +132,7 @@ class PortalAuthMiddleware extends Middleware {
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+	 * @spec openspec/changes/intake-catalogue-and-address-without-sign-in/specs/portal-intake-form/spec.md
 	 */
 	public function beforeController($controller, $methodName): void {
 		if (($controller instanceof PortalProtected) === false) {
@@ -124,7 +141,7 @@ class PortalAuthMiddleware extends Middleware {
 
 		$authorization = $this->request->getHeader('Authorization');
 		$subject = $this->session->resolveFromBearer($authorization);
-		if ($subject !== null) {
+		if ($subject !== null || $this->isPublicRead(controller: $controller, methodName: $methodName) === true) {
 			return;
 		}
 
@@ -142,6 +159,26 @@ class PortalAuthMiddleware extends Middleware {
 
 		throw new PortalUnauthorizedException(message: 'No valid portal session');
 	}//end beforeController()
+
+	/**
+	 * Whether the method is one of a guarded controller's public reads.
+	 *
+	 * @param object $controller The controller being dispatched.
+	 * @param string $methodName The method being invoked.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/intake-catalogue-and-address-without-sign-in/specs/portal-intake-form/spec.md
+	 */
+	private function isPublicRead(object $controller, string $methodName): bool {
+		foreach (self::PUBLIC_READS as $class => $methods) {
+			if ($controller instanceof $class && in_array($methodName, $methods, true) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end isPublicRead()
 
 	/**
 	 * Whether the current request matches an anonymous-flagged entry for the
