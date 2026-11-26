@@ -21,7 +21,25 @@ const STAFF_HEADERS = {
 	requesttoken: 'x',
 }
 
+/** The seeded portal's sign-in settings as they were, to put back. */
+let restoreAuthentication: { id: string, authentication: unknown } | null = null
+
 test.describe('identity-staff-account-screens', () => {
+	test.afterAll(async ({ request }) => {
+		if (restoreAuthentication === null) {
+			return
+		}
+		const url = `/apps/openregister/api/objects/portaliq/portal/${restoreAuthentication.id}`
+		const current = await request.get(url, { headers: STAFF_HEADERS })
+		const body = (await current.json()) as Record<string, unknown>
+		delete body['@self']
+		await request.put(url, {
+			headers: STAFF_HEADERS,
+			data: { ...body, authentication: restoreAuthentication.authentication },
+		})
+		restoreAuthentication = null
+	})
+
 	test.beforeEach(async ({ page }) => {
 		await page.goto('/login')
 		await page.fill('#user', 'admin')
@@ -137,6 +155,10 @@ test.describe('identity-staff-account-screens', () => {
 			{ headers: STAFF_HEADERS },
 		)
 		const portal = (await portals.json()).results[0]
+		// The policy this test opens is put back afterwards: an open
+		// registration on the seeded portal is read by later specs
+		// (portal-identity-and-the-organisations-cases expects it off).
+		restoreAuthentication = { id: String(portal.id), authentication: portal.authentication ?? {} }
 
 		await page.goto(`/apps/portaliq/portals/${portal.id}`)
 		// The Registration widget is on the portal page's settings tab
@@ -161,7 +183,13 @@ test.describe('identity-staff-account-screens', () => {
 		await page.getByRole('tab', { name: /^\s*(Instellingen|Settings)\s*$/ }).click()
 		const row = page.getByTestId('portal-registration-waiting').getByText(email)
 		await expect(row).toBeVisible()
-		await page.getByRole('button', { name: 'Approve' }).first().click()
+		// This registration's own row: others may be waiting as well.
+		await page
+			.getByTestId('portal-registration-waiting')
+			.locator('[data-testid^="portal-registration-row-"]')
+			.filter({ hasText: email })
+			.getByRole('button', { name: 'Approve' })
+			.click()
 		await expect(page.getByText('The registration is approved.')).toBeVisible()
 		await expect(
 			page.getByTestId('portal-registration-waiting').getByText(email),
