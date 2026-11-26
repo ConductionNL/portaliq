@@ -3,7 +3,7 @@
     "info": {
         "title": "Portaliq Register",
         "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry, traffic record, form and landing-page submission the app reads and writes.",
-        "version": "0.133.0"
+        "version": "0.134.0"
     },
     "x-openregister": {
         "type": "application",
@@ -20,7 +20,7 @@
                 "slug": "portaliq",
                 "title": "Portaliq Register",
                 "description": "Portaliq — the fleet's shared external portal for clients and suppliers (ADR-046). Holds every portal account, page, session, submission, message, notification, audit entry and traffic record the app reads and writes.",
-                "version": "0.133.0",
+                "version": "0.134.0",
                 "schemas": [
                     "exampleDocument",
                     "glossaryTerm",
@@ -8936,7 +8936,7 @@
                     ]
                 },
                 "icon": "FormSelect",
-                "version": "0.7.0",
+                "version": "0.8.0",
                 "title": "Portal Form Binding",
                 "description": "What a portal form page is bound to (portal-intake-form-as-an-object REQ-PIFO-001): a case type tuple, an audience, an optional form name, and the intake settings. The page keeps no field list of its own; the fields, their order and their presets come from the published form at render time, so a form edited in buildiq reaches the portal with no portal change.",
                 "type": "object",
@@ -9122,6 +9122,43 @@
                                 "type": "object",
                                 "title": "Fixed values",
                                 "description": "Values every submit writes."
+                            }
+                        }
+                    },
+                    "destinationRules": {
+                        "title": "Destination rules",
+                        "type": "array",
+                        "description": "Rules that send a submit elsewhere by its answers (form-governance REQ-FGV-002). The first rule whose condition holds decides; with no match the form's own destination applies. Each rule's destination must fit its schema when the binding is published.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "when": {
+                                    "title": "Condition",
+                                    "type": "object",
+                                    "description": "A condition over the answers, in the grammar of a field's visibleWhen: {field, op, value}, or all / any of them.",
+                                    "example": {
+                                        "field": "onderwerp",
+                                        "op": "eq",
+                                        "value": "milieu"
+                                    }
+                                },
+                                "destination": {
+                                    "title": "Destination",
+                                    "type": "object",
+                                    "description": "The register and schema the submit goes to when the condition holds, with the same keys as the form's own destination.",
+                                    "properties": {
+                                        "register": {
+                                            "type": "string",
+                                            "title": "Register",
+                                            "description": "The register of the object the submit creates when the condition holds."
+                                        },
+                                        "schema": {
+                                            "type": "string",
+                                            "title": "Schema",
+                                            "description": "The schema of the object the submit creates when the condition holds."
+                                        }
+                                    }
+                                }
                             }
                         }
                     },
