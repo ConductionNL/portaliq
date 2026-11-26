@@ -17,6 +17,7 @@
  *     link, and is never asked to sign in (REQ-EIF-004)
  *   - a signed-in visitor is anonymous inside the frame (REQ-EIF-005)
  *   - the frame RENDERS the form, in a real browser (embed-frame-renders-the-form)
+ *   - a frame without Origin is judged by its Referer's origin (REQ-EIF-006)
  *
  * NOT anchored here, covered by PHPUnit and named so anyone can check:
  *   - that the refusal reads no schema:
@@ -89,6 +90,38 @@ async function seed(
 	return id
 }
 
+/**
+ * Store a published form through buildiq's own form API, the way its form
+ * designer does, and remember its id for the clean-up.
+ *
+ * Not through OpenRegister's `objects/buildiq/registrationForm` route: a form
+ * carries `register` and `schema` properties (where its answers go), and a
+ * JSON body's `register` and `schema` take the place of the route's own
+ * parameters in Nextcloud's request, so that write is refused or lands in the
+ * destination register instead (the same fix as form-flow-repeating-groups).
+ *
+ * @param request The request fixture.
+ * @param form The form.
+ */
+async function seedRegistrationForm(
+	request: APIRequestContext,
+	form: Record<string, unknown>,
+): Promise<void> {
+	const saved = await request.put('/apps/buildiq/api/registration-forms', {
+		headers: ADMIN_HEADERS,
+		data: form,
+	})
+	expect(saved.ok(), `buildiq must store the form: ${await saved.text()}`).toBeTruthy()
+	const found = await request.get(`${OR_OBJECTS_BASE}/buildiq/registrationForm`, {
+		headers: ADMIN_HEADERS,
+		params: { name: String(form.name), _limit: '1' },
+	})
+	const rows = ((await found.json()).results ?? []) as Array<Record<string, unknown>>
+	const id = String(rows[0]?.id ?? '')
+	expect(id, `the stored form ${String(form.name)} is listed`).not.toBe('')
+	created.push(`buildiq/registrationForm/${id}`)
+}
+
 /** The destination register and schema, made once for the run. */
 async function seedDestination(request: APIRequestContext): Promise<void> {
 	if (destinationIds.register) {
@@ -99,7 +132,7 @@ async function seedDestination(request: APIRequestContext): Promise<void> {
 		data: {
 			title: `E2E embed ${DESTINATION}`,
 			slug: DESTINATION,
-			properties: { caseType: { type: 'string' }, postcode: { type: 'string' } },
+			properties: { caseType: { type: 'string' }, postcode: { type: 'string' }, origin: { type: 'string' } },
 			required: ['postcode'],
 			authorization: { create: ['public'], read: ['admin'] },
 		},
@@ -122,7 +155,7 @@ async function seedEmbeddableForm(
 ): Promise<void> {
 	await seedDestination(request)
 	const caseType = `embed-${Date.now()}`
-	await seed(request, 'registrationForm', {
+	await seedRegistrationForm(request, {
 		targetApp: 'portaliq',
 		register: DESTINATION,
 		schema: DESTINATION,
@@ -134,7 +167,7 @@ async function seedEmbeddableForm(
 		status: 'published',
 		fields: [{ name: 'postcode', order: 1, required: true }],
 		confirmationText: 'Bedankt. U hoort van ons.',
-	}, 'buildiq')
+	})
 	await seed(request, 'portalFormBinding', {
 		portal: SITE_PORTAL,
 		route,
@@ -201,6 +234,7 @@ test.describe('embedded-intake-form', () => {
 	//
 	// Everything below needs a real page, because the defect was invisible to
 	// anything that did not run the bundle.
+	// @e2e embedded-intake-form::a-frame-on-an-allowed-site-renders-the-form
 	test('the frame actually renders the form, not just a div for it', async ({
 		page,
 		request,
@@ -208,7 +242,12 @@ test.describe('embedded-intake-form', () => {
 		const route = `aanvragen/embed-render-${Date.now()}`
 		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
 
-		await page.goto(`${EMBED_PATH}?route=${encodeURIComponent(route)}`)
+		// A browser sends no Origin on an iframe's document GET, only the
+		// Referer of the framing page: its origin is judged by the same list
+		// (embed-frame-reads-the-referer-origin, REQ-EIF-006).
+		await page.goto(`${EMBED_PATH}?route=${encodeURIComponent(route)}`, {
+			referer: `${ALLOWED_ORIGIN}/loket/verhuizen`,
+		})
 
 		// A control a visitor can actually type into, and a submit they can
 		// press. An empty div satisfies neither.
@@ -218,6 +257,22 @@ test.describe('embedded-intake-form', () => {
 
 		// The mount really ran: the div is no longer empty.
 		await expect(page.locator('#portaliq-embed')).not.toBeEmpty()
+	})
+
+	// @e2e embedded-intake-form::a-frame-on-another-site-gets-a-message
+	test('a frame on a page of another origin gets words, judged by its Referer', async ({
+		page,
+		request,
+	}) => {
+		const route = `aanvragen/embed-other-referer-${Date.now()}`
+		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
+
+		await page.goto(`${EMBED_PATH}?route=${encodeURIComponent(route)}`, {
+			referer: `${OTHER_ORIGIN}/www.gemeente.nl`,
+		})
+
+		await expect(page.getByTestId('embed-refusal')).toBeVisible()
+		await expect(page.getByTestId('embed-field-postcode')).toHaveCount(0)
 	})
 
 	test('a refused frame renders words, not a blank rectangle', async ({
@@ -233,6 +288,46 @@ test.describe('embedded-intake-form', () => {
 		// broken, still loading, or simply not for them.
 		await expect(page.getByTestId('embed-refusal')).toBeVisible()
 		await expect(page.getByTestId('embed-form')).toHaveCount(0)
+	})
+
+	// @e2e embedded-intake-form::no-origin-and-no-referer-serves-nobody
+	test('without Origin or Referer the frame serves nobody', async ({ request }) => {
+		const route = `aanvragen/embed-no-origin-${Date.now()}`
+		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
+
+		const res = await request.get(`${EMBED_PATH}?route=${encodeURIComponent(route)}`)
+
+		expect(await res.text()).not.toContain('"postcode"')
+	})
+
+	// @e2e embedded-intake-form::an-origin-header-wins-over-the-referer
+	test('an Origin header that is sent wins over an allowed Referer', async ({ request }) => {
+		const route = `aanvragen/embed-origin-wins-${Date.now()}`
+		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
+
+		const res = await request.get(`${EMBED_PATH}?route=${encodeURIComponent(route)}`, {
+			headers: { Origin: OTHER_ORIGIN, Referer: `${ALLOWED_ORIGIN}/loket/verhuizen` },
+		})
+
+		expect(await res.text()).not.toContain('"postcode"')
+	})
+
+	// @e2e embedded-intake-form::a-submission-records-the-origin-not-the-page
+	test('a submission without Origin records the Referer origin, not the page', async ({ request }) => {
+		const route = `aanvragen/embed-referer-submit-${Date.now()}`
+		await seedEmbeddableForm(request, route, [ALLOWED_ORIGIN])
+		const postcode = `${1000 + Math.floor(Math.random() * 8999)} RF`
+
+		const accepted = await request.post(EMBED_SUBMIT, {
+			headers: { Referer: `${ALLOWED_ORIGIN}/loket/verhuizen?bsn=1` },
+			data: { route, answers: { postcode } },
+		})
+		expect(accepted.ok(), await accepted.text()).toBeTruthy()
+
+		const sent = await request.get(`${OR_OBJECTS_BASE}/${DESTINATION}/${DESTINATION}?_limit=100`, { headers: ADMIN_HEADERS })
+		const rows = ((await sent.json()).results ?? []) as Array<{ postcode?: string, origin?: string }>
+		const row = rows.find((candidate) => candidate.postcode === postcode)
+		expect(row?.origin).toBe(ALLOWED_ORIGIN)
 	})
 
 	test('a form with no allowed origins serves nobody', async ({ request }) => {
