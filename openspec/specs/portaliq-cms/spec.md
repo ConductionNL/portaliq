@@ -1679,6 +1679,22 @@ missing install SHALL be reported rather than rendered around.
 - **WHEN** a website is served
 - **THEN** the failure names the missing dependency
 
+### Requirement: The public site meets WCAG 2.1 AA on every page state it serves (REQ-PWA-001)
+
+Every page state the site serves an anonymous visitor SHALL pass axe-core (wcag2a, wcag2aa, wcag21a, wcag21aa) with no serious or critical violation, at least on a widget grid page, a markdown page, the not-found page, the search page with results and facets, and a publication detail page. Every control SHALL work by keyboard alone with a visible focus indicator, and at 320 CSS pixels wide no page SHALL scroll horizontally outside a table's own scroll container.
+
+#### Scenario: The search page with facets
+- **GIVEN** a portal whose search page shows results from two catalogues with facet checkboxes and a sort select
+- **WHEN** axe-core checks the page against the WCAG 2.1 AA tags
+- **THEN** it reports no serious or critical violation
+- e2e: `tests/e2e/site-accessibility.spec.ts`
+
+#### Scenario: A publication by keyboard
+- **GIVEN** a visitor using only the keyboard on a publication detail page
+- **WHEN** they tab through it
+- **THEN** each link and download gets a visible focus and opens with Enter
+- e2e: `tests/e2e/site-accessibility.spec.ts`
+
 ### Requirement: A page can show the organisation's locations on a map (REQ-SLM-001)
 
 The site SHALL offer a block that lists authored places, numbered in the order authored, each with its name and, when given, address, opening hours, a route link and its own links, beside a map that marks each place with a coordinate by the same number. With places of two or more kinds the block SHALL offer a chip per kind and one for all, and the list and the markers SHALL show only the chosen kind. Each marker SHALL carry the place's name, and the map SHALL say under it that it is a sketch, not real map data. A place with opening hours per weekday SHALL say whether it is open now and until when. The map SHALL request nothing from another site. A link that is not a site path, http(s), mailto or tel address SHALL be left out.
