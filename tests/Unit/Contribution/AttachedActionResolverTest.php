@@ -86,14 +86,18 @@ class AttachedActionResolverTest extends TestCase {
 
 	/**
 	 * An attached action that runs in steps carries its steps, draft and
-	 * confirmation to the renderer (site-multi-step-forms REQ-SMF-020).
+	 * confirmation to the renderer (site-multi-step-forms REQ-SMF-020), and
+	 * the words of its "save for later" button (action-draft-label).
 	 *
 	 * @return void
+	 *
+	 * @spec openspec/changes/action-draft-label/tasks.md#T1
 	 */
 	public function testTheListingCarriesTheStepFlow(): void {
 		$flow = [
 			'steps'        => [['id' => 'vraag', 'title' => 'Uw vraag', 'fields' => ['question']]],
 			'draft'        => ['retentionDays' => 30],
+			'draftLabel'   => 'Bewaren voor later',
 			'confirmation' => ['title' => 'Ontvangen'],
 		];
 		$out    = (new AttachedActionResolver())->resolve(contributions: $this->contributions(action: $this->ask($flow)));
@@ -101,6 +105,7 @@ class AttachedActionResolverTest extends TestCase {
 
 		self::assertSame($flow['steps'], $listed['steps']);
 		self::assertSame($flow['draft'], $listed['draft']);
+		self::assertSame($flow['draftLabel'], $listed['draftLabel']);
 		self::assertSame($flow['confirmation'], $listed['confirmation']);
 		self::assertArrayNotHasKey('endpoint', $listed);
 	}//end testTheListingCarriesTheStepFlow()

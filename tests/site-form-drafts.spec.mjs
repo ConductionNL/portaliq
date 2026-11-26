@@ -319,3 +319,21 @@ test('an endpoint action that declares draftSchema keeps its draft there: it res
 	await half.flush()
 	assert.equal(half.find('schema-form-save-draft'), null, 'no schema, no save button')
 })
+
+test('the save button reads the action\'s own draftLabel, else portaliq\'s words (action-draft-label T2)', async () => {
+	const own = await mountSfc(FORM, {
+		action: { ...ACTION, draftLabel: 'Bewaren voor later' },
+		api: fakeApi(),
+		locale: 'nl',
+	})
+	await own.flush()
+	assert.equal(own.textOf(own.find('schema-form-save-draft')).trim(), 'Bewaren voor later')
+
+	const blank = await mountSfc(FORM, {
+		action: { ...ACTION, draftLabel: '   ' },
+		api: fakeApi(),
+		locale: 'nl',
+	})
+	await blank.flush()
+	assert.match(blank.textOf(blank.find('schema-form-save-draft')), /Save and continue later/)
+})

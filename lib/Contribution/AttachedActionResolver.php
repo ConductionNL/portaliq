@@ -68,6 +68,8 @@ class AttachedActionResolver implements AttachedActionResolverInterface {
 		'optionsProviders',
 		'submitLabel',
 		'successMessage',
+		// The "save for later" button's own words (action-draft-label T1).
+		'draftLabel',
 		'rowWhen',
 		'steps',
 		'confirmation',

@@ -230,14 +230,19 @@ class ActionConfigNormaliser {
 	}//end guarded()
 
 	/**
-	 * Drop a non-string `submitLabel` / `successMessage`.
+	 * Drop a non-string `submitLabel` / `successMessage` / `draftLabel`.
+	 *
+	 * `draftLabel` names the form's "save for later" button in the app's own
+	 * words, as its board draws it (action-draft-label).
 	 *
 	 * @param array<string, mixed> $action The action.
 	 *
 	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/action-draft-label/tasks.md#T1
 	 */
 	private function normaliseTextKeys(array $action): array {
-		foreach (['submitLabel', 'successMessage'] as $textKey) {
+		foreach (['submitLabel', 'successMessage', 'draftLabel'] as $textKey) {
 			if (isset($action[$textKey]) === true && is_string($action[$textKey]) === false) {
 				unset($action[$textKey]);
 			}

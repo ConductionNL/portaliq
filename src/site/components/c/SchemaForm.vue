@@ -274,7 +274,7 @@
 				:disabled="submitting"
 				data-testid="schema-form-save-draft"
 				@click="askingToSave = true">
-				{{ translate('Save and continue later') }}
+				{{ draftLabel }}
 			</button>
 			<button
 				v-if="pending !== null"
@@ -724,6 +724,21 @@ export default {
 			return summaryEntries(this.fields, this.errors, (field) =>
 				this.inputId(field),
 			)
+		},
+
+		/**
+		 * The "save for later" button's words: the action's own `draftLabel`
+		 * (already in the reader's language), else portaliq's.
+		 *
+		 * @return {string} The words.
+		 *
+		 * @spec openspec/changes/action-draft-label/tasks.md#T2
+		 */
+		draftLabel() {
+			const own = typeof this.action.draftLabel === 'string'
+				? this.action.draftLabel.trim()
+				: ''
+			return own || this.translate('Save and continue later')
 		},
 
 		submitLabel() {

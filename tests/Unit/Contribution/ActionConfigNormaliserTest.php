@@ -60,6 +60,35 @@ class ActionConfigNormaliserTest extends TestCase {
 	}//end testAWidgetHintIsKeptOnlyWhenKnown()
 
 	/**
+	 * `draftLabel` names the "save for later" button in the app's words; a
+	 * value that is not text is dropped (action-draft-label).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/action-draft-label/tasks.md#T1
+	 */
+	public function testADraftLabelIsKeptOnlyAsText(): void {
+		$normalise = fn (mixed $label): array => (new PortalManifestNormaliser($this->schemaReader()))->normalise(
+			[
+				'collections' => [],
+				'actions'     => [
+					[
+						'id'         => 'createExcuseRequest',
+						'type'       => 'create',
+						'schema'     => 'excuse-request',
+						'fields'     => ['dateFrom', 'dateTo', 'reason', 'reasonKind'],
+						'draftLabel' => $label,
+					],
+				],
+			]
+		)['actions'][0];
+
+		$this->assertSame('Bewaren voor later', $normalise('Bewaren voor later')['draftLabel']);
+		$this->assertArrayNotHasKey('draftLabel', $normalise(['Bewaren voor later']));
+		$this->assertArrayNotHasKey('draftLabel', $normalise(7));
+	}//end testADraftLabelIsKeptOnlyAsText()
+
+	/**
 	 * `choiceOptions` keeps only values among the field's options, in the
 	 * declared order; `otherLabel` travels with it.
 	 *
