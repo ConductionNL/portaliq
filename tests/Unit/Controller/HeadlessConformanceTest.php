@@ -67,7 +67,15 @@ class HeadlessConformanceTest extends TestCase {
 		}
 
 		$this->assertNotSame([], $urls, 'the portal reads the content API');
-		$routed = array_map(static fn (array $r): string => (string)$r['url'], $this->contentRoutes());
+		// A route with a parameter ('/api/content/media/{id}') is read as its
+		// fixed part, which is all a reader's literal can name before the id.
+		$routed = [];
+		foreach ($this->contentRoutes() as $route) {
+			$url      = (string)$route['url'];
+			$routed[] = $url;
+			$routed[] = explode(separator: '/{', string: $url)[0];
+		}
+
 		foreach ($urls as $url => $reader) {
 			$this->assertContains($url, $routed, $reader . ' reads ' . $url . ' which the public API does not route');
 		}

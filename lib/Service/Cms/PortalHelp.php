@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md
+ * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Portaliq\Service\Cms;
 /**
  * Holds help details and section help texts to a fixed shape.
  *
- * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md
+ * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md
  */
 class PortalHelp {
 	public const SECTIONS = ['overview', 'cases', 'tasks', 'messages', 'contacts'];
@@ -48,7 +48,7 @@ class PortalHelp {
 	 *
 	 * @return array<string, string> Empty when the portal sets none.
 	 *
-	 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+	 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
 	 */
 	public function details(mixed $help): array {
 		if (is_array($help) === false) {
@@ -109,7 +109,7 @@ class PortalHelp {
 	 *
 	 * @return array<string, string>
 	 *
-	 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
+	 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
 	 */
 	public function sections(mixed $sections): array {
 		if (is_array($sections) === false) {
@@ -134,7 +134,7 @@ class PortalHelp {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
+	 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
 	 */
 	public function pageText(mixed $value): string {
 		return $this->text(value: $value);

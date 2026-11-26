@@ -344,7 +344,7 @@ export default {
 		 * The help text of the part of Mijn omgeving on screen, or ''.
 		 *
 		 * @return {string} The text.
-		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
+		 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
 		 */
 		sectionHelpText() {
 			const section = sectionOf(this.entry, this.isHome)

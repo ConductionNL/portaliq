@@ -204,7 +204,7 @@ class ContributionControllerTest extends TestCase {
 	/**
 	 * The portal the site names in its header alone decides the own-area pages.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 	 */
 	public function testTheSiteHeaderNamesThePortalForTheAreaPages(): void {
 		$portals = $this->portalsOnlyForZuid(portal: ['slug' => 'zuid', 'contactsEnabled' => true]);

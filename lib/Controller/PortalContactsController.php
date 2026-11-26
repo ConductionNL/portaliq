@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use OCP\IRequest;
 /**
  * The bearer's own contacts. Every answer is scoped to the bearer's own rows.
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
  */
 class PortalContactsController extends Controller implements PortalProtected {
 
@@ -66,7 +66,7 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The overview, or 401 without a session.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -88,7 +88,7 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{sent: true}`, or 400, 409 or 429 with the reason.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -112,7 +112,7 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{sent: true}`, 404 or 401.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -137,7 +137,7 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{sent: true}`, 404 or 401.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -158,7 +158,7 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{sent: true}`, 404 or 401.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -179,7 +179,7 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{sent: true}`, 404 or 401.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -200,7 +200,7 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{sent: true}` when joined, 404 for a link that is unknown, expired or used.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

@@ -16,7 +16,7 @@ use PHPUnit\Framework\TestCase;
  *
  * @covers \OCA\Portaliq\Service\Identity\ContactOverview
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
  */
 class ContactOverviewTest extends TestCase {
 

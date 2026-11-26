@@ -13,7 +13,7 @@
 // Usage:
 //   node --test tests/help-settings.spec.mjs
 //
-// @spec openspec/changes/help-texts-and-form-help/tasks.md
+// @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/tasks.md
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'

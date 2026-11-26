@@ -27,6 +27,8 @@ const WORDS = {
 		goal: 'Doel',
 		endDate: 'Einddatum',
 		openActions: 'Open acties: {count}',
+		openActionsLabel: 'Open acties',
+		shared: 'Gedeeld',
 		progress: '{done} van {total} acties klaar',
 		open: 'Openen',
 		back: 'Alle plannen',
@@ -99,6 +101,8 @@ const WORDS = {
 		goal: 'Goal',
 		endDate: 'End date',
 		openActions: 'Open actions: {count}',
+		openActionsLabel: 'Open actions',
+		shared: 'Shared',
 		progress: '{done} of {total} actions done',
 		open: 'Open',
 		back: 'All plans',
@@ -221,6 +225,24 @@ export function chipCount(counts, chip) {
 			chip
 		] ?? 0
 	)
+}
+
+/**
+ * The days before the end date in which a card warns that the plan ends
+ * (design.md: the end alert shows in the last 14 days; board Plannen).
+ */
+export const ENDING_SOON_DAYS = 14
+
+/**
+ * Whether a card warns that its plan ends: in the last 14 days, or after.
+ *
+ * @param {number|null} days Whole days left, null without an end date.
+ * @return {boolean} True when the warning shows.
+ *
+ * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t10
+ */
+export function endingSoon(days) {
+	return typeof days === 'number' && days <= ENDING_SOON_DAYS
 }
 
 /**

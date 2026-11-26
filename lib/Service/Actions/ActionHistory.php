@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
  */
 
 declare(strict_types=1);
@@ -34,7 +34,7 @@ use Throwable;
  * itself names no resident. Every portal write stamps `editedBy`; replaying
  * the changes oldest first tells who made each one.
  *
- * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
  */
 class ActionHistory {
 
@@ -71,7 +71,7 @@ class ActionHistory {
 	 *
 	 * @return array<int, array{at: string, who: string, kind: string, field: string, from: string, to: string}>
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-an-action-can-be-shared-with-an-approved-contact-req-ral-002
 	 */
 	public function lines(string $uuid, callable $nameOf): array {
 		$lines = [];

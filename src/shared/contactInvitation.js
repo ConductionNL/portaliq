@@ -12,7 +12,7 @@
 // Imports no browser code, so tests/resident-contacts.spec.mjs runs it as
 // plain node.
 //
-// @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+// @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 
 import { contactsApi } from './areaApi.js'
 import {
@@ -36,7 +36,7 @@ const LINK = /^#contact-invitation=([^&]+)$/
  * @param {Storage|null} storage sessionStorage, or null.
  * @return {string} The secret, or '' when the page was not opened from the link.
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
  */
 export function keepContactInvitation(location, history, storage) {
 	return keepInvitationSecret(
@@ -59,7 +59,7 @@ export function keepContactInvitation(location, history, storage) {
  * @param {Storage|null} options.storage sessionStorage, or null.
  * @return {Promise<{role: string, text: string, claimed: boolean}|null>}
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
  */
 export async function redeemKeptContactInvitation({ api, session, t, storage }) {
 	const { secret, notice } = heldInvitation({ session, t, storage }, CONTACT_INVITATION_KEY)

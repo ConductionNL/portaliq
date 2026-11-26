@@ -285,6 +285,7 @@
 						render.settings && render.settings.addressLookup === true
 					"
 					:base="apiBase"
+					:token="sessionToken()"
 					:invalid="!!errors[field.name]"
 					:testid="`intake-field-${field.name}`" />
 				<FamilyMembers
@@ -931,7 +932,7 @@ export default {
 
 		/**
 		 * @return {boolean} Whether the portal or the form has help details to offer.
-		 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+		 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
 		 */
 		offersHelp() {
 			return hasHelp(mergeHelp(this.portalHelp, this.formHelp))
@@ -1278,6 +1279,17 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * The resident's bearer as it stands now, for the calls a field makes
+		 * itself (the address lookup); '' without a session.
+		 *
+		 * @return {string} The bearer, or ''.
+		 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
+		 */
+		sessionToken() {
+			return adoptSessionToken() || ''
+		},
+
 		yiviAttributeName,
 
 		/**

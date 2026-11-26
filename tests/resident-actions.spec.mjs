@@ -10,7 +10,7 @@
 // Usage:
 //   node --test tests/resident-actions.spec.mjs
 //
-// @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md
+// @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'

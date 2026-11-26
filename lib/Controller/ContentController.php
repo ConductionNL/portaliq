@@ -648,7 +648,7 @@ class ContentController extends Controller {
 	 *
 	 * @return string The absolute address, or ''.
 	 *
-	 * @spec openspec/changes/password-reset-from-the-sign-in-page/specs/portal-ways-in/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-password-reset-req-pwr-001
+	 * @spec openspec/changes/archive/2026-11-25-password-reset-from-the-sign-in-page/specs/portal-ways-in/spec.md#requirement-the-sign-in-page-leads-to-nextclouds-own-password-reset-req-pwr-001
 	 */
 	private function lostPasswordUrl(array $portal): string {
 		if (PortalAuthConfig::fromPortal(portal: $portal)->offers(mode: 'nextcloud') === false) {

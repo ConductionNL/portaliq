@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
  */
 
 declare(strict_types=1);
@@ -40,7 +40,7 @@ use Throwable;
  * A subclass names its template key (`TEMPLATE`), its mail id (`MAIL_ID`),
  * what it mails about (`NOUN`, used in log lines) and its own text.
  *
- * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
  */
 abstract class ReminderMailer {
 	/**
@@ -90,7 +90,7 @@ abstract class ReminderMailer {
 	 *
 	 * @return array{heading: string, subject: string, body: string}
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
 	 */
 	abstract protected function text(IL10N $l10n, array $values): array;
 
@@ -103,7 +103,7 @@ abstract class ReminderMailer {
 	 *
 	 * @return bool Whether a mail left; false for a recipient without a usable address or with a withdrawn account.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
 	 */
 	protected function deliver(string $subjectRef, string $organisation, array $values): bool {
 		try {

@@ -171,7 +171,7 @@ import { actionWords, daysLeftLine, dayText, fill } from '../../lib/actions.js'
 import { initialsOf } from './contacts.js'
 
 /**
- * @spec openspec/changes/personal-action-list/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
  */
 export default {
 	name: 'ActionsPage',
@@ -200,7 +200,7 @@ export default {
 	computed: {
 		/**
 		 * @return {string} The page's language.
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		pageLocale() {
 			return globalThis.document?.documentElement?.lang || ''
@@ -208,7 +208,7 @@ export default {
 
 		/**
 		 * @return {Record<string, string>} The words in the reader's language.
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		words() {
 			return actionWords(this.locale || this.pageLocale)
@@ -216,7 +216,7 @@ export default {
 
 		/**
 		 * @return {string} The viewer's subject reference.
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		viewer() {
 			return String(this.session?.subjectRef || '')
@@ -226,7 +226,7 @@ export default {
 	/**
 	 * Read the actions when the page opens.
 	 *
-	 * @spec openspec/changes/personal-action-list/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 	 */
 	async mounted() {
 		await this.load()
@@ -240,7 +240,7 @@ export default {
 		/**
 		 * @param {{endDate: string, status: string}} action An action.
 		 * @return {string} "nog 6 dagen", or ''.
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		daysLeft(action) {
 			return daysLeftLine(
@@ -254,7 +254,7 @@ export default {
 		 * Read the actions again.
 		 *
 		 * @return {Promise<void>} Resolves when read.
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		async load() {
 			const list = await actionsApi(this.api).fetchActions()
@@ -272,7 +272,7 @@ export default {
 		 *
 		 * @param {object|null} action The action.
 		 * @return {void}
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		open(action) {
 			this.notice = ''
@@ -284,7 +284,7 @@ export default {
 		 *
 		 * @param {string} notice What to say.
 		 * @return {Promise<void>} Resolves when read.
-		 * @spec openspec/changes/personal-action-list/tasks.md#t03
+		 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 		 */
 		async closed(notice) {
 			this.editing = null

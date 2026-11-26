@@ -10,6 +10,7 @@ use OCA\Portaliq\Auth\PortalUnauthorizedException;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalAccountSelfController;
 use OCA\Portaliq\Controller\PortalIdentityController;
+use OCA\Portaliq\Controller\PortalIntakeController;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Service\PortalRateLimit;
 use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
@@ -345,6 +346,63 @@ class PortalAuthMiddlewareTest extends TestCase {
 
 	}//end testNoBearerNonEligibleMethodAlwaysThrows()
 
+	/**
+	 * A signed-out visitor reads the intake catalogue and looks up an address
+	 * (decision 25 Nov 2026 21:50 CET); both are rate limited by their own
+	 * AnonRateLimit.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-catalogue-and-address-without-sign-in/specs/portal-intake-form/spec.md
+	 */
+	public function testTheIntakeCatalogueAndAddressLookupAnswerWithoutASession(): void {
+		$mw = $this->middleware(session: $this->session(subject: null), registry: $this->registry(aggregate: []));
+
+		foreach (['catalogue', 'address'] as $method) {
+			$mw->beforeController($this->intakeController(), $method);
+		}
+
+		$this->addToAssertionCount(count: 2);
+
+	}//end testTheIntakeCatalogueAndAddressLookupAnswerWithoutASession()
+
+	/**
+	 * Every other intake method keeps the bearer gate.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-catalogue-and-address-without-sign-in/specs/portal-intake-form/spec.md
+	 */
+	public function testTheOtherIntakeMethodsStillNeedASession(): void {
+		$mw = $this->middleware(session: $this->session(subject: null), registry: $this->registry(aggregate: []));
+
+		foreach (['form', 'submit', 'family', 'pay', 'status', 'onBehalf'] as $method) {
+			try {
+				$mw->beforeController($this->intakeController(), $method);
+				$this->fail(message: $method . ' answered without a session');
+			} catch (PortalUnauthorizedException) {
+				$this->addToAssertionCount(count: 1);
+			}
+		}
+
+	}//end testTheOtherIntakeMethodsStillNeedASession()
+
+	/**
+	 * The public reads belong to the intake controller only: another guarded
+	 * controller's `catalogue` or `address` keeps the gate.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-catalogue-and-address-without-sign-in/specs/portal-intake-form/spec.md
+	 */
+	public function testAnotherControllersMethodOfTheSameNameStillNeedsASession(): void {
+		$mw = $this->middleware(session: $this->session(subject: null), registry: $this->registry(aggregate: []));
+
+		$this->expectException(exception: PortalUnauthorizedException::class);
+		$mw->beforeController($this->protectedController(), 'catalogue');
+
+	}//end testAnotherControllersMethodOfTheSameNameStillNeedsASession()
+
 	private function middleware(BearerSessionResolver $session, PortalContributionRegistry $registry, array $params = []): PortalAuthMiddleware {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('');
@@ -367,6 +425,16 @@ class PortalAuthMiddlewareTest extends TestCase {
 		$mock->method('aggregateAnonymous')->willReturn($aggregate);
 		return $mock;
 	}//end registry()
+
+	/**
+	 * The intake controller, without its dependencies.
+	 *
+	 * @return PortalIntakeController
+	 */
+	private function intakeController(): PortalIntakeController {
+		return $this->getMockBuilder(className: PortalIntakeController::class)->disableOriginalConstructor()->getMock();
+
+	}//end intakeController()
 
 	private function protectedController(): object {
 		return new class implements PortalProtected {

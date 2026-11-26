@@ -278,3 +278,44 @@ test('an endpoint action that declares a draft asks for none: the server keeps n
 		'a create action still resumes',
 	)
 })
+
+test('an endpoint action that declares draftSchema keeps its draft there: it resumes and offers the save button (endpoint-forward-draft-schema T4)', async () => {
+	const asked = []
+	const api = {
+		async fetchOptions() {
+			return []
+		},
+		async getDraft(app, id) {
+			asked.push(['get', app, id])
+			return null
+		},
+		async saveDraft(app, id) {
+			asked.push(['save', app, id])
+			return null
+		},
+	}
+	const endpoint = {
+		...ACTION,
+		type: 'endpoint-forward',
+		register: undefined,
+		schema: undefined,
+		endpoint: '/index.php/apps/dossiq/api/portal/woo-verzoek',
+		draftSchema: { register: 'dossiq', schema: 'woo-draft' },
+	}
+	const form = await mountSfc(FORM, {
+		action: endpoint,
+		api,
+		send: async () => ({ ok: true }),
+	})
+	await form.flush()
+	assert.deepEqual(asked, [['get', 'dossiq', 'woo-request']], 'its draft is read on open')
+	assert.ok(form.find('schema-form-save-draft'), 'the save button is offered')
+
+	const half = await mountSfc(FORM, {
+		action: { ...endpoint, draftSchema: { register: 'dossiq' } },
+		api,
+		send: async () => ({ ok: true }),
+	})
+	await half.flush()
+	assert.equal(half.find('schema-form-save-draft'), null, 'no schema, no save button')
+})

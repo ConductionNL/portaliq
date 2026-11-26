@@ -45,6 +45,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
+use OCA\Portaliq\Contribution\EndpointDraftSchema;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
 use OCA\Portaliq\Contribution\FieldMap;
@@ -459,9 +460,9 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @return array<int, array{special: string, label: string, icon: string}> The pages, in menu order.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t08
-	 * @spec openspec/changes/personal-action-list/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t05
 	 */
 	private function areaPages(): array {
 		if ($this->portals === null) {
@@ -477,7 +478,8 @@ class ContributionController extends Controller implements PortalProtected {
 		}
 
 		if (($portal['plansEnabled'] ?? false) === true) {
-			$pages[] = ['special' => 'samenwerken', 'label' => 'Collaborate', 'icon' => 'ClipboardCheckOutline'];
+			// The menu item reads "Mijn plannen" under the group "Samenwerken" (board Plannen); the page keeps its title.
+			$pages[] = ['special' => 'samenwerken', 'label' => 'My plans', 'icon' => 'ClipboardCheckOutline'];
 		}
 
 		if (($portal['actionsEnabled'] ?? false) === true) {
@@ -2183,6 +2185,7 @@ class ContributionController extends Controller implements PortalProtected {
 	 *
 	 * @spec openspec/changes/archive/2026-10-09-inbox-reply-with-attachments/tasks.md#t02
 	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
 	 */
 	private function createFrom(array $subject, array $match, string $register, string $schema, array $carried=[]): JSONResponse {
 		$action = $match['action'];
@@ -2234,6 +2237,13 @@ class ContributionController extends Controller implements PortalProtected {
 		));
 
 		if ($created === null) {
+			// The record's own app refused it before it was stored (a reaction
+			// on a closed consultation): no longer possible, not a store
+			// failure. Its text stays on the server.
+			if ($this->writer->lastRefusedByOwner() === true) {
+				return new JSONResponse(['error' => 'refused'], Http::STATUS_CONFLICT);
+			}
+
 			// A value the store refused names its field (site-action-forms).
 			return $this->writeRefusal->response(failure: $this->writer->lastFailure(), data: $data)
 				?? new JSONResponse(['error' => 'write_failed'], Http::STATUS_BAD_GATEWAY);
@@ -3122,8 +3132,10 @@ class ContributionController extends Controller implements PortalProtected {
 		$scoped = (new ActionScopeResolver(reader: $this->reader))
 			->prepare(action: $action, subject: $subject, appId: $appId, body: $whitelisted);
 		$refused = $this->requiredFieldsGuard->forwardRefusal(action: $action, scoped: $scoped, declaresFields: $whitelisted !== null);
-		if ($refused !== null) {
-			return $refused;
+		if ($refused !== null || $scoped === null) {
+			// The guard already answers an unresolved scope with 403; the
+			// second test only tells the analysers the body is there.
+			return $refused ?? new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN);
 		}
 
 		$this->recordForward(subject: $subject, appId: $appId, actionId: $actionId);
@@ -3209,6 +3221,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @param array{appId: string, actionId: string} $target  The requested app and action id.
 	 *
 	 * @return JSONResponse
+	 *
+	 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T3
 	 */
 	private function forwardAndAnswer(array $subject, array $action, array $scoped, array $target): JSONResponse {
 		$response = $this->forwarder->forward(action: $action, subject: $subject, whitelisted: $scoped['body'], scopeValue: $scoped['scopeValue']);
@@ -3228,8 +3242,53 @@ class ContributionController extends Controller implements PortalProtected {
 			$this->recordReceipt(subject: $subject, action: $action, target: $target);
 		}
 
+		// The endpoint took the final body: the draft kept elsewhere is done
+		// (endpoint-forward-draft-schema). Fail-safe, never a gate.
+		if ($status >= 200 && $status < 300) {
+			$this->discardForwardedDraft(subject: $subject, action: $action);
+		}
+
 		return new JSONResponse($decoded, $status);
 	}//end forwardAndAnswer()
+
+	/**
+	 * Discard the subject's draft of an endpoint action that keeps its draft
+	 * on a declared `draftSchema`, once the endpoint accepted the final body.
+	 *
+	 * A draft that cannot be found or discarded stays until its retention
+	 * ends; the answer to the resident never changes.
+	 *
+	 * @param array<string, mixed> $subject The subject.
+	 * @param array<string, mixed> $action  The endpoint action.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T3
+	 */
+	private function discardForwardedDraft(array $subject, array $action): void {
+		if ($this->drafts === null || $this->destinations === null
+			|| (new EndpointDraftSchema())->keepsDraftElsewhere(action: $action) === false
+		) {
+			return;
+		}
+
+		$subjectRef = (string)($subject['subjectRef'] ?? '');
+		$draft      = $this->liveDraftOf(action: $action, subjectRef: $subjectRef);
+		if ($draft === null) {
+			return;
+		}
+
+		try {
+			$this->destinations->discardDraft(
+				destination: $this->drafts->destinationOf(action: $action),
+				subjectRef: $subjectRef,
+				draftId: (string)$draft['id']
+			);
+		} catch (\Throwable) {
+			// Kept until its retention ends.
+			return;
+		}
+	}//end discardForwardedDraft()
 
 	/**
 	 * Record the submission receipt of a create forward that succeeded.

@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t02
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ use Psr\Log\LoggerInterface;
  * REQ-RAL-001 and REQ-RAL-002 over an in-memory store that scopes a read
  * and a write the way the portal's reader and writer do.
  *
- * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md
  */
 class PortalActionServiceTest extends TestCase {
 

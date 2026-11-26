@@ -159,13 +159,30 @@ test.describe('change proposals reach the case page', () => {
 			return
 		}
 
+		// A dossiq case requires its case type, and OpenRegister starts it in that
+		// type's initial status (x-openregister-lifecycle initial from caseType).
+		// Any case type will do; E2E_DOSSIQ_CASE_TYPE names one.
+		let caseType = process.env.E2E_DOSSIQ_CASE_TYPE ?? ''
+		if (caseType === '') {
+			const types = await admin.get(`${OR_OBJECTS_BASE}/${REGISTER}/caseType?_limit=1`)
+			expect(types.ok(), 'the admin may list dossiq case types').toBeTruthy()
+			const first = ((await types.json()).results ?? [])[0] ?? {}
+			caseType = String(first.id ?? first['@self']?.id ?? '')
+		}
+		expect(caseType, 'dossiq must have a case type to open a case with').not.toBe('')
+
 		const seeded = await admin.post(`${OR_OBJECTS_BASE}/${REGISTER}/${SCHEMA}`, {
 			data: {
 				title: `Zaak ${STAMP}`,
+				caseType,
+				// dossiq lets an authenticated user read a case only when it is
+				// assigned to them (case schema authorization: read matches
+				// assignee = $userId), so the colleague is the case's assignee.
+				assignee: COLLEAGUE,
 				[PROPERTY]: 'Oorspronkelijke omschrijving',
 			},
 		})
-		expect(seeded.ok(), 'OpenRegister objects#create must accept a dossiq case').toBeTruthy()
+		expect(seeded.ok(), `OpenRegister objects#create must accept a dossiq case: ${await seeded.text()}`).toBeTruthy()
 		caseId = idOf(await seeded.json())
 		expect(caseId).toBeTruthy()
 	})
@@ -256,7 +273,7 @@ test.describe('change proposals reach the case page', () => {
 		expect(queue.some((row) => idOf(row) === proposalId), 'the proposal waits in the handler\'s queue').toBeTruthy()
 
 		const accepted = await admin.post(`${APP_API_BASE}/proposals/${encodeURIComponent(proposalId)}/accept`, { data: {} })
-		expect(accepted.ok(), 'a handler with the review right may accept').toBeTruthy()
+		expect(accepted.ok(), `a handler with the review right may accept: ${accepted.status()} ${await accepted.text()}`).toBeTruthy()
 
 		const after = await admin.get(`${OR_OBJECTS_BASE}/${REGISTER}/${SCHEMA}/${encodeURIComponent(caseId)}`)
 		expect(after.ok()).toBeTruthy()

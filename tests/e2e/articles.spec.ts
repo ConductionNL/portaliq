@@ -308,7 +308,9 @@ test.describe('marketing-articles: the screens', () => {
 
 		await signInAsEditor(page)
 		await openArticlesFromMenu(page)
-		await page.getByRole('button', { name: /^\s*(New article|Nieuw artikel)\s*$/ }).click()
+		// Board PtArtikelen: "Nieuw artikel" beside the title. It goes to another page, so it is a link styled as the primary button.
+		const newArticle = /^\s*(New article|Nieuw artikel)\s*$/
+		await page.getByRole('link', { name: newArticle }).or(page.getByRole('button', { name: newArticle })).first().click()
 		await expect(page).toHaveURL(/\/articles\/new$/)
 
 		const dialog = page.getByRole('dialog')

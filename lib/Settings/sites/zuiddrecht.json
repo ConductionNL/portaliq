@@ -10,6 +10,8 @@
         "status": "published",
         "kind": "site",
         "theme": "zuiddrecht",
+        "contactsEnabled": true,
+        "plansEnabled": true,
         "headerVariant": "double",
         "domains": [],
         "locales": [
@@ -19,7 +21,8 @@
             "modes": [
                 "public",
                 "digid",
-                "eherkenning"
+                "eherkenning",
+                "nextcloud"
             ],
             "minTrust": "low",
             "modeLabels": {
@@ -32,11 +35,16 @@
                     "title": "Namens een bedrijf",
                     "text": "Voor vergunningen, meldingen en zaken van uw organisatie.",
                     "button": "Inloggen met eHerkenning"
+                },
+                "nextcloud": {
+                    "title": "Met een account",
+                    "text": "Voor wie publicaties volgt, dossiers bewaart of een vraag stelt. Geen DigiD nodig.",
+                    "button": "Inloggen met uw account"
                 }
             },
             "signInPage": {
                 "title": "Inloggen op Mijn Zuiddrecht",
-                "intro": "Kies hoe u inlogt. Als inwoner gebruikt u DigiD. Namens een bedrijf gebruikt u eHerkenning.",
+                "intro": "Kies hoe u inlogt. Als inwoner gebruikt u DigiD. Namens een bedrijf gebruikt u eHerkenning. Zonder wettelijke identificatie kunt u een account gebruiken.",
                 "notice": {
                     "text": "Geen DigiD? Bel 14 0999. Wij helpen u op een andere manier."
                 }
@@ -2602,6 +2610,7 @@
                                     "name": "Stadskantoor",
                                     "address": "Marktplein 1, 3311 AA Zuiddrecht",
                                     "opening": "Maandag tot en met vrijdag 8.30 tot 17.00 uur, alleen op afspraak",
+                                    "hours": {"ma": "8.30-17.00", "di": "8.30-17.00", "wo": "8.30-17.00", "do": "8.30-17.00", "vr": "8.30-17.00"},
                                     "category": "Balie en loket",
                                     "lat": 51.8133,
                                     "lon": 4.6697,
@@ -2616,6 +2625,7 @@
                                     "name": "Milieustraat",
                                     "address": "Industrieweg 40, 3316 BK Zuiddrecht",
                                     "opening": "Maandag tot en met vrijdag 8.00 tot 16.00 uur, zaterdag 9.00 tot 15.00 uur",
+                                    "hours": {"ma": "8.00-16.00", "di": "8.00-16.00", "wo": "8.00-16.00", "do": "8.00-16.00", "vr": "8.00-16.00", "za": "9.00-15.00"},
                                     "category": "Afval",
                                     "lat": 51.8051,
                                     "lon": 4.6912,
@@ -2630,6 +2640,7 @@
                                     "name": "Bibliotheek",
                                     "address": "Havenkade 8, 3312 CE Zuiddrecht",
                                     "opening": "Dinsdag tot en met zaterdag 10.00 tot 17.00 uur",
+                                    "hours": {"di": "10.00-17.00", "wo": "10.00-17.00", "do": "10.00-17.00", "vr": "10.00-17.00", "za": "10.00-17.00"},
                                     "category": "Bibliotheek en cultuur",
                                     "lat": 51.8178,
                                     "lon": 4.6589,

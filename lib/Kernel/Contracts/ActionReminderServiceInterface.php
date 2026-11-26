@@ -44,7 +44,7 @@ interface ActionReminderServiceInterface {
 	 *
 	 * @return int How many reminders were sent.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
 	 */
 	public function remindDue(?string $today = null): int;
 }//end interface

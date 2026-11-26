@@ -90,7 +90,8 @@ class DisplayKeys {
 
 		$out = ['display' => $display] + $this->fieldKeys(block: $block, collection: $collection) + $this->textKeys(block: $block);
 		return $out + $this->lists(display: $display, block: $block, collection: $collection)
-			+ $this->numbers(display: $display, block: $block) + $this->tones(display: $display, block: $block);
+			+ $this->numbers(display: $display, block: $block) + $this->tones(display: $display, block: $block)
+			+ $this->statusNotes(display: $display, block: $block, collection: $collection);
 	}//end keys()
 
 	/**
@@ -215,6 +216,71 @@ class DisplayKeys {
 
 		return [];
 	}//end numbers()
+
+	/**
+	 * The line under the status pill per status value on rows: `statusNotes`,
+	 * a map from a stored value to `{field, atField, template}`. A status with
+	 * an entry reads its own name and moment ("Gezien door juf Esra om 8:12
+	 * uur" while submitted); any other status keeps `statusNoteField` and
+	 * `statusNoteAtField`. The template is the contributing app's own,
+	 * translated by it; portaliq fills `{name}`, `{date}` and `{time}`.
+	 *
+	 * @param string                    $display    The display.
+	 * @param array<string, mixed>      $block      The declared block.
+	 * @param array<string, mixed>|null $collection The collection it reads, or null when unknown.
+	 *
+	 * @return array<string, array<string, array<string, string>>>
+	 *
+	 * @spec openspec/changes/rows-status-note-per-state/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-a-different-note-per-status
+	 */
+	private function statusNotes(string $display, array $block, ?array $collection): array {
+		if ($display !== 'rows' || is_array($block['statusNotes'] ?? null) === false) {
+			return [];
+		}
+
+		$notes = [];
+		foreach ($block['statusNotes'] as $value => $note) {
+			$kept = $this->statusNote(note: $note, collection: $collection);
+			if (is_string($value) === true && $value !== '' && $kept !== null) {
+				$notes[$value] = $kept;
+			}
+		}
+
+		if ($notes === []) {
+			return [];
+		}
+
+		return ['statusNotes' => array_slice($notes, 0, self::MAX_TONES, true)];
+	}//end statusNotes()
+
+	/**
+	 * One status value's note: its name field (required, projected), its
+	 * moment field and its template (each kept only when valid).
+	 *
+	 * @param mixed                     $note       The declared note.
+	 * @param array<string, mixed>|null $collection The collection it reads.
+	 *
+	 * @return array<string, string>|null The note, or null when it names no projected field.
+	 *
+	 * @spec openspec/changes/rows-status-note-per-state/specs/portal-contribution-contract/spec.md#requirement-a-dated-row-may-say-a-different-note-per-status
+	 */
+	private function statusNote(mixed $note, ?array $collection): ?array {
+		if (is_array($note) === false || $this->projects(collection: $collection, field: ($note['field'] ?? null)) === false) {
+			return null;
+		}
+
+		$kept = ['field' => $note['field']];
+		if ($this->projects(collection: $collection, field: ($note['atField'] ?? null)) === true) {
+			$kept['atField'] = $note['atField'];
+		}
+
+		$template = ($note['template'] ?? null);
+		if (is_string($template) === true && trim($template) !== '' && mb_strlen($template) <= self::MAX_TEXT) {
+			$kept['template'] = trim($template);
+		}
+
+		return $kept;
+	}//end statusNote()
 
 	/**
 	 * Whether a field is one the collection projects. A collection without a

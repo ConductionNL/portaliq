@@ -34,6 +34,9 @@ parameters:
         # OpenRegister's leaf contract (change-proposal-queue): verbatim copies.
         - tests/Stubs/OpenRegister/Exception/NotImplementedException.php
         - tests/Stubs/OpenRegister/Service/Integration/IntegrationProvider.php
+        - tests/Stubs/OpenRegister/Service/Integration/RefIntegrationProvider.php
+        - tests/Stubs/OpenRegister/Kernel/Contracts/ObjectRef.php
+        - tests/Stubs/OpenRegister/Kernel/Contracts/RegisterSchemaRef.php
         - tests/Stubs/OpenRegister/Service/Integration/LeafDescriptor.php
         - tests/Stubs/OpenRegister/Event/RegisterLeafProvidersEvent.php
 

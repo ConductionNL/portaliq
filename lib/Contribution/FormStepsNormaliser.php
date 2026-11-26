@@ -56,16 +56,18 @@ class FormStepsNormaliser implements FormStepsNormaliserInterface {
 	 * @return array<string, mixed> The action.
 	 *
 	 * @spec openspec/changes/site-multi-step-forms/specs/portal-contribution-contract/spec.md#requirement-a-create-or-endpoint-action-may-run-in-steps-with-a-review-a-draft-and-a-confirmation-req-smf-020
+	 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T1
 	 */
 	public function applyToAction(array $action, array $whitelist): array {
 		$flows    = $this->flows(action: $action, whitelist: $whitelist);
 		$declared = $this->declared(action: $action);
 		$action   = $this->withoutDeclarations(action: $action);
-		if ($flows === false) {
-			return $action;
+		if ($flows === true) {
+			$action = $this->withClean(action: $action, clean: $this->cleaned(declared: $declared, whitelist: $whitelist));
 		}
 
-		return $this->withClean(action: $action, clean: $this->cleaned(declared: $declared, whitelist: $whitelist));
+		// Where an endpoint action keeps its draft, once its draft is settled (endpoint-forward-draft-schema).
+		return (new EndpointDraftSchema())->normalise(action: $action);
 	}//end applyToAction()
 
 	/**

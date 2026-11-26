@@ -18,7 +18,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t02
  */
 
 declare(strict_types=1);
@@ -44,7 +44,7 @@ use OCP\IRequest;
  * shares a plan on; an unknown action and someone else's answer the same 404.
  * The service decides who may change what.
  *
- * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md
  */
 class PortalActionsController extends Controller implements PortalProtected {
 
@@ -75,7 +75,7 @@ class PortalActionsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{actions, done, total, assignees}`, or 401.
 	 *
-	 * @spec openspec/changes/personal-action-list/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -94,7 +94,7 @@ class PortalActionsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{id}` with 201, 400, or 401.
 	 *
-	 * @spec openspec/changes/personal-action-list/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -121,7 +121,7 @@ class PortalActionsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{ok: true}`, or 400, 403, 404, 401.
 	 *
-	 * @spec openspec/changes/personal-action-list/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -143,7 +143,7 @@ class PortalActionsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{ok: true}`, or 403 for an assignee, 404, 401.
 	 *
-	 * @spec openspec/changes/personal-action-list/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -165,7 +165,7 @@ class PortalActionsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{history}`, or 404, 401.
 	 *
-	 * @spec openspec/changes/personal-action-list/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -192,7 +192,7 @@ class PortalActionsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{ok: true}`, or 400 for a file that is not a PDF, JPG or PNG up to 10 MB, 403, 404, 401.
 	 *
-	 * @spec openspec/changes/personal-action-list/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -216,7 +216,7 @@ class PortalActionsController extends Controller implements PortalProtected {
 	 *
 	 * @return Response The file, or 404, 401.
 	 *
-	 * @spec openspec/changes/personal-action-list/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

@@ -560,6 +560,7 @@ import {
 	anyGrouped,
 	groupFieldOf,
 	groupLabelCollection,
+	groupOrderOf,
 	groupRows,
 } from '../../../shared/collectionGroups.js'
 import { introOf } from '../../../shared/collectionIntro.js'
@@ -574,6 +575,7 @@ import {
 	consumeOpenTarget,
 	forgetOpenTarget,
 	navKeyFor,
+	recordPageForRow,
 } from '../../../shared/openRecord.js'
 import { routeForNav } from '../../../shared/portalNav.js'
 import {
@@ -1495,6 +1497,7 @@ export default {
 		 * @return {Array<{value: string, label: string, rows: Array<object>}>}
 		 *
 		 * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T3
+		 * @spec openspec/changes/collection-group-order/tasks.md#T1
 		 */
 		groupsOf(item) {
 			if (this.activeRecord && item.block?.recordField) {
@@ -1509,6 +1512,7 @@ export default {
 				),
 				groupFieldOf(item.collection),
 				source ? this.store[source.id]?.objects || [] : [],
+				groupOrderOf(item.collection),
 			)
 		},
 
@@ -1640,7 +1644,35 @@ export default {
 			}
 		},
 
+		/**
+		 * Choose a row of a list: open it on its collection's record page
+		 * when that is another page, else mark it here.
+		 *
+		 * @param {{id: string}} collection The row's collection.
+		 * @param {object} row The row.
+		 * @return {void}
+		 * @spec openspec/changes/list-row-opens-its-record-page/specs/site-mijn-omgeving/spec.md#requirement-a-list-row-opens-its-collections-record-page
+		 */
 		select(collection, row) {
+			const elsewhere = recordPageForRow(
+				this.nav,
+				this.entry,
+				this.currentPage,
+				{
+					app: this.currentContribution?.app || '',
+					collection: collection.id,
+				},
+			)
+			const id = rowIdOf(row)
+			if (elsewhere && id) {
+				// The collection's record page is another page (REQ-SMO-010):
+				// open the row there instead of only marking it here.
+				this.$emit(
+					'navigate',
+					`${routeForNav(elsewhere)}/${encodeURIComponent(id)}`,
+				)
+				return
+			}
 			this.selected = { ...this.selected, [collection.id]: row }
 			if (this.recordPage && collection.id === this.recordPage.collection) {
 				// Opening a record moves the focus to its name, so a keyboard

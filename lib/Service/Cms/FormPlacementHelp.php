@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md
+ * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ use OCA\Portaliq\Service\CmsRows;
 /**
  * Hands each form placement the help details of its stored form.
  *
- * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md
+ * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md
  */
 class FormPlacementHelp {
 	private const WIDGET = 'form';
@@ -64,7 +64,7 @@ class FormPlacementHelp {
 	 *
 	 * @return array The widgets, each form placement with its `formHelp` or without the key.
 	 *
-	 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+	 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
 	 */
 	public function attach(array $widgets, string $portal): array {
 		return $this->walk(widgets: $widgets, run: new FormPlacementRun(portal: $portal));

@@ -44,6 +44,104 @@ class PortalObjectWriterTest extends TestCase {
 
 	}//end testAnUpdateWithoutOpenRegisterWritesNothing()
 
+	/**
+	 * A write the owning app's hook stopped is told apart from a store failure.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
+	 */
+	public function testAWriteTheOwningAppRefusedIsMarkedAsSuch(): void {
+		$writer = $this->writerThrowing(failure: new \OCA\OpenRegister\Exception\HookStoppedException(message: 'Could not verify the parent is open'));
+
+		$created = $writer->createObject(
+			register: 'decidiq',
+			schema: 'consultation-reaction',
+			scopeField: 'submitterId',
+			subjectRef: 's1',
+			organisation: 'org-1',
+			data: ['body' => 'Te laat']
+		);
+
+		$this->assertNull(actual: $created);
+		$this->assertTrue(condition: $writer->lastRefusedByOwner());
+		$this->assertSame(expected: 'Could not verify the parent is open', actual: $writer->lastFailure());
+	}//end testAWriteTheOwningAppRefusedIsMarkedAsSuch()
+
+	/**
+	 * Any other failure of the store is not an owner's refusal.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
+	 */
+	public function testAStoreFailureIsNotAnOwnersRefusal(): void {
+		$writer = $this->writerThrowing(failure: new RuntimeException(message: 'database is down'));
+
+		$created = $writer->createObject(
+			register: 'decidiq',
+			schema: 'consultation-reaction',
+			scopeField: 'submitterId',
+			subjectRef: 's1',
+			organisation: 'org-1',
+			data: ['body' => 'Nu']
+		);
+
+		$this->assertNull(actual: $created);
+		$this->assertFalse(condition: $writer->lastRefusedByOwner());
+	}//end testAStoreFailureIsNotAnOwnersRefusal()
+
+	/**
+	 * A writer whose object service throws on save.
+	 *
+	 * @param \Throwable $failure What the save throws.
+	 *
+	 * @return PortalObjectWriter
+	 */
+	private function writerThrowing(\Throwable $failure): PortalObjectWriter {
+		$objectService = new class($failure) {
+			/**
+			 * Constructor.
+			 *
+			 * @param \Throwable $failure What the save throws.
+			 */
+			public function __construct(private \Throwable $failure) {
+			}
+
+			/**
+			 * Throws what it was given.
+			 *
+			 * @param array<string, mixed> $object        The object.
+			 * @param ObjectSaveOptions    $options       The options.
+			 * @param bool                 $_rbac         RBAC.
+			 * @param bool                 $_multitenancy Multitenancy.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function saveObject(
+				array $object,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
+				bool $_rbac = true,
+				bool $_multitenancy = true
+			): array {
+				throw $this->failure;
+			}
+		};
+
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			function (string $id) use ($objectService) {
+				if ($id === self::OS) {
+					return $objectService;
+				}
+
+				throw new RuntimeException('no service: ' . $id);
+			}
+		);
+
+		return new PortalObjectWriter(container: $container, logger: $this->createMock(originalClassName: LoggerInterface::class));
+	}//end writerThrowing()
+
 	public function testStampsOwnershipOverClientInputAndBypassesRbac(): void {
 		$objectService = new class {
 

@@ -105,7 +105,7 @@ class ContributionTenantGuardTest extends TestCase {
 	/**
 	 * Own-area pages are announced only for a portal that switched them on.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t08
 	 */
 	public function testAreaPagesAreAnnouncedOnlyWhenThePortalSwitchedThemOn(): void {
