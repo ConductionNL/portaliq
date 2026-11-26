@@ -18,7 +18,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { ADMIN_HEADERS, APP, ENABLED, login, portalRecord } from './lib/traffic.ts'
+import { ADMIN_HEADERS, APP, ENABLED, login, OR_OBJECTS, portalRecord } from './lib/traffic.ts'
 
 const OTHER = 'open-venray'
 const HIDDEN = process.env.E2E_CASE_TYPE_HIDDEN ?? ''
