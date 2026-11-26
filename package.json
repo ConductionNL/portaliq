@@ -394,7 +394,7 @@
     "@nextcloud/stylelint-config": "^3.2.2",
     "@nextcloud/webpack-vue-config": "^7.0.2",
     "@playwright/test": "^1.65.1",
-    "@typescript-eslint/parser": "^8.72.1",
+    "@typescript-eslint/parser": "^8.74.0",
     "@vue/compiler-sfc": "^3.5.44",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
