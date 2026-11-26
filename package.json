@@ -350,7 +350,7 @@
     "@utrecht/textbox-css": "^4.1.0",
     "@utrecht/tooltip-css": "3.0.1",
     "@utrecht/unordered-list-css": "3.1.1",
-    "@vueuse/core": "^14.3.0",
+    "@vueuse/core": "^15.1.0",
     "axios": "^1.21.1",
     "babel-loader": "^10.1.1",
     "dexie": "^4.4.7",
