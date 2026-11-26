@@ -170,12 +170,30 @@ final class FormSubmitActions {
 
 			$fieldId = ($field['id'] ?? null);
 			if (($field['type'] ?? null) === FileFieldConfigNormaliser::TYPE_FILE && is_string($fieldId) === true && $fieldId !== '') {
-				$configs[$fieldId] = (new FileFieldConfigNormaliser())->apply(entry: [], config: $field, actionType: 'create');
+				$configs[$fieldId] = (new FileFieldConfigNormaliser())->apply(entry: [], config: $this->withAcceptList(field: $field), actionType: 'create');
 			}
 		}
 
 		return $configs;
 	}//end fileFieldConfigs()
+
+	/**
+	 * The field with its `accept` as a list: the inspector keeps it as one
+	 * line, `.pdf, image/*`.
+	 *
+	 * @param array<string, mixed> $field The file field.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/anonymous-form-file-upload/specs/landing-page-provisioning/spec.md
+	 */
+	private function withAcceptList(array $field): array {
+		if (is_string($field['accept'] ?? null) === true) {
+			$field['accept'] = array_map('trim', explode(',', $field['accept']));
+		}
+
+		return $field;
+	}//end withAcceptList()
 
 	/**
 	 * The values the server sets on a submission, which a client can never override.

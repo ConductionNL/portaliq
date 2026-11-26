@@ -291,6 +291,7 @@ test('FormBlock draws every declared type, choice groups under one legend', () =
 		'textarea',
 		'select',
 		'date',
+		'file',
 	]) {
 		assert.match(
 			block,
@@ -303,7 +304,7 @@ test('FormBlock draws every declared type, choice groups under one legend', () =
 		/return \['date', 'radio', 'checkboxes'\]\.includes\(field\.type\)/,
 	)
 	assert.match(block, /:role="field\.type === 'switch' \? 'switch' : undefined"/)
-	assert.match(block, /formErrors\(answerFields\(this\.fields\), this\.values\)/)
+	assert.match(block, /formErrors\(answerFields\(this\.fields\), this\.values, this\.files\)/)
 })
 
 test('a date field offers the picker and its earliest and latest date (D1 rows 22, 23)', () => {

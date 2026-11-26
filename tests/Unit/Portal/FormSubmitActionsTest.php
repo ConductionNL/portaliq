@@ -222,7 +222,7 @@ class FormSubmitActionsTest extends TestCase {
 		$fields = [
 			['id' => 'name'],
 			['id' => 'photo', 'type' => 'file', 'accept' => ['.JPG', 'image/png', 'not an accept'], 'maxSizeMb' => 80],
-			['id' => 'papers', 'type' => 'group', 'fields' => [['id' => 'permit', 'type' => 'file', 'multiple' => true]]],
+			['id' => 'papers', 'type' => 'group', 'fields' => [['id' => 'permit', 'type' => 'file', 'multiple' => true, 'accept' => '.pdf, image/* ', 'maxSizeMb' => '3']]],
 		];
 		$action = (new FormSubmitActions(random: $random, logger: $logger))->action(row: $this->row(fields: $fields), formId: 'f-5');
 
@@ -230,7 +230,7 @@ class FormSubmitActionsTest extends TestCase {
 		$this->assertSame(
 			expected: [
 				'photo' => ['type' => 'file', 'multiple' => false, 'accept' => ['.jpg', 'image/png'], 'maxSizeMb' => 50],
-				'permit' => ['type' => 'file', 'multiple' => true],
+				'permit' => ['type' => 'file', 'multiple' => true, 'accept' => ['.pdf', 'image/*'], 'maxSizeMb' => 3],
 			],
 			actual: $action['fieldConfigs']
 		);
