@@ -12,7 +12,8 @@
  * The spec seeds its own published form (an `addressNL` field, an IBAN and a
  * BSN field, and a `familyMembers` field), its binding with `addressLookup`
  * on, and a site page with the intake widget, all deleted afterwards. The
- * visitor is anonymous.
+ * visitor is a resident signed in through dev-login (low trust, no DigiD):
+ * the intake form renders only for a signed-in resident.
  *
  * WHAT IS REAL AND WHAT IS STUBBED.
  * - "No match" runs against the real address route: a postcode no BAG
@@ -41,7 +42,7 @@ import type { APIRequestContext, Browser, Page, Route } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
 import { BASE_URL } from './base-url.ts'
-import { SITE_PORTAL, siteAddress } from './portal-nav.ts'
+import { devLogin, seedSiteSession, SITE_PORTAL, siteAddress } from './portal-nav.ts'
 
 const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 const ADMIN = Buffer.from(process.env.PORTALIQ_E2E_ADMIN || 'admin:admin').toString(
@@ -60,7 +61,7 @@ const WRONG_IBAN = 'NL91 ABNA 0417 1643 01'
 const BAD_BSN = '123456780'
 const GOOD_BSN = '111222333'
 
-/** What this run created, as `schema/id`, to delete afterwards. */
+/** What this run created, as `register/schema/id`, to delete afterwards. */
 const created: string[] = []
 
 /**
@@ -74,8 +75,9 @@ async function seed(
 	request: APIRequestContext,
 	schema: string,
 	data: Record<string, unknown>,
+	register = 'portaliq',
 ): Promise<void> {
-	const res = await request.post(`${OR_OBJECTS_BASE}/portaliq/${schema}`, {
+	const res = await request.post(`${OR_OBJECTS_BASE}/${register}/${schema}`, {
 		headers: ADMIN_HEADERS,
 		data,
 	})
@@ -86,7 +88,86 @@ async function seed(
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
-	created.push(`${schema}/${id}`)
+	created.push(`${register}/${schema}/${id}`)
+}
+
+/**
+ * Store a published form through buildiq's own form API, the way its form
+ * designer does, and remember its id for the clean-up.
+ *
+ * Not through OpenRegister's `objects/buildiq/registrationForm` route: a form
+ * carries `register` and `schema` properties (where its answers go), and a
+ * JSON body's `register` and `schema` replace the route's own parameters in
+ * Nextcloud's request, so that write lands in the destination register
+ * instead and the portal finds no form ("Dit formulier is nu niet
+ * beschikbaar").
+ *
+ * @param request The request fixture.
+ * @param form The form.
+ */
+async function seedRegistrationForm(
+	request: APIRequestContext,
+	form: Record<string, unknown>,
+): Promise<void> {
+	const saved = await request.put('/apps/buildiq/api/registration-forms', {
+		headers: ADMIN_HEADERS,
+		data: form,
+	})
+	expect(saved.ok(), `buildiq must store the form: ${await saved.text()}`).toBeTruthy()
+	const found = await request.get(`${OR_OBJECTS_BASE}/buildiq/registrationForm`, {
+		headers: ADMIN_HEADERS,
+		params: { name: String(form.name), _limit: '1' },
+	})
+	const rows = ((await found.json()).results ?? []) as Array<Record<string, unknown>>
+	const id = String(rows[0]?.id ?? '')
+	expect(id, `the stored form ${String(form.name)} is listed`).not.toBe('')
+	created.push(`buildiq/registrationForm/${id}`)
+}
+
+/**
+ * The register and schema the answers go to. A portal submit is an anonymous
+ * write, so the form points at a schema that lets a public visitor create;
+ * the spec makes its own and removes it afterwards. (A registrationForm's
+ * `register` and `schema` also name where OpenRegister writes the form row
+ * itself, so they cannot point at portalCase, which requires a subject.)
+ */
+const DESTINATION = `e2e-verhuizing-${STAMP}`
+const destinationIds: { schema?: number, register?: number } = {}
+
+/**
+ * Create the destination register and schema, once for the run.
+ *
+ * @param request The request fixture.
+ */
+async function seedDestination(request: APIRequestContext): Promise<void> {
+	if (destinationIds.register) {
+		return
+	}
+	const schema = await request.post('/apps/openregister/api/schemas', {
+		headers: ADMIN_HEADERS,
+		data: {
+			title: `E2E ${DESTINATION}`,
+			slug: DESTINATION,
+			properties: {
+				caseType: { type: 'string' },
+				adres: { type: 'object' },
+				iban: { type: 'string' },
+				bsn: { type: 'string' },
+				meeverhuizers: { type: 'array' },
+				reference: { type: 'string', 'x-openregister': { reference: true } },
+				subjectRef: { type: 'string' },
+			},
+			authorization: { create: ['public'], read: ['admin'] },
+		},
+	})
+	expect(schema.ok(), `the destination schema must be created: ${await schema.text()}`).toBeTruthy()
+	destinationIds.schema = (await schema.json()).id
+	const register = await request.post('/apps/openregister/api/registers', {
+		headers: ADMIN_HEADERS,
+		data: { title: `E2E ${DESTINATION}`, slug: DESTINATION, schemas: [destinationIds.schema] },
+	})
+	expect(register.ok(), `the destination register must be created: ${await register.text()}`).toBeTruthy()
+	destinationIds.register = (await register.json()).id
 }
 
 /**
@@ -96,8 +177,16 @@ async function seed(
  */
 async function seedForm(request: APIRequestContext): Promise<void> {
 	const caseType = `verhuizing-${STAMP}`
-	await seed(request, 'registrationForm', {
-		caseType,
+	await seedDestination(request)
+	// The published form lives in buildiq, the binding resolver's default
+	// form register; portaliq declares no registrationForm schema.
+	await seedRegistrationForm(request, {
+		targetApp: 'portaliq',
+		register: DESTINATION,
+		schema: DESTINATION,
+		typeProperty: 'caseType',
+		typeValue: caseType,
+		isPublic: true,
 		audience: 'client',
 		name: `${caseType}-client`,
 		status: 'published',
@@ -132,9 +221,9 @@ async function seedForm(request: APIRequestContext): Promise<void> {
 		typeSchema: 'portalCaseType',
 		typeId: caseType,
 		audience: 'client',
-		formRegister: 'portaliq',
+		formRegister: 'buildiq',
 		formSchema: 'registrationForm',
-		destination: { register: 'portaliq', schema: 'portalCase' },
+		destination: { register: DESTINATION, schema: DESTINATION, subjectField: 'subjectRef' },
 		intakeKind: 'hosted',
 		addressLookup: true,
 		status: 'published',
@@ -165,7 +254,15 @@ async function seedForm(request: APIRequestContext): Promise<void> {
 }
 
 /**
- * A page in a fresh anonymous context, opened on the form.
+ * The resident's bearer for the run: today's intake form renders only for a
+ * signed-in resident (an anonymous visitor is asked to sign in first), so the
+ * spec signs one in through dev-login, at low trust and without DigiD.
+ */
+let residentToken = ''
+
+/**
+ * A page in a fresh context with only the resident's site session, opened on
+ * the form.
  *
  * @param browser The browser fixture.
  * @return The page.
@@ -176,6 +273,7 @@ async function openForm(browser: Browser): Promise<Page> {
 		storageState: EMPTY_STATE,
 	})
 	const page = await context.newPage()
+	await seedSiteSession(page, residentToken)
 	await page.goto(siteAddress(PAGE_ROUTE))
 	await expect(page.getByTestId('intake-form')).toBeVisible({ timeout: 60_000 })
 	return page
@@ -242,13 +340,25 @@ async function tamperedSubmit(
 test.describe('data-lookups-and-checks-in-forms', () => {
 	test.beforeAll(async ({ request }) => {
 		await seedForm(request)
+		residentToken = await devLogin(
+			request,
+			`e2e-verhuizing-${STAMP}`,
+			'client',
+			process.env.PORTALIQ_E2E_ORGANISATION || 'dev-org',
+		)
 	})
 
 	test.afterAll(async ({ request }) => {
 		for (const ref of created.splice(0).reverse()) {
-			await request.delete(`${OR_OBJECTS_BASE}/portaliq/${ref}`, {
+			await request.delete(`${OR_OBJECTS_BASE}/${ref}`, {
 				headers: ADMIN_HEADERS,
 			})
+		}
+		if (destinationIds.register) {
+			await request.delete(`/apps/openregister/api/registers/${destinationIds.register}`, { headers: ADMIN_HEADERS })
+		}
+		if (destinationIds.schema) {
+			await request.delete(`/apps/openregister/api/schemas/${destinationIds.schema}`, { headers: ADMIN_HEADERS })
 		}
 	})
 
@@ -281,8 +391,9 @@ test.describe('data-lookups-and-checks-in-forms', () => {
 		await expect(page.getByTestId('intake-field-adres-town')).toHaveValue(
 			'Zuiddrecht',
 		)
+		// The note speaks the reader's language.
 		await expect(page.getByTestId('address-found')).toContainText(
-			'Wij vonden dit adres bij uw postcode en huisnummer.',
+			/(Wij vonden dit adres bij uw postcode en huisnummer\.|We found this address for your postcode and house number\.)/,
 		)
 
 		await page.getByTestId('intake-field-adres-street').fill('Lindelaan-Oost')

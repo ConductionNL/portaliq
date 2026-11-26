@@ -23,7 +23,7 @@ export const metaOf = {
 		{
 			name: 'locations',
 			kind: 'json',
-			label: 'Locaties (naam, adres, openingstijden, soort, breedtegraad, lengtegraad, links)',
+			label: 'Locaties (naam, adres, openingstijden, uren per dag als {"ma": "8.30-17.00"}, soort, breedtegraad, lengtegraad, links)',
 		},
 		{ name: 'allLabel', kind: 'string', label: 'Naam van het filter op alles' },
 	],

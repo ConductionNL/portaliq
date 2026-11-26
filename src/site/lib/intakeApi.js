@@ -580,7 +580,11 @@ export function statusView(status) {
  * route. A miss, a refusal and a network failure all answer null, so the form
  * falls back to typing (data-lookups-and-checks-in-forms REQ-DIF-001).
  *
- * @param {IntakeConnection} conn The connection (`base`, `fetchImpl`).
+ * The resident's bearer goes along when there is one: the route sits behind
+ * the portal session gate, so a lookup without it is refused with 401 and the
+ * form never fills in the street and town.
+ *
+ * @param {IntakeConnection} conn The connection (`base`, `token`, `fetchImpl`).
  * @param {object} block The address block (`postcode`, `number`, `letter`, `addition`).
  * @return {Promise<{street: string, town: string}|null>} The address, or null.
  * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
@@ -588,7 +592,7 @@ export function statusView(status) {
 export async function lookupAddress(conn, block) {
 	try {
 		const response = await fetcher(conn.fetchImpl)(addressUrl(conn, block), {
-			headers: headersFor(''),
+			headers: headersFor(conn.token || ''),
 		})
 		if (!response.ok) {
 			return null

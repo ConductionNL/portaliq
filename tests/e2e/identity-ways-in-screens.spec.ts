@@ -9,11 +9,13 @@
  * browser, so the link steps answer the redeem routes through page.route with
  * the shapes PortalIdentityControllerTest pins.
  *
- * Needs: a published portal `e2e-ways-in` on `dev-org` with registration
- * policy `activation`, a `generic` sign-in provider, and a form binding to a
- * case type admitting `reference`; a portal `e2e-digid-only` with policy
- * `approval` and DigiD only; and a portal `e2e-registration-off` with policy
- * `off` and a `generic` provider.
+ * Needs (seeded by tests/e2e/ci-seed.sh, "ways-in fixtures"): a published
+ * portal `e2e-ways-in` on `e2e-ways-org` with registration policy
+ * `activation`, a `generic` sign-in provider, and a form binding to a case
+ * type admitting `reference`; a portal `e2e-digid-only` on `e2e-digid-org`
+ * with policy `approval` and DigiD only; and a portal `e2e-registration-off`
+ * on `e2e-ways-org` with policy `off`. Their own organisations keep the
+ * e-mail sign-in off `dev-org`, whose portals other specs read.
  *
  * @spec openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md#requirement-you-can-create-an-account-where-the-portal-allows-it-req-iwi-002
  * @e2e openspec/changes/identity-ways-in-screens/specs/portal-ways-in/spec.md
@@ -118,6 +120,10 @@ test.describe('identity-ways-in-screens', () => {
 			/Your account is ready|Uw account is klaar/,
 		)
 
+		// The site drops the secret from the address once read, so the same
+		// address with the hash again is a same-document jump the site never
+		// reads; open it as a fresh page, as a second click in the mail does.
+		await page.goto('about:blank')
 		await page.goto(`${site('e2e-ways-in', '/')}#invitation=mailed-secret`)
 		await page.getByTestId('way-in-accept').click()
 		await expect(page.getByTestId('way-in-link-result')).toContainText(
