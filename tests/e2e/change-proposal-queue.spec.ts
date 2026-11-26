@@ -50,6 +50,13 @@ const OR_OBJECTS_BASE = '/apps/openregister/api/objects'
 const ADMIN = Buffer.from('admin:admin').toString('base64')
 const ORGANISATION = 'dev-org'
 
+/**
+ * Every object a test seeds, removed after it: a contribution left behind
+ * declares a second "Mijn zaken" page for every later spec, which then opens
+ * this one instead of its own (seen live once these seeds started to land).
+ */
+const created: string[] = []
+
 /** Create one object through OpenRegister's own object API, as the dev admin. */
 async function seed(
 	request: APIRequestContext,
@@ -67,6 +74,7 @@ async function seed(
 	const body = await res.json()
 	const id = (body.id ?? body['@self']?.id) as string
 	expect(id).toBeTruthy()
+	created.push(`${schema}/${id}`)
 	return id
 }
 
@@ -108,6 +116,14 @@ async function seedContribution(request: APIRequestContext): Promise<string> {
 }
 
 test.describe('change-proposal-queue', () => {
+	test.afterEach(async ({ request }) => {
+		for (const ref of created.splice(0).reverse()) {
+			await request.delete(`${OR_OBJECTS_BASE}/portaliq/${ref}`, {
+				headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
+			})
+		}
+	})
+
 	test('a citizen proposes a change, it queues, and a reviewer accepts it onto the record', async ({
 		request,
 	}) => {

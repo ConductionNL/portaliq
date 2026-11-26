@@ -88,3 +88,41 @@ test('through the action form: the stepper starts at min and steps within max', 
 		'2 deelnemers × [PRIJS]',
 	)
 })
+
+test('a typed count above max shows the count that is sent, also when typed twice', async () => {
+	const action = {
+		id: 'enrolEmployees',
+		type: 'endpoint-forward',
+		label: 'Medewerkers inschrijven',
+		fields: ['participantCount'],
+		fieldConfigs: {
+			participantCount: {
+				label: 'Aantal deelnemers',
+				widget: 'count',
+				min: 1,
+				max: 12,
+				unit: { one: 'deelnemer', other: 'deelnemers' },
+			},
+		},
+	}
+	const api = {
+		async fetchOptions() {
+			return []
+		},
+		async runAction() {
+			return { ok: true, result: {} }
+		},
+	}
+	const form = await mountSfc(FORM, { action, api, locale: 'nl' })
+	await form.flush()
+	const [box] = form.findAll((n) => n.props && n.props.id === 'f-enrolEmployees-participantCount')
+	assert.ok(box, 'the number box')
+	for (const typed of ['13', '13']) {
+		await form.fire(box, 'change', { value: typed })
+		assert.equal(box.value, '12', `typed ${typed}: the box holds what is sent`)
+		assert.equal(
+			form.textOf(form.find('f-enrolEmployees-participantCount-line')).trim(),
+			'12 deelnemers',
+		)
+	}
+})

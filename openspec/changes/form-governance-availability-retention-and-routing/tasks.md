@@ -13,8 +13,8 @@
   - `IntakeFormBlock.vue` (failure block, `keyOfThisSubmission()`), `intakeApi.js` (`Idempotency-Key` header, `error.code`, `newSubmissionKey()`), words in `forms/fields.js`. Node test: `tests/intake-send-failed.spec.mjs` (`npm run check:intake-send-failed`).
 - [x] **T07**: (rewritten onto the direct submit) `lib/BackgroundJob/FormFailureDigestJob.php` at 07:00 over `SubmitFailureLog::since()`, template `form-failure-digest` listed in the mail templates screen; no mail when nothing failed; PHPUnit (REQ-FGV-003)
   - `lib/Service/Intake/FormFailureDigest.php` (from 07:00 server time, once a day, the past 24 hours, one mail per portal to the members of its `adminGroups`, else the instance administrators; lines per form with count and codes), hourly `FormFailureDigestJob` in info.xml, `form-failure-digest` in `MailTemplateRendererInterface::TEMPLATES`, strings in en/en_US/nl. PHPUnit: `FormFailureDigestTest`.
-- [ ] **T08**: `lib/BackgroundJob/IntakeRetentionJob.php`: expiry per state, delete through OpenRegister or anonymise; PHPUnit for both methods and the defaults (REQ-FGV-004)
-  - Not built in portaliq: decision 179 moved retention to the destination objects, by the destination app's own rules.
+- [x] **T08**: `lib/BackgroundJob/IntakeRetentionJob.php`: expiry per state, delete through OpenRegister or anonymise; PHPUnit for both methods and the defaults (REQ-FGV-004)
+  - Closed without portaliq code (Ruben, 25 Nov 2026 19:30 CET, FINISH-ORDER.md DECISIONS): retention stays with each destination app's own rules (decision 179); portaliq keeps no submission to expire.
 - [ ] **T09**: export route and "Inzendingen downloaden" under "Meer" on the form settings page, built on OpenRegister's object export filtered on the binding; audit line; PtInzendingen "Downloaden" without answers; PHPUnit for the rights check (REQ-FGV-005)
   - Not built in portaliq: decision 179 moved export to the destination objects, by the destination app's own rules.
 - [x] **T10**: admin tabs Beschikbaarheid, Bewaartermijn and Doorsturen and the status panel on the form settings page, per PtFormulierInstellingen; strings in nl, en, en_US

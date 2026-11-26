@@ -143,6 +143,14 @@
             <step>OCA\Portaliq\Repair\InitializeActions</step>
             <step>OCA\Portaliq\Repair\SeedStaffGroup</step>
             <!--
+                On install too, not only after a migration: a fresh
+                `occ app:enable` runs only these install steps, and the portal
+                request that uploads a resident's file has no Nextcloud user,
+                so Nextcloud refuses to create the tag there. Without it the
+                upload lands untagged and never shows under "Sent by you".
+            -->
+            <step>OCA\Portaliq\Repair\EnsurePortalFileTags</step>
+            <!--
                 LAST, and INSTALL-ONLY.
 
                 Last because it writes objects into the register the two steps
