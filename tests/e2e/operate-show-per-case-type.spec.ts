@@ -18,7 +18,7 @@
 import type { APIRequestContext } from '@playwright/test'
 
 import { expect, test } from '@playwright/test'
-import { ADMIN_HEADERS, APP, ENABLED, login, portalRecord } from './lib/traffic.ts'
+import { ADMIN_HEADERS, APP, ENABLED, login, OR_OBJECTS, portalRecord } from './lib/traffic.ts'
 
 const OTHER = 'open-venray'
 const HIDDEN = process.env.E2E_CASE_TYPE_HIDDEN ?? ''
@@ -69,7 +69,10 @@ test.describe('operate-show-per-case-type', () => {
 	let bindingId = ''
 
 	test.beforeAll(async ({ request }) => {
-		// A published request form binding makes the portal name the type.
+		// A published request form binding makes the portal name the type. An
+		// external intake: a hosted form may only be published with a
+		// destination its answers fit (destination-missing), and the type is
+		// all this spec needs the binding for.
 		const res = await request.post(`${OR_OBJECTS}/portalFormBinding`, {
 			headers: ADMIN_HEADERS,
 			data: {
@@ -77,13 +80,16 @@ test.describe('operate-show-per-case-type', () => {
 				route: '/e2e/handhaving',
 				status: 'published',
 				audience: 'client',
-				intakeKind: 'hosted',
+				deliverTo: 'case',
+				intakeKind: 'external',
+				externalUrl: 'https://handhaving.e2e.example/melding',
+				allowedOrigins: ['https://handhaving.e2e.example'],
 				typeRegister: 'e2e',
 				typeSchema: 'caseType',
 				typeId: 'e2e-internal',
 			},
 		})
-		expect(res.ok()).toBeTruthy()
+		expect(res.ok(), `the binding must be stored: ${await res.text()}`).toBeTruthy()
 		const body = await res.json()
 		bindingId = String(body.id ?? body.uuid ?? body['@self']?.id ?? '')
 	})
@@ -111,12 +117,20 @@ test.describe('operate-show-per-case-type', () => {
 
 		await login(page)
 		await page.goto(`${APP}/portals/${id}`)
+		// The case types sit on the portal page's settings tab.
+		const settingsTab = page.getByRole('tab', { name: /^\s*(Instellingen|Settings)\s*$/ })
+		await settingsTab.click()
 		const toggle = page
 			.getByTestId('case-type-e2e-internal')
 			.getByRole('switch', { name: 'Show in this portal' })
 		await expect(toggle).toBeChecked()
 
-		await toggle.click()
+		// The switch's input is drawn over by NcCheckboxRadioSwitch; a person
+		// clicks its label.
+		await page
+			.getByTestId('case-type-e2e-internal')
+			.getByText('Show in this portal')
+			.click()
 		await expect(page.getByTestId('case-types-warning')).toHaveText(
 			'Residents with a case of this type will no longer see it here.',
 		)
@@ -124,6 +138,7 @@ test.describe('operate-show-per-case-type', () => {
 		await expect(page.getByText('Your choices are saved.')).toBeVisible()
 
 		await page.reload()
+		await settingsTab.click()
 		await expect(
 			page
 				.getByTestId('case-type-e2e-internal')
