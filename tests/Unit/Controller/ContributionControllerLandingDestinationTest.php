@@ -175,7 +175,8 @@ class ContributionControllerLandingDestinationTest extends TestCase {
 			)
 			->willReturn('tok-abc');
 
-		$response = $this->controller(writer: $this->createMock(originalClassName: PortalObjectWriter::class), outcome: ['reference' => 'LEAD-8', 'id' => 'l-1'], action: $action, grants: $grants)
+		$writer   = $this->createMock(originalClassName: PortalObjectWriter::class);
+		$response = $this->controller(writer: $writer, outcome: ['reference' => 'LEAD-8', 'id' => 'l-1'], action: $action, grants: $grants)
 			->create('portaliq', 'landingPageSubmission');
 
 		$this->assertSame(expected: 200, actual: $response->getStatus());
@@ -195,7 +196,8 @@ class ContributionControllerLandingDestinationTest extends TestCase {
 		$grants = $this->createMock(originalClassName: FormUploadGrantsInterface::class);
 		$grants->expects($this->never())->method('mint');
 
-		$response = $this->controller(writer: $this->createMock(originalClassName: PortalObjectWriter::class), outcome: ['reference' => 'LEAD-9', 'id' => 'l-2'], grants: $grants)
+		$writer   = $this->createMock(originalClassName: PortalObjectWriter::class);
+		$response = $this->controller(writer: $writer, outcome: ['reference' => 'LEAD-9', 'id' => 'l-2'], grants: $grants)
 			->create('portaliq', 'landingPageSubmission');
 
 		$this->assertArrayNotHasKey(key: 'uploadToken', array: $response->getData());
@@ -206,15 +208,28 @@ class ContributionControllerLandingDestinationTest extends TestCase {
 	 *
 	 * @param array<string, mixed>|\Throwable $outcome What the submit answers.
 	 */
-	private function controller(PortalObjectWriter $writer, array|\Throwable $outcome, bool $wired = true, ?array $action = null, ?FormUploadGrantsInterface $grants = null): ContributionController {
-		$params  = ['actionId' => 'submit-form-a', 'email' => 'ada@example.nl', 'name' => 'Ada', 'isAdmin' => true, 'photo' => 'someone-elses-file'];
+	private function controller(
+		PortalObjectWriter $writer,
+		array|\Throwable $outcome,
+		bool $wired = true,
+		?array $action = null,
+		?FormUploadGrantsInterface $grants = null
+	): ContributionController {
+		$params  = [
+			'actionId' => 'submit-form-a',
+			'email' => 'ada@example.nl',
+			'name' => 'Ada',
+			'isAdmin' => true,
+			'photo' => 'someone-elses-file',
+		];
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturnCallback(static fn (string $name): string => ($name === 'Idempotency-Key' ? 'key-1' : ''));
 		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null) => ($params[$key] ?? $default));
 
 		$schemas = $this->createMock(PortalSchemaReader::class);
 		$schemas->method('readSchema')->willReturn(['required' => [], 'properties' => ['email' => ['type' => 'string'], 'name' => ['type' => 'string'], 'formId' => ['type' => 'string'], 'pageRoute' => ['type' => 'string'], 'source' => ['type' => 'string']]]);
-		$normalised = (new PortalManifestNormaliser($schemas))->normalise(['collections' => [], 'actions' => [($action ?? self::ACTION)]]);
+		$manifest   = ['collections' => [], 'actions' => [($action ?? self::ACTION)]];
+		$normalised = (new PortalManifestNormaliser(schemaReader: $schemas))->normalise(contribution: $manifest);
 		$aggregate  = ['contributions' => [['app' => 'portaliq', 'collections' => [], 'actions' => $normalised['actions']]]];
 
 		$registry = $this->createMock(PortalContributionRegistry::class);
@@ -250,7 +265,19 @@ class ContributionControllerLandingDestinationTest extends TestCase {
 			receiptService: $this->createMock(SubmissionReceiptService::class),
 			notificationDispatch: $this->createMock(NotificationDispatchService::class),
 			logger: $this->createMock(LoggerInterface::class),
-			intake: $intake, caseRowMarker: new CaseRowMarker(), createActionMatcher: new CreateActionMatcher(), createBody: new CreateBody(), inboxMessageFields: new InboxMessageFields(), pageChoice: new PageChoice(), requestedPortal: new RequestedPortal(), requiredFieldsGuard: new RequiredFieldsGuard(), rowIdentifier: new RowIdentifier(), themeChoice: new ThemeChoice(), visibleFromGate: new VisibleFromGate(), writeRefusal: new WriteRefusal(), uploadGrants: $grants
+			intake: $intake,
+			caseRowMarker: new CaseRowMarker(),
+			createActionMatcher: new CreateActionMatcher(),
+			createBody: new CreateBody(),
+			inboxMessageFields: new InboxMessageFields(),
+			pageChoice: new PageChoice(),
+			requestedPortal: new RequestedPortal(),
+			requiredFieldsGuard: new RequiredFieldsGuard(),
+			rowIdentifier: new RowIdentifier(),
+			themeChoice: new ThemeChoice(),
+			visibleFromGate: new VisibleFromGate(),
+			writeRefusal: new WriteRefusal(),
+			uploadGrants: $grants
 		);
 	}//end controller()
 }//end class
