@@ -172,6 +172,8 @@ export default {
 		lookup: { type: Boolean, default: false },
 		/** The portal api base the lookup route lives under. */
 		base: { type: String, default: '' },
+		/** The resident's bearer for the lookup; '' sends none. */
+		token: { type: String, default: '' },
 		/** Whether the block has an error. */
 		invalid: { type: Boolean, default: false },
 		/** The test id of the block. */
@@ -239,7 +241,10 @@ export default {
 				return
 			}
 			const asked = { ...this.block }
-			const found = await lookupAddress({ base: this.base }, asked)
+			const found = await lookupAddress(
+				{ base: this.base, token: this.token },
+				asked,
+			)
 			if (!found || !stillAsked(this.block, asked)) {
 				return
 			}

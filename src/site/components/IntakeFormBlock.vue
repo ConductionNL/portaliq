@@ -285,6 +285,7 @@
 						render.settings && render.settings.addressLookup === true
 					"
 					:base="apiBase"
+					:token="sessionToken()"
 					:invalid="!!errors[field.name]"
 					:testid="`intake-field-${field.name}`" />
 				<FamilyMembers
@@ -1278,6 +1279,17 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * The resident's bearer as it stands now, for the calls a field makes
+		 * itself (the address lookup); '' without a session.
+		 *
+		 * @return {string} The bearer, or ''.
+		 * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t01
+		 */
+		sessionToken() {
+			return adoptSessionToken() || ''
+		},
+
 		yiviAttributeName,
 
 		/**

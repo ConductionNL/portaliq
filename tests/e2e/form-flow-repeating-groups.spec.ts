@@ -107,6 +107,38 @@ async function seed(
 	created.push(`${register}/${schema}/${id}`)
 }
 
+/**
+ * Store a published form through buildiq's own form API, the way its form
+ * designer does, and remember its id for the clean-up.
+ *
+ * Not through OpenRegister's `objects/buildiq/registrationForm` route: a form
+ * carries `register` and `schema` properties (where its answers go), and a
+ * JSON body's `register` and `schema` take the place of the route's own
+ * parameters in Nextcloud's request, so that write is refused ("register,
+ * schema missing") or lands in the destination register instead.
+ *
+ * @param request The request fixture.
+ * @param form The form.
+ */
+async function seedRegistrationForm(
+	request: APIRequestContext,
+	form: Record<string, unknown>,
+): Promise<void> {
+	const saved = await request.put('/apps/buildiq/api/registration-forms', {
+		headers: ADMIN_HEADERS,
+		data: form,
+	})
+	expect(saved.ok(), `buildiq must store the form: ${await saved.text()}`).toBeTruthy()
+	const found = await request.get(`${OR_OBJECTS_BASE}/buildiq/registrationForm`, {
+		headers: ADMIN_HEADERS,
+		params: { name: String(form.name), _limit: '1' },
+	})
+	const rows = ((await found.json()).results ?? []) as Array<Record<string, unknown>>
+	const id = String(rows[0]?.id ?? '')
+	expect(id, `the stored form ${String(form.name)} is listed`).not.toBe('')
+	created.push(`buildiq/registrationForm/${id}`)
+}
+
 /** The destination's schema and register ids, to delete afterwards. */
 const destinationIds: { schema?: number, register?: number } = {}
 
@@ -148,11 +180,14 @@ async function seedDestination(request: APIRequestContext): Promise<void> {
 async function seedStreetParty(request: APIRequestContext): Promise<void> {
 	await seedDestination(request)
 	const caseType = `straatfeest-${STAMP}`
-	await seed(request, 'registrationForm', {
+	await seedRegistrationForm(request, {
 		caseType,
 		targetApp: 'portaliq',
-		register: 'portaliq',
-		schema: 'portalCase',
+		// Where the answers go: the spec's own destination, which a public
+		// visitor may create in (buildiq refuses a published form whose
+		// destination a visitor cannot write, and portalCase is not one).
+		register: DESTINATION,
+		schema: DESTINATION,
 		typeProperty: 'caseType',
 		typeValue: caseType,
 		// Open to visitors: a form that is not public asks for a sign-in first.
@@ -186,7 +221,7 @@ async function seedStreetParty(request: APIRequestContext): Promise<void> {
 			{ id: 'aanvrager', title: 'Uw gegevens', fields: ['aanvrager'] },
 			{ id: 'controleren', title: 'Controleren', review: true },
 		],
-	}, 'buildiq')
+	})
 	await seed(request, 'portalFormBinding', {
 		portal: SITE_PORTAL,
 		route: ROUTE,
