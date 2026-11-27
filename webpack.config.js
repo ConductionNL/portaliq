@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: EUPL-1.2
 const path = require('path')
-const { LibraryStylesheetCopy } = require('@conduction/nextcloud-vue/webpack')
+const { LibraryStylesheetCopy, withLeanBundles } = require('@conduction/nextcloud-vue/webpack')
 const fs = require('fs')
 const webpack = require('webpack')
 const webpackConfig = require('@nextcloud/webpack-vue-config')
@@ -235,7 +235,10 @@ webpackConfig.optimization = {
 	splitChunks: {
 		...(webpackConfig.optimization?.splitChunks || {}),
 		// Every entry but `leaves`, which must run alone on a foreign page.
-		chunks: (chunk) => chunk.name !== 'leaves',
+		// Initial chunks only: what the library loads on demand (icon packs,
+		// charts, editors) stays in its own async chunk instead of joining
+		// the shared chunk every page loads.
+		chunks: (chunk) => chunk.name !== 'leaves' && chunk.canBeInitial(),
 		cacheGroups: {
 			default: false,
 			defaultVendors: false,
@@ -267,4 +270,6 @@ webpackConfig.optimization = {
 // bundle inserting ~1.1 MB of CSS text on every load.
 webpackConfig.plugins.push(new LibraryStylesheetCopy())
 
-module.exports = webpackConfig
+// css-loader writes no source maps into the JavaScript, and @nextcloud/vue's
+// index is side-effect free so one Nc* import does not bundle every component.
+module.exports = withLeanBundles(webpackConfig)
