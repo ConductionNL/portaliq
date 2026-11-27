@@ -27,6 +27,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
+use OCA\Portaliq\Service\ContainerService;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -186,17 +187,7 @@ class PartyTreeSource {
 	 * @return object|null The service.
 	 */
 	private function service(string $id): ?object {
-		try {
-			$service = $this->container->get($id);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
+		return (new ContainerService(container: $this->container))->get(id: $id);
 	}//end service()
 
 	/**

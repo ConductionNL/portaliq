@@ -216,6 +216,9 @@ foreach ([
 	// What ObjectService::saveObjects() takes (openregister #9108): the defaults first.
 	'Kernel\\Contracts\\Value\\BulkBatchDefaults' => 'Kernel/Contracts/Value/BulkBatchDefaults.php',
 	'Kernel\\Contracts\\Value\\BulkSaveOptions' => 'Kernel/Contracts/Value/BulkSaveOptions.php',
+	// What PartyTreeSource builds for OpenRegister's tree read and find (openregister main).
+	'Service\\Relation\\ObjectTreeQuery' => 'Service/Relation/ObjectTreeQuery.php',
+	'Kernel\\Contracts\\Value\\ObjectFindOptions' => 'Kernel/Contracts/Value/ObjectFindOptions.php',
 ] as $orStubClass => $orStubFile) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false

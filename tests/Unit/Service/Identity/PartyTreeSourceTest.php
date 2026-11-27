@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
+use OCA\OpenRegister\Db\ObjectEntity;
 use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
 use OCA\OpenRegister\Service\Relation\ObjectTreeQuery;
 use OCA\Portaliq\Service\Identity\PartyTreeSource;
@@ -38,6 +39,13 @@ class PartyTreeSourceTest extends TestCase {
 	 * @return object The entity.
 	 */
 	public static function entity(string $uuid): object {
+		// OpenRegister's own tree query takes its real entity when OpenRegister is loaded.
+		if (class_exists(ObjectEntity::class) === true) {
+			$entity = new ObjectEntity();
+			$entity->setUuid($uuid);
+			return $entity;
+		}
+
 		return new class($uuid) {
 			public function __construct(private string $uuid) {
 			}
