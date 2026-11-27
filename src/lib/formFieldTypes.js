@@ -170,6 +170,21 @@ export const FORM_FIELD_TYPES = Object.freeze([
 		settings: LIMITS,
 	},
 	{
+		// D1 File Input (anonymous-form-file-upload): the file goes after the
+		// submit, with the create answer's one-time token, checked against
+		// these limits on the server (decision 25 Nov 2026 15:15 CET).
+		type: 'file',
+		label: 'Bestand',
+		nlds: 'File Input',
+		synonyms: ['upload', 'bijlage', 'document', 'foto', 'bestand kiezen'],
+		settings: [
+			{ name: 'description', kind: 'text', label: 'Toelichting' },
+			{ name: 'accept', kind: 'string', label: 'Soorten bestanden (bijvoorbeeld .pdf, image/*)' },
+			{ name: 'maxSizeMb', kind: 'number', label: 'Grootste bestand (MB, hoogstens 50)' },
+			{ name: 'multiple', kind: 'boolean', label: 'Meer dan één bestand' },
+		],
+	},
+	{
 		// D1 row 28, Fieldset: a legend and a description over fields of its
 		// own. It holds fields, not a value: its fields submit under their own
 		// names, and a group never sits inside a group.
