@@ -68,14 +68,6 @@ use Throwable;
  */
 class PortalFieldFileController extends Controller implements PortalProtected {
 	/**
-	 * HTTP status per policy refusal.
-	 */
-	private const REFUSAL_STATUS = [
-		PortalFileFieldPolicyInterface::ERROR_TOO_LARGE => Http::STATUS_REQUEST_ENTITY_TOO_LARGE,
-		PortalFileFieldPolicyInterface::ERROR_TYPE_REFUSED => Http::STATUS_UNSUPPORTED_MEDIA_TYPE,
-	];
-
-	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
@@ -248,7 +240,7 @@ class PortalFieldFileController extends Controller implements PortalProtected {
 
 		$refusal = $this->policy->refusal(config: $context['config'], fileName: $upload['name'], content: $upload['content']);
 		if ($refusal !== null) {
-			return new JSONResponse(['error' => $refusal], self::REFUSAL_STATUS[$refusal]);
+			return new JSONResponse(['error' => $refusal], PortalFileFieldPolicyInterface::REFUSAL_STATUS[$refusal]);
 		}
 
 		$arrayProperty = $this->policy->isArrayProperty(schemaSlug: $context['schema'], field: $context['field']);

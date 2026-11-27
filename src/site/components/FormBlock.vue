@@ -237,6 +237,20 @@
 						:aria-describedby="describedBy"
 						:data-testid="`form-field-${field.id}`" />
 
+					<input
+						v-else-if="field.type === 'file'"
+						:id="fieldElementId(field)"
+						type="file"
+						class="pq-form__file"
+						:accept="acceptOf(field)"
+						:multiple="field.multiple === true"
+						:aria-required="field.required ? 'true' : undefined"
+						:aria-invalid="errors[field.id] ? 'true' : undefined"
+						:aria-labelledby="`${fieldElementId(field)}-label`"
+						:aria-describedby="describedBy"
+						:data-testid="`form-field-${field.id}`"
+						@change="pickFiles(field, $event)">
+
 					<textarea
 						v-else-if="field.type === 'textarea'"
 						:id="fieldElementId(field)"
@@ -287,6 +301,13 @@
 				{{ successLabel }}
 			</p>
 			<p
+				v-if="status === 'success' && filesNotSent"
+				class="utrecht-paragraph pq-form__status pq-form__status--error"
+				data-testid="form-files-not-sent"
+				role="alert">
+				{{ fileText.notSent }}
+			</p>
+			<p
 				v-if="status === 'error'"
 				class="utrecht-paragraph pq-form__status pq-form__status--error"
 				data-testid="form-status-error"
@@ -318,7 +339,8 @@ import {
 	dateRangeErrors,
 	minimumErrors,
 } from '../lib/formFieldValues.js'
-import { submitLandingPageForm } from '../lib/formSubmission.js'
+import { acceptList, FILE_TEXT, fileErrors, isFileField, pendingUploads } from '../lib/formFiles.js'
+import { submitLandingPageForm, uploadFormFiles } from '../lib/formSubmission.js'
 import { hasHelp, mergeHelp } from '../lib/help.js'
 import {
 	DUTCH,
@@ -335,7 +357,8 @@ import {
  * @return {Array<object>} One rule per field: name, label, required, date.
  */
 function fieldRules(fields) {
-	return fields.map((field) => ({
+	// A file field's answer is a file, checked by fileErrors().
+	return fields.filter((field) => !isFileField(field)).map((field) => ({
 		name: field.id,
 		label: field.label,
 		required: !!field.required,
@@ -349,15 +372,40 @@ function fieldRules(fields) {
  *
  * @param {Array<object>} fields The declared form fields.
  * @param {object} values The values per field id.
+ * @param {Record<string, Array<File>>} [files] The files per file field id.
  * @return {Record<string, string>} The message per field id.
  */
-function formErrors(fields, values) {
+function formErrors(fields, values, files = {}) {
 	return {
 		...plainFieldErrors(fieldRules(fields), values),
+		...fileErrors(fields, files),
 		...minimumErrors(fields, values),
 		...dateRangeErrors(fields, values),
 		...choiceErrors(fields, values),
 	}
+}
+
+/**
+ * Send the picked files with the one-time token of the submission just
+ * created, and tell whether one of them did not arrive.
+ *
+ * @param {Array<object>} fields The answering fields.
+ * @param {Record<string, Array<File>>} files The files per file field id.
+ * @param {object} created What the submit answered.
+ * @return {Promise<boolean>} True when a file was not sent.
+ *
+ * @spec openspec/changes/anonymous-form-file-upload/specs/landing-page-provisioning/spec.md
+ */
+async function filesNotSentAfter(fields, files, created) {
+	const uploads = pendingUploads(fields, files)
+	if (uploads.length === 0) {
+		return false
+	}
+	const token = created && typeof created.uploadToken === 'string' ? created.uploadToken : ''
+	if (token === '') {
+		return true
+	}
+	return (await uploadFormFiles(token, uploads)).failed.length > 0
 }
 
 /**
@@ -482,6 +530,8 @@ export default {
 	data() {
 		return {
 			values: {},
+			files: {},
+			filesNotSent: false,
 			errors: {},
 			submitting: false,
 			status: null,
@@ -530,6 +580,17 @@ export default {
 		 */
 		text() {
 			return DUTCH
+		},
+
+		/**
+		 * The file fields' Dutch words.
+		 *
+		 * @return {object} The words.
+		 *
+		 * @spec openspec/changes/anonymous-form-file-upload/specs/landing-page-provisioning/spec.md
+		 */
+		fileText() {
+			return FILE_TEXT
 		},
 
 		/**
@@ -691,6 +752,31 @@ export default {
 		},
 
 		/**
+		 * The accept attribute of a file field.
+		 *
+		 * @param {object} field The file field.
+		 * @return {string|undefined} The entries, or undefined for any file.
+		 *
+		 * @spec openspec/changes/anonymous-form-file-upload/specs/landing-page-provisioning/spec.md
+		 */
+		acceptOf(field) {
+			return acceptList(field.accept).join(',') || undefined
+		},
+
+		/**
+		 * Keep the files a visitor picked for a file field.
+		 *
+		 * @param {object} field The file field.
+		 * @param {Event} event The change event.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/anonymous-form-file-upload/specs/landing-page-provisioning/spec.md
+		 */
+		pickFiles(field, event) {
+			this.files = { ...this.files, [field.id]: Array.from(event.target.files || []) }
+		},
+
+		/**
 		 * Submit the collected values plus the client-observed UTM/referrer
 		 * attribution, through this form's own create action.
 		 *
@@ -701,7 +787,8 @@ export default {
 		 */
 		async submit() {
 			this.status = null
-			this.errors = formErrors(answerFields(this.fields), this.values)
+			this.filesNotSent = false
+			this.errors = formErrors(answerFields(this.fields), this.values, this.files)
 			if (Object.keys(this.errors).length > 0) {
 				this.$nextTick(() => {
 					if (this.$refs.summary) {
@@ -714,9 +801,11 @@ export default {
 			this.submitting = true
 
 			try {
-				await submitLandingPageForm(this.values, campaignOf(this.portal), this.formId)
+				const created = await submitLandingPageForm(this.values, campaignOf(this.portal), this.formId)
+				this.filesNotSent = await filesNotSentAfter(answerFields(this.fields), this.files || {}, created)
 				this.status = 'success'
 				this.values = {}
+				this.files = {}
 			} catch {
 				this.status = 'error'
 			} finally {

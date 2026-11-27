@@ -59,6 +59,7 @@ use OCA\Portaliq\Kernel\Contracts\ColumnOverridesInterface;
 use OCA\Portaliq\Kernel\Contracts\ContactConfirmationMailerInterface;
 use OCA\Portaliq\Kernel\Contracts\DestinationDraftInterface;
 use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
+use OCA\Portaliq\Kernel\Contracts\FormUploadGrantsInterface;
 use OCA\Portaliq\Kernel\Contracts\FileFieldConfigNormaliserInterface;
 use OCA\Portaliq\Kernel\Contracts\NotificationDispatchServiceInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalActionForwarderInterface;
@@ -222,6 +223,8 @@ class ContributionController extends Controller implements PortalProtected {
 	 * @param DestinationIntakeInterface|null $intake Submits a landing-page form straight into its destination
 	 *                                       (decision 179). Absent answers 503 for such a form.
 	 * @param OnCaseCreate|null $onCase The case a create filed from a case page is about (REQ-COC-004).
+	 * @param FormUploadGrantsInterface|null $uploadGrants Mints the one-time upload token of a landing-page
+	 *                                                   form with file fields. Absent, such a form sends no files.
 	 */
 	public function __construct(
 		IRequest $request,
@@ -264,6 +267,7 @@ class ContributionController extends Controller implements PortalProtected {
 		private readonly ?DestinationDraftInterface $destinations = null,
 		private readonly ?DestinationIntakeInterface $intake = null,
 		private readonly ?OnCaseCreate $onCase = null,
+		private readonly ?FormUploadGrantsInterface $uploadGrants = null,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -2584,8 +2588,50 @@ class ContributionController extends Controller implements PortalProtected {
 			return $this->intakeRefusal(submitted: $submitted);
 		}
 
-		return new JSONResponse(['object' => $submitted['answer']]);
+		$answer = ['object' => $submitted['answer']];
+		$token  = $this->uploadToken(action: $action, created: (array)$submitted['answer']);
+		if ($token !== '') {
+			$answer['uploadToken'] = $token;
+		}
+
+		return new JSONResponse($answer);
 	}//end submitIntoDestination()
+
+	/**
+	 * The one-time token a form with file fields uploads its files with,
+	 * bound to the object this submission just became; '' without file
+	 * fields, without the grant store or without an object id.
+	 *
+	 * @param array<string, mixed> $action  The matched landing-page action.
+	 * @param array<string, mixed> $created What the destination answered.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/anonymous-form-file-upload/specs/landing-page-provisioning/spec.md
+	 */
+	private function uploadToken(array $action, array $created): string {
+		$uploads = [];
+		foreach ((array)($action['fieldConfigs'] ?? []) as $field => $config) {
+			if (is_array($config) === true && ($config['type'] ?? null) === FileFieldConfigNormaliserInterface::TYPE_FILE) {
+				$uploads[(string)$field] = $config;
+			}
+		}
+
+		if ($uploads === [] || $this->uploadGrants === null) {
+			return '';
+		}
+
+		$destination = (array)($action['destination'] ?? []);
+
+		return $this->uploadGrants->mint(
+			target: [
+				'register' => (string)($destination['register'] ?? ''),
+				'schema' => (string)($destination['schema'] ?? ''),
+				'id' => (string)($created['id'] ?? ''),
+			],
+			uploads: $uploads
+		);
+	}//end uploadToken()
 
 	/**
 	 * What the destination intake answers for the action's answers; a
