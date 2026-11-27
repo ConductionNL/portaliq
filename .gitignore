@@ -159,3 +159,5 @@ css/fonts/licensed/*
 # Added by the 2026-08-25 fleet hygiene sweep (ADR-100 Decision 2).
 .stale/
 /.e2e-state/
+# nextcloud-vue stylesheet, copied by webpack.config.js (LibraryStylesheetCopy)
+/css/nextcloud-vue.css

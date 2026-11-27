@@ -21,6 +21,7 @@ $appId = Application::APP_ID;
 // (see comment in templates/index.php). The admin-settings entry's bundle
 // tail also wraps its mount in `__webpack_require__.O(...)` waiting for the
 // shared chunks, so register them in dependency order here too.
+Util::addStyle($appId, 'nextcloud-vue');
 Util::addScript($appId, $appId . '-shared-vendor');
 Util::addScript($appId, $appId . '-shared-nc-vue');
 Util::addScript($appId, $appId . '-settings');

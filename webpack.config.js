@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: EUPL-1.2
 const path = require('path')
+const { LibraryStylesheetCopy } = require('@conduction/nextcloud-vue/webpack')
 const fs = require('fs')
 const webpack = require('webpack')
 const webpackConfig = require('@nextcloud/webpack-vue-config')
@@ -260,5 +261,10 @@ webpackConfig.optimization = {
 		},
 	},
 }
+
+// nextcloud-vue's stylesheet goes to css/nextcloud-vue.css, which the app's
+// pages link (templates/index.php, templates/settings/admin.php) instead of a
+// bundle inserting ~1.1 MB of CSS text on every load.
+webpackConfig.plugins.push(new LibraryStylesheetCopy())
 
 module.exports = webpackConfig
