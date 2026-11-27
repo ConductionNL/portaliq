@@ -78,6 +78,7 @@ class DestinationIntake implements DestinationIntakeInterface {
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-the-case-is-created-in-the-request-and-the-citizen-gets-its-reference-at-once-req-pifo-005
 	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-each-form-names-where-its-submissions-go-req-fgv-002
 	 */
 	public function submit(
 		array $binding,
@@ -87,6 +88,8 @@ class DestinationIntake implements DestinationIntakeInterface {
 		array $server = [],
 		string $idempotencyKey = '',
 	): array {
+		// A rule over the answers may send this submit elsewhere (REQ-FGV-002).
+		$binding     = (new DestinationRules())->routed(binding: $binding, answers: $answers);
 		$destination = $this->mapping->destinationOf(binding: $binding);
 		if ($destination === null) {
 			return $this->failed(
@@ -182,12 +185,34 @@ class DestinationIntake implements DestinationIntakeInterface {
 	 * @return array<int, array<string, mixed>> The findings; empty when the binding may be published.
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-each-form-names-where-its-submissions-go-req-fgv-002
 	 */
 	public function check(array $binding, array $render): array {
 		if ((string)($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL) {
 			return [];
 		}
 
+		// Every destination a rule may route to must fit too (REQ-FGV-002).
+		$rules    = (new DestinationRules())->alternatives(binding: $binding);
+		$findings = array_merge($this->checkOne(binding: $binding, render: $render), $rules['findings']);
+		foreach ($rules['bindings'] as $routed) {
+			$findings = array_merge($findings, $this->checkOne(binding: $routed, render: $render));
+		}
+
+		return $findings;
+	}//end check()
+
+	/**
+	 * The findings of one destination of the binding: its own, or a rule's.
+	 *
+	 * @param array<string, mixed> $binding The binding, with the destination to check.
+	 * @param array<string, mixed> $render  What the binding renders to.
+	 *
+	 * @return array<int, array<string, mixed>> The findings.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
+	 */
+	private function checkOne(array $binding, array $render): array {
 		$destination = $this->mapping->destinationOf(binding: $binding);
 		if ($destination === null) {
 			return [[
@@ -218,5 +243,5 @@ class DestinationIntake implements DestinationIntakeInterface {
 		}
 
 		return $findings;
-	}//end check()
+	}//end checkOne()
 }//end class

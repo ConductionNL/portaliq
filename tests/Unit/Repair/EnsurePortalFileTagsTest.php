@@ -82,4 +82,27 @@ class EnsurePortalFileTagsTest extends TestCase {
 
 		(new EnsurePortalFileTags(tags: $tags))->run(output: $output);
 	}//end testARefusedCreationIsAWarning()
+
+	/**
+	 * The step runs on a fresh install as well as after a migration.
+	 *
+	 * A fresh `occ app:enable` runs only the install steps, and a resident's
+	 * upload arrives on a request without a Nextcloud user, where Nextcloud
+	 * refuses to create a tag. Listed under post-migration only, the tag never
+	 * existed on a new instance and every upload stayed out of "Sent by you".
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
+	 */
+	public function testTheStepRunsOnInstallAndAfterAMigration(): void {
+		$info  = simplexml_load_file(__DIR__.'/../../../appinfo/info.xml');
+		$steps = static fn (string $phase): array => array_map(
+			'strval',
+			$info->xpath('/info/repair-steps/'.$phase.'/step')
+		);
+
+		$this->assertContains(needle: EnsurePortalFileTags::class, haystack: $steps('install'));
+		$this->assertContains(needle: EnsurePortalFileTags::class, haystack: $steps('post-migration'));
+	}//end testTheStepRunsOnInstallAndAfterAMigration()
 }//end class

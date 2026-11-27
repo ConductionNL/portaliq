@@ -35,7 +35,13 @@ test('the index lists articles with title and status, and never opens the object
 	assert.equal(index.config.showAdd, false)
 	assert.equal(index.config.showEditAction, false)
 	assert.deepEqual(index.config.viewSwitch, ['table', 'cards'])
-	assert.deepEqual(index.config.headerActions[0], { id: 'new-article', label: 'New article', icon: 'Plus', handler: 'navigate', route: 'ArticleNew' })
+	// "New article" is the primary button beside the title (board PtArtikelen). A header
+	// button follows only an href action, so the action links to the new-article page.
+	assert.deepEqual(index.config.headerActions[0], { id: 'new-article', label: 'New article', icon: 'Plus', href: '/apps/portaliq/articles/new' })
+	assert.deepEqual(index.config.headerButtons, [
+		{ action: 'export', label: 'Download' },
+		{ action: 'new-article', variant: 'primary', label: 'New article', icon: 'Plus' },
+	])
 })
 
 test('the new and detail pages mount the registered article components', () => {
