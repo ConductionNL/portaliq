@@ -25,12 +25,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\CollectionDocuments;
-use OCA\Portaliq\Service\PortalObjectReader;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\CollectionDocumentsInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalObjectReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
+use OCA\Portaliq\Kernel\Support\SessionTrust;
+use OCA\Portaliq\Service\DocumentOpening;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -50,6 +52,9 @@ use OCP\IRequest;
  * stream. No refusal carries more than its status.
  *
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t4
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class PortalCollectionDocumentsController extends Controller implements PortalProtected {
 
@@ -57,21 +62,21 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalContributionRegistry $registry The subject's contributions.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalObjectReader $reader The scoped single-object read.
-	 * @param CollectionDocuments $documents Lists and opens the documents.
+	 * @param PortalContributionRegistryInterface $registry The subject's contributions.
+	 * @param PortalSessionServiceInterface $session Resolves the subject from the bearer.
+	 * @param PortalObjectReaderInterface $reader The scoped single-object read.
+	 * @param CollectionDocumentsInterface $documents Lists and opens the documents.
 	 * @param IL10N $l10n The sentence a refused opening is given with.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalContributionRegistry $registry,
-		private readonly PortalSessionService $session,
-		private readonly PortalObjectReader $reader,
-		private readonly CollectionDocuments $documents,
+		private readonly PortalContributionRegistryInterface $registry,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalObjectReaderInterface $reader,
+		private readonly CollectionDocumentsInterface $documents,
 		private readonly IL10N $l10n,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -130,7 +135,7 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 			object: ['register' => $register, 'schema' => $schema, 'id' => $id],
 			documentId: $documentId
 		);
-		if ($result === CollectionDocuments::REFUSED) {
+		if ($result === CollectionDocumentsInterface::REFUSED) {
 			$message = $this->l10n->t('The paper cannot be opened right now');
 			return new JSONResponse(['error' => 'paper_unavailable', 'message' => $message], Http::STATUS_SERVICE_UNAVAILABLE);
 		}
@@ -143,6 +148,129 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	}//end open()
 
 	/**
+	 * The download conditions one listed paper carries, so they can be shown
+	 * with an Accept button before it is opened. An app that declares no
+	 * `terms` hook, or a paper it cannot decide on, answers `terms: null`.
+	 *
+	 * @param string $register   The register of the collection.
+	 * @param string $schema     The schema of the collection.
+	 * @param string $id         The object id.
+	 * @param string $documentId The listed entry's id.
+	 *
+	 * @return JSONResponse `{terms}`, or 401 / 404.
+	 *
+	 * @spec openspec/changes/document-download-terms/tasks.md#task-2
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function terms(string $register, string $schema, string $id, string $documentId): JSONResponse {
+		$proven = $this->proven(register: $register, schema: $schema, id: $id);
+		if ($proven instanceof JSONResponse) {
+			return $proven;
+		}
+
+		$object = ['register' => $register, 'schema' => $schema, 'id' => $id];
+		$terms  = $this->documents->terms(opening: $this->opening(proven: $proven, object: $object, documentId: $documentId));
+
+		return new JSONResponse(['terms' => $terms]);
+	}//end terms()
+
+	/**
+	 * Accept the conditions of one listed paper in the version shown. The
+	 * acceptance is the session subject's; only the version travels, in the
+	 * body as `version`.
+	 *
+	 * @param string $register   The register of the collection.
+	 * @param string $schema     The schema of the collection.
+	 * @param string $id         The object id.
+	 * @param string $documentId The listed entry's id.
+	 *
+	 * @return JSONResponse `{accepted: true}`, or 401 / 404 / 409.
+	 *
+	 * @spec openspec/changes/document-download-terms/tasks.md#task-2
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 20, period: 60)]
+	public function acceptTerms(string $register, string $schema, string $id, string $documentId): JSONResponse {
+		$proven = $this->proven(register: $register, schema: $schema, id: $id);
+		if ($proven instanceof JSONResponse) {
+			return $proven;
+		}
+
+		$version = $this->request->getParam('version', '');
+		if (is_string($version) === false) {
+			$version = '';
+		}
+
+		$object   = ['register' => $register, 'schema' => $schema, 'id' => $id];
+		$accepted = $this->documents->accept(
+			opening: $this->opening(proven: $proven, object: $object, documentId: $documentId),
+			version: $version
+		);
+		if ($accepted === false) {
+			$message = $this->l10n->t('The conditions could not be accepted. Read them again and try once more.');
+			return new JSONResponse(['accepted' => false, 'message' => $message], Http::STATUS_CONFLICT);
+		}
+
+		return new JSONResponse(['accepted' => true]);
+	}//end acceptTerms()
+
+	/**
+	 * The bundle of an object's papers its app answers through the
+	 * collection's `bundle` method (documents-grouped-per-record).
+	 *
+	 * @param string $register The register of the collection.
+	 * @param string $schema   The schema of the collection.
+	 * @param string $id       The object id.
+	 *
+	 * @return Response The file, or 401 / 404.
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function bundle(string $register, string $schema, string $id): Response {
+		$proven = $this->proven(register: $register, schema: $schema, id: $id);
+		if ($proven instanceof JSONResponse) {
+			return $proven;
+		}
+
+		$stream = $this->documents->bundle(
+			subject: $proven['subject'],
+			app: $proven['app'],
+			documents: $proven['documents'],
+			object: ['register' => $register, 'schema' => $schema, 'id' => $id]
+		);
+		if ($stream === null) {
+			return new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
+		}
+
+		return $stream;
+	}//end bundle()
+
+	/**
+	 * One listed document of a proven object, as the documents service takes it.
+	 *
+	 * @param array{subject: array<string, mixed>, app: string, documents: array<string, mixed>} $proven     The proven match.
+	 * @param array{register: string, schema: string, id: string}                                $object     The proven object.
+	 * @param string                                                                             $documentId The listed entry's id.
+	 *
+	 * @return DocumentOpening
+	 */
+	private function opening(array $proven, array $object, string $documentId): DocumentOpening {
+		return new DocumentOpening(
+			subject: $proven['subject'],
+			app: $proven['app'],
+			documents: $proven['documents'],
+			object: $object,
+			documentId: $documentId
+		);
+	}//end opening()
+
+	/**
 	 * Prove the object is the subject's, in a collection of the subject's own
 	 * aggregate that declares `documents`.
 	 *
@@ -151,8 +279,6 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	 * @param string $id The object id.
 	 *
 	 * @return JSONResponse|array{subject: array<string, mixed>, app: string, documents: array<string, mixed>} The refusal, or the proven match.
-	 *
-	 * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies, the one trust ordering.
 	 */
 	private function proven(string $register, string $schema, string $id): JSONResponse|array {
 		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
@@ -160,15 +286,15 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$match = $this->collectionOf(subject: $subject, register: $register, schema: $schema);
+		$match = $this->trustedCollection(subject: $subject, register: $register, schema: $schema);
 		$notFound = new JSONResponse(['error' => 'not_found'], Http::STATUS_NOT_FOUND);
-		if ($match === null || PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+		if ($match === null) {
 			return $notFound;
 		}
 
 		$collection = $match['collection'];
-		$documents  = ($collection['documents'] ?? null);
-		if (is_array($documents) === false || is_string($documents['provider'] ?? null) === false) {
+		$documents  = $this->documentsOf(collection: $collection);
+		if ($documents === null) {
 			return $notFound;
 		}
 
@@ -193,6 +319,42 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	}//end proven()
 
 	/**
+	 * The subject's own collection for a register and schema, when the session meets its trust level.
+	 *
+	 * @param array<string, mixed> $subject  The resolved subject.
+	 * @param string               $register The requested register.
+	 * @param string               $schema   The requested schema.
+	 *
+	 * @return array{collection: array<string, mixed>, app: string}|null
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies, the one trust ordering.
+	 */
+	private function trustedCollection(array $subject, string $register, string $schema): array|null {
+		$match = $this->collectionOf(subject: $subject, register: $register, schema: $schema);
+		if ($match === null || (new SessionTrust())->trustSatisfies(($subject['trust'] ?? ''), ($match['collection']['minTrust'] ?? null)) === false) {
+			return null;
+		}
+
+		return $match;
+	}//end trustedCollection()
+
+	/**
+	 * The collection's `documents` declaration when it names a provider.
+	 *
+	 * @param array<string, mixed> $collection The collection.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function documentsOf(array $collection): array|null {
+		$documents = ($collection['documents'] ?? null);
+		if (is_array($documents) === false || is_string($documents['provider'] ?? null) === false) {
+			return null;
+		}
+
+		return $documents;
+	}//end documentsOf()
+
+	/**
 	 * The subject's own collection for a register and schema, with its app.
 	 *
 	 * @param array<string, mixed> $subject The resolved subject.
@@ -202,21 +364,9 @@ class PortalCollectionDocumentsController extends Controller implements PortalPr
 	 * @return array{collection: array<string, mixed>, app: string}|null
 	 */
 	private function collectionOf(array $subject, string $register, string $schema): ?array {
-		$collectionId = (string)$this->request->getParam('collection', '');
-		foreach (($this->registry->aggregateFor($subject)['contributions'] ?? []) as $contribution) {
-			foreach (($contribution['collections'] ?? []) as $collection) {
-				if (($collection['register'] ?? '') !== $register || ($collection['schema'] ?? '') !== $schema) {
-					continue;
-				}
-
-				if ($collectionId !== '' && ($collection['id'] ?? '') !== $collectionId) {
-					continue;
-				}
-
-				return ['collection' => $collection, 'app' => (string)($contribution['app'] ?? '')];
-			}
-		}
-
-		return null;
+		return (new SubjectCollectionFinder(registry: $this->registry))->find(
+			subject: $subject,
+			requested: ['register' => $register, 'schema' => $schema, 'collection' => (string)$this->request->getParam('collection', '')]
+		);
 	}//end collectionOf()
 }//end class

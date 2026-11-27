@@ -27,6 +27,13 @@ const ORGANISATION = 'dev-org'
  * @param data The object.
  * @return The id.
  */
+/**
+ * What the current test seeded, removed after it. The portal reads ONE active
+ * portalPage per audience and takes the lowest id when several are active, so
+ * a page left behind can shadow the page the next test (or spec) seeds.
+ */
+const created: string[] = []
+
 async function seed(
 	request: APIRequestContext,
 	schema: string,
@@ -38,10 +45,40 @@ async function seed(
 	})
 	expect(
 		res.ok(),
-		`OpenRegister objects#create must be reachable for ${schema}`,
+		`OpenRegister objects#create must be reachable for ${schema}: ${await res.text()}`,
 	).toBeTruthy()
 	const body = await res.json()
-	return (body.id ?? body['@self']?.id) as string
+	const id = (body.id ?? body['@self']?.id) as string
+	created.push(`${schema}/${id}`)
+	return id
+}
+
+/**
+ * Open a case row: a link when the case has a page of its own, a button when
+ * it opens in place (CaseCard).
+ *
+ * @param page The page.
+ * @param name The case's title.
+ */
+async function openRow(page: Page, name: string): Promise<void> {
+	await page
+		.getByRole('link', { name })
+		.or(page.getByRole('button', { name }))
+		.first()
+		.click()
+}
+
+/**
+ * Remove what the current test seeded.
+ *
+ * @param request The request fixture.
+ */
+async function removeSeeded(request: APIRequestContext): Promise<void> {
+	for (const ref of created.splice(0).reverse()) {
+		await request.delete(`${OR_OBJECTS_BASE}/portaliq/${ref}`, {
+			headers: { Authorization: `Basic ${ADMIN}`, 'OCS-APIRequest': 'true' },
+		})
+	}
 }
 
 /**
@@ -119,6 +156,8 @@ async function signIn(
 }
 
 test.describe('cases-my-cases-page', () => {
+	test.afterEach(async ({ request }) => removeSeeded(request))
+
 	// @e2e portal-my-cases::cases-from-two-apps-in-one-list
 	// @e2e portal-my-cases::a-decided-case-moves-to-closed
 	test('every case in one list, newest first, and a decided case under Closed', async ({
@@ -165,7 +204,7 @@ test.describe('cases-my-cases-page', () => {
 		await signIn(request, page, [
 			{ reference: 'Kapvergunning', omschrijving: 'vergunning' },
 		])
-		await page.getByRole('button', { name: 'Kapvergunning' }).click()
+		await openRow(page, 'Kapvergunning')
 		await expect(page.getByTestId('my-cases')).toHaveCount(0)
 		await expect(page.getByText('Kapvergunning').first()).toBeVisible()
 	})
@@ -208,6 +247,7 @@ async function signInAsEmployee(
 			{
 				id: 'amend-case',
 				type: 'update',
+				label: 'Mijn aanvraag wijzigen',
 				register: 'portaliq',
 				schema: 'portalCase',
 				scopeField: 'subjectRef',
@@ -264,6 +304,8 @@ async function signInAsEmployee(
 }
 
 test.describe('cases-my-cases-page acting for', () => {
+	test.afterEach(async ({ request }) => removeSeeded(request))
+
 	// @e2e portal-my-cases::switching-to-a-mandate
 	// @e2e portal-my-cases::a-mandated-case-carries-its-label
 	// @e2e portal-my-cases::a-mandated-case-is-read-not-changed
@@ -272,22 +314,24 @@ test.describe('cases-my-cases-page acting for', () => {
 		request,
 	}) => {
 		await signInAsEmployee(request, page, true)
-		await expect(page.getByTestId('my-cases-empty')).toBeVisible()
+		await expect(page.getByTestId('mijn-acting-for-bar')).toBeVisible()
 
-		await page.getByLabel('Namens').selectOption({ label: 'Bakkerij Jansen BV' })
+		await page
+			.getByLabel('Wissel naar')
+			.selectOption({ label: 'Bakkerij Jansen BV' })
 		const row = page.getByTestId('my-cases-row')
 		await expect(row).toContainText('Terrasvergunning')
-		await expect(page.getByTestId('my-cases-mandate')).toHaveText(
+		await expect(page.getByTestId('mijn-case-card-mandate')).toHaveText(
 			'Bakkerij Jansen BV',
 		)
 
 		await page.reload()
-		await expect(page.getByLabel('Namens')).toHaveValue(/.+/)
+		await expect(page.getByLabel('Wissel naar')).toHaveValue(/.+/)
 		await expect(page.getByTestId('my-cases-row')).toContainText(
 			'Terrasvergunning',
 		)
 
-		await page.getByRole('button', { name: 'Terrasvergunning' }).click()
+		await openRow(page, 'Terrasvergunning')
 		await expect(page.getByTestId('case-window-closed')).toContainText(
 			'Bakkerij Jansen BV',
 		)
@@ -300,7 +344,7 @@ test.describe('cases-my-cases-page acting for', () => {
 		request,
 	}) => {
 		await signInAsEmployee(request, page, false)
-		await expect(page.getByTestId('acting-for')).toHaveCount(0)
+		await expect(page.getByTestId('mijn-acting-for-bar')).toHaveCount(0)
 		await expect(page.getByTestId('my-cases-empty')).toBeVisible()
 	})
 

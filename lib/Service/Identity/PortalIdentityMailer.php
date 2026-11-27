@@ -34,16 +34,19 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\AppInfo\Application;
+use DateTime;
+use DateTimeInterface;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
 use OCA\Portaliq\Service\Mail\MailLog;
+use OCA\Portaliq\Service\Mail\MailSite;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
-use OCA\Portaliq\Service\PortalResolver;
-use DateTimeInterface;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
+use OCP\Mail\IEMailTemplate;
 use OCP\Mail\IMailer;
+use OCP\Mail\IMessage;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -52,44 +55,13 @@ use Throwable;
  *
  * @spec openspec/specs/portal-ways-in/spec.md#requirement-every-way-in-sends-its-secret-by-mail-req-iwi-001
  */
-class PortalIdentityMailer {
-	/**
-	 * The one-time link to follow one case (identity-ways-in-screens D1).
-	 */
-	public const TEMPLATE_REFERENCE_LINK = 'reference-link';
-
-	/**
-	 * The invitation into the portal (identity-staff-account-screens D2).
-	 */
-	public const TEMPLATE_INVITATION = 'invitation';
-
-	/**
-	 * The confirmation of a new address (identity-profile-page D1).
-	 */
-	public const TEMPLATE_EMAIL_CONFIRMATION = 'email-confirmation';
-
-	/**
-	 * The activation link of a self-registration (identity-ways-in-screens D4).
-	 */
-	public const TEMPLATE_REGISTRATION_ACTIVATION = 'registration-activation';
-
-	/**
-	 * The invitation of a waiting account an app provisioned: the person
-	 * follows the link, signs in, and the waiting account joins theirs
-	 * (invitation-secret-joins-the-signed-in-account).
-	 */
-	public const TEMPLATE_ACCOUNT_INVITATION = 'account-invitation';
+class PortalIdentityMailer implements PortalIdentityMailerInterface {
 
 	/**
 	 * The invitation of a resident to become a contact of another resident
 	 * (own-contacts-and-invitations REQ-ROC-003).
 	 */
 	public const TEMPLATE_CONTACT_INVITATION = 'contact-invitation';
-
-	/**
-	 * The invitation to act on someone's behalf (site-mandates-the-represented-manage).
-	 */
-	public const TEMPLATE_MANDATE_INVITATION = 'mandate-invitation';
 
 	/**
 	 * The one-time sign-in link of an `email` account (sign-in-with-an-email-link).
@@ -195,14 +167,40 @@ class PortalIdentityMailer {
 	private const IGNORE_KEY = 'Did you not ask for this? Then you can ignore this mail.';
 
 	/**
-	 * The language of a portal that declares none.
+	 * The mail log's status for each way a send ends: '' when it was
+	 * delivered, else the word for the failure.
 	 */
-	private const DEFAULT_LANGUAGE = 'nl';
+	private const LOG_STATUS = [
+		''          => 'delivered',
+		'exception' => 'failed',
+		'refused'   => 'failed',
+	];
 
 	/**
-	 * The name of a tenant nothing names.
+	 * Per notice: the English source keys of the informing mail and the width
+	 * of the moment its line names. `%1$s` is the portal's name, `%2$s` the
+	 * moment.
 	 */
-	private const DEFAULT_NAME = 'Portaliq';
+	private const NOTICES = [
+		self::NOTICE_TEMPLATE => [
+			'subject' => 'Your invitation to %1$s was accepted',
+			'heading' => 'Your invitation was accepted',
+			'line' => 'Your invitation to the portal of %1$s was accepted on %2$s.',
+			'moment' => 'date',
+		],
+		self::NOTICE_SIGNED_IN => [
+			'subject' => 'You signed in to %1$s',
+			'heading' => 'You signed in',
+			'line' => 'Your account at %1$s was signed in to with an e-mail link on %2$s.',
+			'moment' => 'datetime',
+		],
+		self::NOTICE_ADDRESS_CHANGED => [
+			'subject' => 'Your sign-in address for %1$s was changed',
+			'heading' => 'Your sign-in address was changed',
+			'line' => 'From %2$s, sign-in links for your account at %1$s go to another address.',
+			'moment' => 'datetime',
+		],
+	];
 
 	/**
 	 * Constructor.
@@ -210,8 +208,7 @@ class PortalIdentityMailer {
 	 * @param IMailer $mailer Sends the mail.
 	 * @param IFactory $l10nFactory The portal's language, independent of any session locale.
 	 * @param PortalDeepLinkBuilder $deepLinks Builds the portal link from the route table.
-	 * @param PortalResolver $portals Finds the organisation's portal when the caller has none.
-	 * @param PortalOrganisationConfigService $organisations The tenant's name when no portal names it.
+	 * @param MailSite $site The portal, name and language a mail is sent with.
 	 * @param LoggerInterface $logger Records a failed send, never the secret.
 	 * @param MailTemplateRenderer|null $renderer Swaps in a portal's own text (mail-templates-admin-screen).
 	 * @param MailLog|null $mailLog Logs each send, with the address masked.
@@ -220,8 +217,7 @@ class PortalIdentityMailer {
 		private readonly IMailer $mailer,
 		private readonly IFactory $l10nFactory,
 		private readonly PortalDeepLinkBuilder $deepLinks,
-		private readonly PortalResolver $portals,
-		private readonly PortalOrganisationConfigService $organisations,
+		private readonly MailSite $site,
 		private readonly LoggerInterface $logger,
 		private readonly ?MailTemplateRenderer $renderer=null,
 		private readonly ?MailLog $mailLog=null,
@@ -255,57 +251,102 @@ class PortalIdentityMailer {
 			return false;
 		}
 
-		$portal = ($portal ?? $this->portalOf(organisation: $organisation));
-		$name   = $this->nameOf(portal: $portal, organisation: $organisation);
+		$portal = ($portal ?? $this->site->portal(organisation: $organisation));
+		$name   = $this->site->name(portal: $portal, organisation: $organisation);
 		$link   = $this->linkFor(keys: $keys, portalSlug: trim((string)($portal['slug'] ?? '')), organisation: $organisation);
 		$link  .= '#' . $keys['fragment'] . '=' . rawurlencode($secret);
 
+		$run    = new IdentityMailRun(template: $template, keys: $keys, email: $email, portal: $portal, name: $name, link: $link, details: $details);
+
+		return $this->deliver(run: $run);
+	}//end send()
+
+	/**
+	 * Write and send one identity mail, and log how it went.
+	 *
+	 * @param IdentityMailRun $run The mail being sent.
+	 *
+	 * @return bool True when the mail left.
+	 */
+	private function deliver(IdentityMailRun $run): bool {
 		try {
-			$l10n = $this->l10nFactory->get(Application::APP_ID, $this->languageOf(portal: $portal));
-
-			$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . $template, []);
-			$text = $this->textOf(
-				template: $template,
-				portalSlug: trim((string)($portal['slug'] ?? '')),
-				values: ['portal' => $name, 'link' => $link],
-				subject: $l10n->t($keys['subject'], [$name]),
-				intro: $l10n->t($keys['intro'], [$name])
-			);
-
-			$mail->setSubject($text['subject']);
-			$mail->addHeader();
-			$mail->addHeading($l10n->t($keys['heading']));
-			$mail->addBodyText($text['body']);
-			foreach ($this->detailLines(l10n: $l10n, details: $details) as $line) {
-				$mail->addBodyText($line);
-			}
-
-			$mail->addBodyButton($l10n->t($keys['button']), $link);
-			$mail->addBodyText($this->closing(l10n: $l10n));
-			$mail->addFooter();
-
-			$message = $this->mailer->createMessage();
-			$message->setTo([$email]);
-			$message->useTemplate($mail);
-			$failed = $this->mailer->send($message);
+			$l10n   = $this->l10nFactory->get(AppIdentity::APP_ID, $this->site->language(portal: $run->portal));
+			$failed = $this->mailer->send($this->messageTo(email: $run->email, mail: $this->composeMail(run: $run, l10n: $l10n)));
 		} catch (Throwable $failure) {
 			// The exception's own message is left out on purpose: a transport
 			// error may quote the recipient or the body back.
-			$this->logger->warning('Portaliq: identity mail not sent', ['template' => $template, 'exception' => get_class($failure)]);
-			$this->logSend(template: $template, email: $email, portal: $portal, status: 'failed', reason: 'exception');
+			$this->logger->warning('Portaliq: identity mail not sent', ['template' => $run->template, 'exception' => get_class($failure)]);
+			$this->logSend(run: $run, failure: 'exception');
 			return false;
 		}
 
+		return $this->reportOutcome(run: $run, failed: $failed);
+	}//end deliver()
+
+	/**
+	 * Log a sent mail as delivered, or as refused when the mail server
+	 * refused a recipient.
+	 *
+	 * @param IdentityMailRun $run    The mail that was sent.
+	 * @param array<mixed>    $failed The recipients the mail server refused.
+	 *
+	 * @return bool True when the mail left.
+	 */
+	private function reportOutcome(IdentityMailRun $run, array $failed): bool {
 		if (count($failed) > 0) {
-			$this->logger->warning('Portaliq: identity mail refused by the mail server', ['template' => $template]);
-			$this->logSend(template: $template, email: $email, portal: $portal, status: 'failed', reason: 'refused');
+			$this->logger->warning('Portaliq: identity mail refused by the mail server', ['template' => $run->template]);
+			$this->logSend(run: $run, failure: 'refused');
 			return false;
 		}
 
-		$this->logSend(template: $template, email: $email, portal: $portal, status: 'delivered', reason: '');
+		$this->logSend(run: $run, failure: '');
 
 		return true;
-	}//end send()
+	}//end reportOutcome()
+
+	/**
+	 * The identity mail in the portal's language: heading, text, who invited,
+	 * the button with the link and the closing lines.
+	 *
+	 * @param IdentityMailRun $run  The mail being sent.
+	 * @param IL10N           $l10n The portal's language.
+	 *
+	 * @return IEMailTemplate
+	 */
+	private function composeMail(IdentityMailRun $run, IL10N $l10n): IEMailTemplate {
+		$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . $run->template, []);
+		$text = $this->textOf(run: $run, l10n: $l10n);
+
+		$mail->setSubject($text['subject']);
+		$mail->addHeader();
+		$mail->addHeading($l10n->t($run->keys['heading']));
+		$mail->addBodyText($text['body']);
+		foreach ($this->detailLines(l10n: $l10n, details: $run->details) as $line) {
+			$mail->addBodyText($line);
+		}
+
+		$mail->addBodyButton($l10n->t($run->keys['button']), $run->link);
+		$mail->addBodyText($this->closing(l10n: $l10n));
+		$mail->addFooter();
+
+		return $mail;
+	}//end composeMail()
+
+	/**
+	 * One message to one address, carrying the written mail.
+	 *
+	 * @param string         $email The recipient.
+	 * @param IEMailTemplate $mail  The written mail.
+	 *
+	 * @return IMessage
+	 */
+	private function messageTo(string $email, IEMailTemplate $mail): IMessage {
+		$message = $this->mailer->createMessage();
+		$message->setTo([$email]);
+		$message->useTemplate($mail);
+
+		return $message;
+	}//end messageTo()
 
 	/**
 	 * The lines that say who invited the reader and what they wrote.
@@ -315,7 +356,7 @@ class PortalIdentityMailer {
 	 *
 	 * @return array<int, string> The lines, none when the mail names no inviter.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t04
 	 */
 	private function detailLines(\OCP\IL10N $l10n, array $details): array {
 		$lines   = [];
@@ -342,22 +383,22 @@ class PortalIdentityMailer {
 	/**
 	 * The subject and text to send: the portal's own when it has one.
 	 *
-	 * @param string                $template   The template key.
-	 * @param string                $portalSlug The portal slug.
-	 * @param array<string, string> $values     The variables' values.
-	 * @param string                $subject    The default subject.
-	 * @param string                $intro      The default text.
+	 * @param IdentityMailRun $run  The mail being sent.
+	 * @param IL10N           $l10n The portal's language, for the default text.
 	 *
 	 * @return array{subject: string, body: string}
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t03
 	 */
-	private function textOf(string $template, string $portalSlug, array $values, string $subject, string $intro): array {
+	private function textOf(IdentityMailRun $run, IL10N $l10n): array {
+		$subject = $l10n->t($run->keys['subject'], [$run->name]);
+		$intro   = $l10n->t($run->keys['intro'], [$run->name]);
 		if ($this->renderer === null) {
 			return ['subject' => $subject, 'body' => $intro];
 		}
 
-		$rendered = $this->renderer->render(portal: $portalSlug, key: $template, values: $values, subject: $subject, body: $intro);
+		$values   = ['portal' => $run->name, 'link' => $run->link];
+		$rendered = $this->renderer->render(portal: $run->portalSlug(), key: $run->template, values: $values, subject: $subject, body: $intro);
 
 		return ['subject' => $rendered['subject'], 'body' => $rendered['body']];
 	}//end textOf()
@@ -365,28 +406,25 @@ class PortalIdentityMailer {
 	/**
 	 * Log one send; never a reason to fail the mail.
 	 *
-	 * @param string                    $template The template key.
-	 * @param string                    $email    The recipient.
-	 * @param array<string, mixed>|null $portal   The portal.
-	 * @param string                    $status   `delivered` or `failed`.
-	 * @param string                    $reason   A word for a failure, or ''.
+	 * @param IdentityMailRun $run     The mail that was sent.
+	 * @param string          $failure A word for a failure, or '' when it was delivered.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t03
 	 */
-	private function logSend(string $template, string $email, ?array $portal, string $status, string $reason): void {
+	private function logSend(IdentityMailRun $run, string $failure): void {
 		if ($this->mailLog === null) {
 			return;
 		}
 
 		try {
 			$this->mailLog->record(
-				portal: trim((string)($portal['slug'] ?? '')),
-				templateKey: $template,
-				email: $email,
-				status: $status,
-				failureReason: $reason
+				portal: $run->portalSlug(),
+				templateKey: $run->template,
+				email: $run->email,
+				status: self::LOG_STATUS[$failure],
+				failureReason: $failure
 			);
 		} catch (Throwable) {
 			// The log is a convenience; the mail has gone either way.
@@ -409,39 +447,18 @@ class PortalIdentityMailer {
 	 *
 	 * @return bool True when the mail left.
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function sendClaimNotice(string $email, string $organisation, DateTimeInterface $moment): bool {
-		if ($this->mailer->validateMailAddress($email) === false) {
-			$this->logger->warning('Portaliq: identity mail not sent, the call was incomplete', ['template' => self::NOTICE_TEMPLATE]);
-			return false;
-		}
-
-		$portal = $this->portalOf(organisation: $organisation);
-		$name   = $this->nameOf(portal: $portal, organisation: $organisation);
-
-		try {
-			$l10n = $this->l10nFactory->get(Application::APP_ID, $this->languageOf(portal: $portal));
-			$day  = (string)$l10n->l('date', $moment, ['width' => 'long']);
-
-			$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . self::NOTICE_TEMPLATE, []);
-			$mail->setSubject($l10n->t('Your invitation to %1$s was accepted', [$name]));
-			$mail->addHeader();
-			$mail->addHeading($l10n->t('Your invitation was accepted'));
-			$mail->addBodyText($l10n->t('Your invitation to the portal of %1$s was accepted on %2$s.', [$name, $day]));
-			$mail->addBodyText($l10n->t('Was this not you? Then contact %1$s.', [$name]));
-			$mail->addFooter();
-
-			$message = $this->mailer->createMessage();
-			$message->setTo([$email]);
-			$message->useTemplate($mail);
-			$failed = $this->mailer->send($message);
-		} catch (Throwable $failure) {
-			$this->logger->warning('Portaliq: identity mail not sent', ['template' => self::NOTICE_TEMPLATE, 'exception' => get_class($failure)]);
-			return false;
-		}
-
-		return count($failed) === 0;
+		return $this->notice(
+			notice: new IdentityNotice(
+				template: self::NOTICE_TEMPLATE,
+				email: $email,
+				organisation: $organisation,
+				portal: null,
+				moment: $moment
+			)
+		);
 	}//end sendClaimNotice()
 
 	/**
@@ -462,16 +479,13 @@ class PortalIdentityMailer {
 	 */
 	public function sendSignedInNotice(string $email, string $organisation, ?array $portal, DateTimeInterface $moment): bool {
 		return $this->notice(
-			template: self::NOTICE_SIGNED_IN,
-			email: $email,
-			organisation: $organisation,
-			portal: $portal,
-			keys: [
-				'subject' => 'You signed in to %1$s',
-				'heading' => 'You signed in',
-				'line' => 'Your account at %1$s was signed in to with an e-mail link on %2$s.',
-			],
-			moment: $moment
+			notice: new IdentityNotice(
+				template: self::NOTICE_SIGNED_IN,
+				email: $email,
+				organisation: $organisation,
+				portal: $portal,
+				moment: $moment
+			)
 		);
 	}//end sendSignedInNotice()
 
@@ -490,64 +504,70 @@ class PortalIdentityMailer {
 	 */
 	public function sendSignInAddressChanged(string $email, string $organisation, DateTimeInterface $moment): bool {
 		return $this->notice(
-			template: self::NOTICE_ADDRESS_CHANGED,
-			email: $email,
-			organisation: $organisation,
-			portal: null,
-			keys: [
-				'subject' => 'Your sign-in address for %1$s was changed',
-				'heading' => 'Your sign-in address was changed',
-				'line' => 'From %2$s, sign-in links for your account at %1$s go to another address.',
-			],
-			moment: $moment
+			notice: new IdentityNotice(
+				template: self::NOTICE_ADDRESS_CHANGED,
+				email: $email,
+				organisation: $organisation,
+				portal: null,
+				moment: $moment
+			)
 		);
 	}//end sendSignInAddressChanged()
 
 	/**
-	 * One informing mail: a heading, one line with the portal and the day,
-	 * and whom to contact. Never throws; never logs the address.
+	 * One informing mail: a heading, one line with the portal and the
+	 * moment, and whom to contact. Never throws; never logs the address.
 	 *
-	 * @param string                    $template     The notice key, for the log.
-	 * @param string                    $email        The recipient.
-	 * @param string                    $organisation The tenant.
-	 * @param array<string, mixed>|null $portal       The portal, or null to look it up.
-	 * @param array<string, string>     $keys         `subject`, `heading`, `line` source keys.
-	 * @param DateTimeInterface         $moment       The moment the line names.
+	 * @param IdentityNotice $notice Which notice, to whom and when.
 	 *
-	 * @return bool
+	 * @return bool True when the mail left.
 	 */
-	private function notice(string $template, string $email, string $organisation, ?array $portal, array $keys, DateTimeInterface $moment): bool {
-		if ($this->mailer->validateMailAddress($email) === false) {
-			$this->logger->warning('Portaliq: identity mail not sent, the call was incomplete', ['template' => $template]);
+	private function notice(IdentityNotice $notice): bool {
+		if ($this->mailer->validateMailAddress($notice->email) === false) {
+			$this->logger->warning('Portaliq: identity mail not sent, the call was incomplete', ['template' => $notice->template]);
 			return false;
 		}
 
-		$portal = ($portal ?? $this->portalOf(organisation: $organisation));
-		$name   = $this->nameOf(portal: $portal, organisation: $organisation);
+		$notice = $notice->withPortal(portal: ($notice->portal ?? $this->site->portal(organisation: $notice->organisation)));
+		$name   = $this->site->name(portal: $notice->portal, organisation: $notice->organisation);
 
 		try {
-			$l10n = $this->l10nFactory->get(Application::APP_ID, $this->languageOf(portal: $portal));
-			$day  = (string)$l10n->l('datetime', $moment, ['width' => 'long']);
-
-			$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . $template, []);
-			$mail->setSubject($l10n->t($keys['subject'], [$name]));
-			$mail->addHeader();
-			$mail->addHeading($l10n->t($keys['heading']));
-			$mail->addBodyText($l10n->t($keys['line'], [$name, $day]));
-			$mail->addBodyText($l10n->t('Was this not you? Then contact %1$s.', [$name]));
-			$mail->addFooter();
-
-			$message = $this->mailer->createMessage();
-			$message->setTo([$email]);
-			$message->useTemplate($mail);
-			$failed = $this->mailer->send($message);
+			$failed = $this->mailer->send($this->messageTo(email: $notice->email, mail: $this->noticeMail(notice: $notice, name: $name)));
 		} catch (Throwable $failure) {
-			$this->logger->warning('Portaliq: identity mail not sent', ['template' => $template, 'exception' => get_class($failure)]);
+			$this->logger->warning('Portaliq: identity mail not sent', ['template' => $notice->template, 'exception' => get_class($failure)]);
 			return false;
 		}
 
 		return count($failed) === 0;
 	}//end notice()
+
+	/**
+	 * The informing mail in the portal's language.
+	 *
+	 * @param IdentityNotice $notice Which notice, for its portal, to whom and when.
+	 * @param string         $name   The portal's name.
+	 *
+	 * @return IEMailTemplate
+	 */
+	private function noticeMail(IdentityNotice $notice, string $name): IEMailTemplate {
+		$keys = self::NOTICES[$notice->template];
+		$l10n = $this->l10nFactory->get(AppIdentity::APP_ID, $this->site->language(portal: $notice->portal));
+		// IL10N::l() reads only a mutable \DateTime; a DateTimeImmutable would
+		// be cast to an integer and read as 1 January 1970.
+		$when = new DateTime('@' . $notice->moment->getTimestamp());
+		$when->setTimezone($notice->moment->getTimezone());
+		$day = (string)$l10n->l($keys['moment'], $when, ['width' => 'long']);
+
+		$mail = $this->mailer->createEMailTemplate('portaliq.identity.' . $notice->template, []);
+		$mail->setSubject($l10n->t($keys['subject'], [$name]));
+		$mail->addHeader();
+		$mail->addHeading($l10n->t($keys['heading']));
+		$mail->addBodyText($l10n->t($keys['line'], [$name, $day]));
+		$mail->addBodyText($l10n->t('Was this not you? Then contact %1$s.', [$name]));
+		$mail->addFooter();
+
+		return $mail;
+	}//end noticeMail()
 
 	/**
 	 * The page a template's link opens. Every link opens the site: the ways
@@ -581,63 +601,4 @@ class PortalIdentityMailer {
 	private function closing(IL10N $l10n): string {
 		return $l10n->t(self::ONCE_KEY) . ' ' . $l10n->t(self::IGNORE_KEY);
 	}//end closing()
-
-	/**
-	 * The organisation's one published portal, or null when it has none or
-	 * several (then the link names the organisation instead).
-	 *
-	 * @param string $organisation The tenant.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function portalOf(string $organisation): ?array {
-		try {
-			return $this->portals->resolveByOrganisation(organisation: $organisation);
-		} catch (Throwable) {
-			return null;
-		}
-	}//end portalOf()
-
-	/**
-	 * The name the mail greets from: the portal's title, else the tenant's.
-	 *
-	 * @param array<string, mixed>|null $portal The portal, or null.
-	 * @param string $organisation The tenant.
-	 *
-	 * @return string
-	 */
-	private function nameOf(?array $portal, string $organisation): string {
-		$title = trim((string)($portal['title'] ?? ''));
-		if ($title !== '') {
-			return $title;
-		}
-
-		try {
-			$name = trim((string)($this->organisations->resolve(orgSlug: $organisation)['organisationName'] ?? ''));
-		} catch (Throwable) {
-			$name = '';
-		}
-
-		if ($name === '') {
-			return self::DEFAULT_NAME;
-		}
-
-		return $name;
-	}//end nameOf()
-
-	/**
-	 * The portal's language: the first locale it publishes in.
-	 *
-	 * @param array<string, mixed>|null $portal The portal, or null.
-	 *
-	 * @return string
-	 */
-	private function languageOf(?array $portal): string {
-		$locales = ($portal['locales'] ?? []);
-		if (is_array($locales) === true && is_string($locales[0] ?? null) === true && trim($locales[0]) !== '') {
-			return trim($locales[0]);
-		}
-
-		return self::DEFAULT_LANGUAGE;
-	}//end languageOf()
 }//end class

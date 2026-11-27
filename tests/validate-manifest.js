@@ -214,8 +214,49 @@ const RENDERABLE_WIDGET_TYPES = new Set([
 	// nextcloud-vue 2.80 registers it for the detail-page and app-dashboard
 	// surfaces; a filter without @objectId tokens needs no current object.
 	'record-list',
+	...libraryWidgetKeys(),
 	...registryWidgetKeys(),
 ])
+
+/**
+ * The widget types nextcloud-vue registers for a `config.widgets` dashboard.
+ *
+ * CnDashboardPage resolves `type` through the shared dashboard widget
+ * registry, which `CnWidgetGrid/registerDashboardWidgets.js` fills: by calls
+ * in that module and by the registration modules it imports. Those keys are
+ * read off the library source, so a type the library registers (such as
+ * `object-table`) is mountable here without this script naming it. A library
+ * that is not installed adds no keys; the hand-written list above still holds.
+ *
+ * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#T07
+ *
+ * @param {string} [libraryRoot] The nextcloud-vue package directory.
+ * @return {string[]} The registered keys.
+ */
+function libraryWidgetKeys(libraryRoot = path.join(REPO_ROOT, 'node_modules', '@conduction', 'nextcloud-vue')) {
+	const entry = path.join(libraryRoot, 'src', 'components', 'CnWidgetGrid', 'registerDashboardWidgets.js')
+	if (!fs.existsSync(entry)) {
+		return []
+	}
+	const source = fs.readFileSync(entry, 'utf8')
+	const sources = [source]
+	const sideEffect = /^import '(\.\.?\/[^']+\.js)'/gm
+	let match
+	while ((match = sideEffect.exec(source)) !== null) {
+		const file = path.resolve(path.dirname(entry), match[1])
+		if (fs.existsSync(file)) {
+			sources.push(fs.readFileSync(file, 'utf8'))
+		}
+	}
+	const keys = new Set()
+	const call = /registerDashboardWidget\(\s*'([a-z0-9-]+)'/g
+	for (const text of sources) {
+		while ((match = call.exec(text)) !== null) {
+			keys.add(match[1])
+		}
+	}
+	return [...keys]
+}
 
 /**
  * The kind: "widget" keys declared in src/registry.js.
@@ -252,9 +293,9 @@ const TILE_LINK_TYPES = new Set(['app', 'url'])
  *                      layout renders its empty state — "No widgets
  *                      configured" — which reads as "nothing was configured
  *                      yet" rather than "your configuration is unreachable".
- *   unrenderable type  `text` and `object-table` are not in the renderer's
- *                      vocabulary. They validate, they round-trip, and they
- *                      mount nothing.
+ *   unrenderable type  a type neither the library nor src/registry.js
+ *                      registers. It validates, it round-trips, and it
+ *                      mounts nothing.
  *
  * Neither is a schema violation: the schema describes the manifest's SHAPE,
  * and both of these are true statements about a component's behaviour.
@@ -264,13 +305,7 @@ const TILE_LINK_TYPES = new Set(['app', 'url'])
  */
 function rendererContractLint(manifest) {
 	const errors = []
-	const dashboards = (manifest.pages || []).filter(
-		(p) =>
-			p
-			&& p.type === 'dashboard'
-			&& p.config
-			&& Array.isArray(p.config.widgets),
-	)
+	const dashboards = pagesWithWidgets(manifest, 'dashboard')
 
 	// A check that inspects nothing must not report success. If the manifest
 	// stops using dashboard pages, or their shape moves, this lint would
@@ -284,63 +319,7 @@ function rendererContractLint(manifest) {
 	}
 
 	for (const page of dashboards) {
-		const widgets = page.config.widgets
-		const layout = Array.isArray(page.config.layout) ? page.config.layout : []
-		const placed = new Set(layout.map((l) => l && l.widgetId))
-
-		for (const widget of widgets) {
-			if (!widget || typeof widget !== 'object') continue
-
-			if (!placed.has(widget.id)) {
-				errors.push(
-					`pages[${page.id}].config: widget "${widget.id}" has no layout entry — `
-						+ 'it will not render (CnDashboardPage iterates layout, not widgets)',
-				)
-			}
-
-			// NC Dashboard API widgets are mounted by their own branch and
-			// carry no renderable `type`.
-			if (widget.itemApiVersions) continue
-
-			if (!RENDERABLE_WIDGET_TYPES.has(widget.type)) {
-				errors.push(
-					`pages[${page.id}].config: widget "${widget.id}" has type "${widget.type}", `
-						+ `which CnDashboardPage cannot mount (renderable: ${[...RENDERABLE_WIDGET_TYPES].join(', ')})`,
-				)
-			}
-
-			// A tile's linkType is `'app' | 'url'` and nothing else. CnTileWidget
-			// has no default branch: an unrecognised linkType falls through to
-			// the raw linkValue as an href, so `{linkType: 'route', linkValue:
-			// '/portals'}` renders a perfectly good-looking tile that navigates
-			// to a 404 — the tile is styled, clickable and wrong.
-			if (widget.type === 'tile') {
-				if (!TILE_LINK_TYPES.has(widget.linkType)) {
-					errors.push(
-						`pages[${page.id}].config: tile "${widget.id}" has linkType "${widget.linkType}" — `
-							+ `CnTileWidget resolves only ${[...TILE_LINK_TYPES].join(' / ')} and would use linkValue as a raw href`,
-					)
-				}
-
-				if (!widget.linkValue) {
-					errors.push(
-						`pages[${page.id}].config: tile "${widget.id}" has no linkValue — it would link to "#"`,
-					)
-				}
-			}
-		}
-
-		for (const entry of layout) {
-			if (
-				entry
-				&& entry.widgetId
-				&& !widgets.some((w) => w && w.id === entry.widgetId)
-			) {
-				errors.push(
-					`pages[${page.id}].config.layout: entry references unknown widget "${entry.widgetId}"`,
-				)
-			}
-		}
+		lintDashboardPage(page, errors)
 	}
 
 	// DETAIL PAGES HAVE THE SAME LAYOUT TRAP, and this lint used to look right
@@ -354,75 +333,10 @@ function rendererContractLint(manifest) {
 	// so an allow-list here would be a guess about what is registered, and a
 	// wrong guess would fail a working page. The pairing is checkable without
 	// guessing; the type is not.
-	const details = (manifest.pages || []).filter(
-		(p) =>
-			p && p.type === 'detail' && p.config && Array.isArray(p.config.widgets),
-	)
+	const details = pagesWithWidgets(manifest, 'detail')
 
 	for (const page of details) {
-		const widgets = page.config.widgets
-		const layout = Array.isArray(page.config.layout) ? page.config.layout : []
-		const placed = new Set(layout.map((l) => l && l.widgetId))
-		// A `tabs` widget holds its children as tabs and `sideColumn` draws
-		// widgets beside the body: neither needs a grid cell of its own, and a
-		// grid cell for them would draw the widget twice.
-		for (const widget of widgets) {
-			if (
-				widget
-				&& widget.type === 'tabs'
-				&& widget.content
-				&& Array.isArray(widget.content.tabs)
-			) {
-				for (const tab of widget.content.tabs) {
-					placed.add(typeof tab === 'string' ? tab : tab && tab.widgetId)
-					// A stack (`widgetIds`) draws every widget it names in the tab.
-					for (const id of (tab && tab.widgetIds) || []) {
-						placed.add(id)
-					}
-				}
-			}
-			// A `sections` widget draws its `widgetId` children under headings
-			// (the portal's Instellingen tab).
-			if (
-				widget
-				&& widget.type === 'sections'
-				&& widget.content
-				&& Array.isArray(widget.content.sections)
-			) {
-				for (const section of widget.content.sections) {
-					if (section && section.widgetId) {
-						placed.add(section.widgetId)
-					}
-				}
-			}
-		}
-		for (const entry of Array.isArray(page.config.sideColumn)
-			? page.config.sideColumn
-			: []) {
-			placed.add(typeof entry === 'string' ? entry : entry && entry.id)
-		}
-
-		for (const widget of widgets) {
-			if (!widget || typeof widget !== 'object') continue
-			if (!placed.has(widget.id)) {
-				errors.push(
-					`pages[${page.id}].config: widget "${widget.id}" has no layout entry — `
-						+ 'a detail-page widget without one never renders',
-				)
-			}
-		}
-
-		for (const entry of layout) {
-			if (
-				entry
-				&& entry.widgetId
-				&& !widgets.some((w) => w && w.id === entry.widgetId)
-			) {
-				errors.push(
-					`pages[${page.id}].config.layout: entry references unknown widget "${entry.widgetId}"`,
-				)
-			}
-		}
+		lintDetailPage(page, errors)
 	}
 
 	console.log(
@@ -435,6 +349,221 @@ function rendererContractLint(manifest) {
 	)
 
 	return errors
+}
+
+/**
+ * The pages of one type that carry a `config.widgets` array.
+ *
+ * @param {object} manifest Parsed manifest object.
+ * @param {string} type Page type, such as `dashboard` or `detail`.
+ * @return {object[]} The matching pages.
+ */
+function pagesWithWidgets(manifest, type) {
+	return (manifest.pages || []).filter(
+		(p) => p && p.type === type && p.config && Array.isArray(p.config.widgets),
+	)
+}
+
+/**
+ * The page's grid layout, or an empty list when it has none.
+ *
+ * @param {object} page A page with a `config.widgets` array.
+ * @return {object[]} The layout entries.
+ */
+function layoutOf(page) {
+	return Array.isArray(page.config.layout) ? page.config.layout : []
+}
+
+/**
+ * Report layout entries that name a widget the page does not declare.
+ *
+ * @param {object} page A page with a `config.widgets` array.
+ * @param {string[]} errors Problems found so far; appended to.
+ */
+function lintUnknownLayoutEntries(page, errors) {
+	const widgets = page.config.widgets
+	for (const entry of layoutOf(page)) {
+		if (
+			entry
+			&& entry.widgetId
+			&& !widgets.some((w) => w && w.id === entry.widgetId)
+		) {
+			errors.push(
+				`pages[${page.id}].config.layout: entry references unknown widget "${entry.widgetId}"`,
+			)
+		}
+	}
+}
+
+/**
+ * Check a dashboard page: every widget placed, mountable and, for tiles, linked.
+ *
+ * @param {object} page A dashboard page with a `config.widgets` array.
+ * @param {string[]} errors Problems found so far; appended to.
+ */
+function lintDashboardPage(page, errors) {
+	const placed = new Set(layoutOf(page).map((l) => l && l.widgetId))
+
+	for (const widget of page.config.widgets) {
+		if (!widget || typeof widget !== 'object') continue
+
+		if (!placed.has(widget.id)) {
+			errors.push(
+				`pages[${page.id}].config: widget "${widget.id}" has no layout entry — `
+					+ 'it will not render (CnDashboardPage iterates layout, not widgets)',
+			)
+		}
+
+		// NC Dashboard API widgets are mounted by their own branch and
+		// carry no renderable `type`.
+		if (widget.itemApiVersions) continue
+
+		if (!RENDERABLE_WIDGET_TYPES.has(widget.type)) {
+			errors.push(
+				`pages[${page.id}].config: widget "${widget.id}" has type "${widget.type}", `
+					+ `which CnDashboardPage cannot mount (renderable: ${[...RENDERABLE_WIDGET_TYPES].join(', ')})`,
+			)
+		}
+
+		if (widget.type === 'tile') {
+			lintTileWidget(page, widget, errors)
+		}
+	}
+
+	lintUnknownLayoutEntries(page, errors)
+}
+
+/**
+ * Check a tile's link.
+ *
+ * A tile's linkType is `'app' | 'url'` and nothing else. CnTileWidget
+ * has no default branch: an unrecognised linkType falls through to
+ * the raw linkValue as an href, so `{linkType: 'route', linkValue:
+ * '/portals'}` renders a perfectly good-looking tile that navigates
+ * to a 404 — the tile is styled, clickable and wrong.
+ *
+ * @param {object} page The dashboard page holding the tile.
+ * @param {object} widget The tile widget.
+ * @param {string[]} errors Problems found so far; appended to.
+ */
+function lintTileWidget(page, widget, errors) {
+	if (!TILE_LINK_TYPES.has(widget.linkType)) {
+		errors.push(
+			`pages[${page.id}].config: tile "${widget.id}" has linkType "${widget.linkType}" — `
+				+ `CnTileWidget resolves only ${[...TILE_LINK_TYPES].join(' / ')} and would use linkValue as a raw href`,
+		)
+	}
+
+	if (!widget.linkValue) {
+		errors.push(
+			`pages[${page.id}].config: tile "${widget.id}" has no linkValue — it would link to "#"`,
+		)
+	}
+}
+
+/**
+ * Check a detail page: every widget is placed in the grid, in a tab, in a
+ * section or in the side column.
+ *
+ * @param {object} page A detail page with a `config.widgets` array.
+ * @param {string[]} errors Problems found so far; appended to.
+ */
+function lintDetailPage(page, errors) {
+	const placed = detailPlacedIds(page)
+
+	for (const widget of page.config.widgets) {
+		if (!widget || typeof widget !== 'object') continue
+		if (!placed.has(widget.id)) {
+			errors.push(
+				`pages[${page.id}].config: widget "${widget.id}" has no layout entry — `
+					+ 'a detail-page widget without one never renders',
+			)
+		}
+	}
+
+	lintUnknownLayoutEntries(page, errors)
+}
+
+/**
+ * The widget ids a detail page draws somewhere.
+ *
+ * A `tabs` widget holds its children as tabs, `sideColumn` draws
+ * widgets beside the body and `band` draws a row of widgets above both:
+ * none of them needs a grid cell of its own, and a grid cell for them
+ * would draw the widget twice.
+ *
+ * @param {object} page A detail page with a `config.widgets` array.
+ * @return {Set<string>} The placed widget ids.
+ */
+function detailPlacedIds(page) {
+	const placed = new Set(layoutOf(page).map((l) => l && l.widgetId))
+
+	for (const widget of page.config.widgets) {
+		addTabChildren(widget, placed)
+		addSectionChildren(widget, placed)
+	}
+
+	const sideColumn = Array.isArray(page.config.sideColumn) ? page.config.sideColumn : []
+	for (const entry of sideColumn) {
+		placed.add(typeof entry === 'string' ? entry : entry && entry.id)
+	}
+
+	// A band entry is a widget id, `{ widgetId, span, chrome }` or a widget definition.
+	const band = Array.isArray(page.config.band) ? page.config.band : []
+	for (const entry of band) {
+		placed.add(typeof entry === 'string' ? entry : entry && (entry.widgetId || entry.id))
+	}
+
+	return placed
+}
+
+/**
+ * Add the widgets a `tabs` widget draws in its tabs.
+ *
+ * @param {object} widget Any widget.
+ * @param {Set<string>} placed The placed widget ids; added to.
+ */
+function addTabChildren(widget, placed) {
+	if (
+		!widget
+		|| widget.type !== 'tabs'
+		|| !widget.content
+		|| !Array.isArray(widget.content.tabs)
+	) {
+		return
+	}
+
+	for (const tab of widget.content.tabs) {
+		placed.add(typeof tab === 'string' ? tab : tab && tab.widgetId)
+		// A stack (`widgetIds`) draws every widget it names in the tab.
+		for (const id of (tab && tab.widgetIds) || []) {
+			placed.add(id)
+		}
+	}
+}
+
+/**
+ * Add the widgets a `sections` widget draws under headings (the portal's
+ * Instellingen tab).
+ *
+ * @param {object} widget Any widget.
+ * @param {Set<string>} placed The placed widget ids; added to.
+ */
+function addSectionChildren(widget, placed) {
+	if (
+		!widget
+		|| widget.type !== 'sections'
+		|| !widget.content
+		|| !Array.isArray(widget.content.sections)
+	) {
+		return
+	}
+
+	for (const section of widget.content.sections) {
+		if (section && section.widgetId) {
+			placed.add(section.widgetId)
+		}
+	}
 }
 
 /**
@@ -525,4 +654,8 @@ function main() {
 	process.exit(1)
 }
 
-main()
+if (require.main === module) {
+	main()
+}
+
+module.exports = { libraryWidgetKeys, rendererContractLint }

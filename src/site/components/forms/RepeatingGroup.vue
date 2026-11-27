@@ -153,7 +153,7 @@ import {
 const INPUT_TYPES = { number: 'number', email: 'email', date: 'date' }
 
 /**
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export default {
 	name: 'RepeatingGroup',
@@ -180,7 +180,7 @@ export default {
 	computed: {
 		/**
 		 * @return {Array<object>} The items.
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
 		 */
 		items() {
 			return Array.isArray(this.modelValue) ? this.modelValue : []
@@ -188,7 +188,7 @@ export default {
 
 		/**
 		 * @return {object} The repeat settings.
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
 		 */
 		repeat() {
 			return repeatOf(this.field)
@@ -196,7 +196,7 @@ export default {
 
 		/**
 		 * @return {Array<object>} The sub-questions.
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
 		 */
 		subFields() {
 			return Array.isArray(this.field.fields) ? this.field.fields : []
@@ -204,7 +204,7 @@ export default {
 
 		/**
 		 * @return {boolean} False once the maximum is reached.
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
 		 */
 		addable() {
 			return canAdd(this.field, this.items)
@@ -215,7 +215,7 @@ export default {
 		/**
 		 * @param {number} index The item's place.
 		 * @return {string} "Bewoner 2".
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
 		 */
 		titleOf(index) {
 			return itemTitle(this.field, index)
@@ -224,7 +224,7 @@ export default {
 		/**
 		 * @param {object} item The item.
 		 * @return {{first: string, rest: string}} What its card says.
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
 		 */
 		linesOf(item) {
 			return itemLines(this.field, item)
@@ -233,7 +233,7 @@ export default {
 		/**
 		 * @param {object} sub A sub-question.
 		 * @return {string} The input type.
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
 		 */
 		inputType(sub) {
 			return INPUT_TYPES[sub.type] || 'text'
@@ -244,7 +244,7 @@ export default {
 		 *
 		 * @param {number} index The item's place, or -1.
 		 * @return {void}
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
 		 */
 		open(index) {
 			this.editing = index
@@ -271,7 +271,7 @@ export default {
 		 * Keep the item when its required questions are answered; focus its card.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
 		 */
 		save() {
 			this.problems = itemErrors(this.field, this.draft, this.words.required)
@@ -287,7 +287,7 @@ export default {
 		 * Leave the questions without keeping anything; focus the card.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
 		 */
 		cancel() {
 			this.close(this.editing < 0 ? this.items.length - 1 : this.editing)
@@ -298,7 +298,7 @@ export default {
 		 *
 		 * @param {number} index The item's place.
 		 * @return {void}
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
 		 */
 		remove(index) {
 			this.$emit('update:modelValue', withoutItem(this.items, index))
@@ -311,7 +311,7 @@ export default {
 		 * @param {number} cardIndex The card to focus.
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+		 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
 		 */
 		close(cardIndex) {
 			this.editing = null
@@ -327,3 +327,50 @@ export default {
 	},
 }
 </script>
+
+<style scoped>
+/*
+ * The cards the FormulierKaart board draws for a repeating group: one bordered
+ * card per item, its title, lines and actions beside each other, the add
+ * button under the list (form-flow-repeating-groups-calculations-and-decisions
+ * T09, found live: the group had no styles of its own, so the cards ran
+ * together and "Wijzigen" and "Verwijderen" read as one word). Tokens only.
+ */
+.pq-group__list {
+	display: grid;
+	gap: var(--utrecht-space-block-sm, 0.5rem);
+	margin: 0 0 var(--utrecht-space-block-md, 1rem);
+	padding: 0;
+	list-style: none;
+}
+
+.pq-group__card {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	column-gap: var(--utrecht-space-inline-md, 1rem);
+	align-items: center;
+	padding: var(--utrecht-space-block-sm, 0.75rem) var(--utrecht-space-inline-md, 1rem);
+	border: 1px solid var(--nldesign-website-card-border-color, var(--nldesign-color-border, currentcolor));
+	border-radius: var(--nldesign-website-border-radius, 4px);
+}
+
+.pq-group__title,
+.pq-group__line {
+	grid-column: 1;
+	margin: 0;
+}
+
+.pq-group__actions {
+	display: flex;
+	flex-wrap: wrap;
+	grid-column: 2;
+	grid-row: 1 / span 3;
+	gap: var(--utrecht-space-inline-sm, 0.5rem);
+}
+
+.pq-group__form {
+	display: grid;
+	gap: var(--utrecht-space-block-sm, 0.75rem);
+	margin-block-end: var(--utrecht-space-block-md, 1rem);
+}
+</style>

@@ -10,6 +10,95 @@ import {
 } from './steps.js'
 
 /**
+ * @param {object} vm The component running the flow.
+ * @return {Array<object>} The fields of the step on screen that show.
+ */
+function shownFields(vm) {
+	return vm.currentStep.fields.filter((field) => vm.isShownField(field))
+}
+
+/**
+ * @param {object} vm The component running the flow.
+ * @return {boolean} Whether the step on screen decides, and the component can ask.
+ */
+function decidesHere(vm) {
+	return vm.currentStep.decides === true && typeof vm.decideStep === 'function'
+}
+
+/**
+ * The step "Volgende stap" opens: the review when the step was opened from
+ * it, else the next shown step, unless a deciding step names another.
+ *
+ * @param {object} vm The component running the flow.
+ * @return {Promise<number|null>} The step's index, or null while the rule engine is down.
+ */
+async function nextTarget(vm) {
+	const planned = vm.backToReview
+		? vm.flow.length - 1
+		: stepTo(vm.flow, vm.stepIndex, 1, vm.isShownField)
+	const target = decidesHere(vm) ? await decidedTarget(vm, planned) : planned
+	return target === null ? null : fetchedTarget(vm, target)
+}
+
+/**
+ * A step that fetches runs its fetches on the server before it opens, with
+ * the answers so far, so it shows what the connection answered. A fetch
+ * that does not answer keeps the step on screen, the answers and the draft
+ * as they are, and offers a retry (data-lookups-and-checks-in-forms
+ * REQ-DIF-005, situation 4).
+ *
+ * @param {object} vm The component running the flow.
+ * @param {number} target The step about to open.
+ * @return {Promise<number|null>} The step's index, or null when a fetch failed.
+ *
+ * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t05
+ */
+async function fetchedTarget(vm, target) {
+	const step = vm.flow[target]
+	if (!step || !Array.isArray(step.fetch) || typeof vm.fetchStep !== 'function') {
+		return target
+	}
+	vm.fetchDown = false
+	vm.fetching = true
+	try {
+		for (const fetch of step.fetch) {
+			await vm.fetchStep(step, fetch)
+		}
+		return target
+	} catch {
+		vm.fetchDown = true
+		return null
+	} finally {
+		vm.fetching = false
+	}
+}
+
+/**
+ * A step that decides asks the rule engine on the server; the step its
+ * outcome names opens next. The engine being down keeps the answers and
+ * offers a retry (form-flow-repeating-groups-calculations-and-decisions
+ * REQ-FFL-003).
+ *
+ * @param {object} vm The component running the flow.
+ * @param {number} planned The step that opens when the outcome names none.
+ * @return {Promise<number|null>} The step's index, or null when the engine is down.
+ */
+async function decidedTarget(vm, planned) {
+	vm.decisionDown = false
+	vm.deciding = true
+	try {
+		const decided = await vm.decideStep(vm.currentStep)
+		const named = stepIndexById(vm.flow, decided && decided.nextStep)
+		return named >= 0 && !vm.backToReview ? named : planned
+	} catch {
+		vm.decisionDown = true
+		return null
+	} finally {
+		vm.deciding = false
+	}
+}
+
+/**
  * The step flow both form renderers share (site-multi-step-forms T6, T7b):
  * one step at a time, "Volgende stap" checks only the step's shown fields,
  * "Vorige stap" never checks, a step whose fields are all hidden is skipped
@@ -24,6 +113,8 @@ import {
  * - `errors` (data) and `focusSummary()`, the error summary's;
  * - `decideStep(step)` (optional): asks the server to decide a step that
  *   `decides`, answering `{nextStep}`; a throw means the rule engine is down.
+ * - `fetchStep(step, fetch)` (optional): runs one fetch of a step that
+ *   declares `fetch` before it opens; a throw means the connection is down.
  * It puts `ref="stepHeading"` on the step heading.
  *
  * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
@@ -35,6 +126,8 @@ export default {
 			backToReview: false,
 			deciding: false,
 			decisionDown: false,
+			fetching: false,
+			fetchDown: false,
 		}
 	},
 
@@ -86,42 +179,14 @@ export default {
 		 * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
 		 */
 		async nextStep() {
-			const fields = this.currentStep.fields.filter((field) =>
-				this.isShownField(field),
-			)
-			this.errors = this.checkFields(fields)
+			this.errors = this.checkFields(shownFields(this))
 			if (Object.keys(this.errors).length > 0) {
 				this.$nextTick(() => this.focusSummary())
 				return
 			}
-			let target = this.backToReview
-				? this.flow.length - 1
-				: stepTo(this.flow, this.stepIndex, 1, this.isShownField)
-			// A step that decides asks the rule engine on the server; the step
-			// its outcome names opens next. The engine being down keeps the
-			// answers and offers a retry (form-flow-repeating-groups-
-			// calculations-and-decisions REQ-FFL-003).
-			if (
-				this.currentStep.decides === true
-				&& typeof this.decideStep === 'function'
-			) {
-				this.decisionDown = false
-				this.deciding = true
-				try {
-					const decided = await this.decideStep(this.currentStep)
-					const named = stepIndexById(
-						this.flow,
-						decided && decided.nextStep,
-					)
-					if (named >= 0 && !this.backToReview) {
-						target = named
-					}
-				} catch {
-					this.decisionDown = true
-					return
-				} finally {
-					this.deciding = false
-				}
+			const target = await nextTarget(this)
+			if (target === null) {
+				return
 			}
 			this.backToReview = false
 			this.openStep(target)

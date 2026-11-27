@@ -19,6 +19,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { afterEach, test } from 'node:test'
+import { DUTCH, summaryHeadingOf } from '../src/site/components/forms/fields.js'
 import {
 	confirmationText,
 	flowSteps,
@@ -236,7 +237,7 @@ test('a Woo request in steps: progress, per-step checks, the review round trip a
 	)
 	assert.equal(
 		form.textOf(form.find('form-progress-short')),
-		'Stap 1 van 4',
+		'Stap 1 van 4: Uw vraag',
 		'the short progress',
 	)
 	assert.ok(
@@ -440,6 +441,7 @@ test('an attached Woo action runs the same steps and forwards through the row ac
 		block.textOf(block.find('schema-form-step-heading')),
 		'Stap 1 van 2: uw vraag',
 	)
+	assert.ok(block.find('attached-action-cancel') !== null, 'before the send it can be cancelled')
 
 	await type(block, 'f-startWooVerzoek-onderwerp', 'De brug')
 	await press(block)
@@ -452,6 +454,13 @@ test('an attached Woo action runs the same steps and forwards through the row ac
 		block.textOf(block.find('schema-form-confirmation-body')),
 		'Uw zaaknummer is 2026-0004.',
 	)
+
+	// attached-form-confirmation-drops-cancel: a sent request has nothing left
+	// to cancel; the confirmation offers to close instead.
+	assert.equal(block.find('attached-action-cancel'), null)
+	await block.fire(block.find('attached-action-close'), 'click')
+	assert.equal(block.find('attached-action-steps'), null)
+	assert.ok(block.find('attached-action-startWooVerzoek') !== null)
 })
 
 // endpoint-action-forms-keep-their-field-shape REQ-EAF-003: a refusal the app
@@ -597,4 +606,16 @@ test('a published form in steps: the review, then the confirmation heading takes
 		form.textOf(form.find('intake-form-done')),
 		/Wij halen het op\. Uw kenmerk: MLD-7/,
 	)
+})
+
+test('a failed step counts its errors; a failed send reads "Er ontbreekt nog iets" (REQ-SMF-002)', () => {
+	assert.equal(summaryHeadingOf({ count: 1, step: true }, DUTCH), 'Er is 1 fout')
+	assert.equal(summaryHeadingOf({ count: 3, step: true }, DUTCH), 'Er zijn 3 fouten')
+	assert.equal(
+		summaryHeadingOf({ count: 3, step: false }, DUTCH),
+		'Er ontbreekt nog iets',
+	)
+	const intake = readFileSync(INTAKE, 'utf8')
+	assert.match(intake, /:heading="summaryHeading"/)
+	assert.match(intake, /step: this\.hasSteps && !this\.onReview/)
 })

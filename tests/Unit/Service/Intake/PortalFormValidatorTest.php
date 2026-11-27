@@ -322,7 +322,7 @@ class PortalFormValidatorTest extends TestCase {
 	 * form-flow-repeating-groups-calculations-and-decisions REQ-FFL-001: a group
 	 * is a list whose count fits repeat.min and repeat.max.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
 	 */
 	public function testAGroupMustHoldBetweenMinAndMaxItems(): void {
 		$group = ['name' => 'bewoners', 'type' => 'group', 'repeat' => ['min' => 2, 'max' => 3], 'fields' => [['name' => 'naam', 'required' => true]]];
@@ -348,7 +348,7 @@ class PortalFormValidatorTest extends TestCase {
 	 * REQ-FFL-001: the server names the item and the field, and keeps only the
 	 * sub-fields the group declares.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t01
 	 */
 	public function testTheServerChecksEachItemAndNamesItAndTheField(): void {
 		$group = ['name' => 'bewoners', 'type' => 'group', 'repeat' => ['min' => 1], 'fields' => [['name' => 'naam', 'required' => true], ['name' => 'huisnummer']]];
@@ -376,7 +376,7 @@ class PortalFormValidatorTest extends TestCase {
 	 * REQ-FFL-002: a calculated or decided field is never taken from the browser,
 	 * and being absent from the submission is not a missing answer.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
 	public function testACalculatedFieldIsNeverTakenFromTheBrowser(): void {
 		$fields = [
@@ -415,6 +415,46 @@ class PortalFormValidatorTest extends TestCase {
 		$this->assertArrayHasKey('handtekening', $validator->validate(fields: $fields, answers: ['handtekening' => $png(str_repeat('a', 200001))])['errors'], 'over the limit');
 		$this->assertTrue($validator->validate(fields: [['name' => 'handtekening', 'type' => 'signature']], answers: [])['valid'], 'optional may stay empty');
 	}//end testASignatureIsAPngUnder200kbAndARequiredOneMayNotBeEmpty()
+
+	/**
+	 * A form mixing every kind of field validates exactly as recorded, errors and answers in declared order.
+	 *
+	 * @return void
+	 */
+	public function testAMixedFormIsAsRecorded(): void {
+		$fields = array_merge(
+			['not a field', ['label' => 'No name'], ['name' => '']],
+			$this->partnerForm(),
+			[
+				['name' => 'bewoners', 'type' => 'group', 'repeat' => ['min' => 1], 'fields' => [['name' => 'naam', 'required' => true]]],
+				['name' => 'soort', 'computed' => true],
+				['name' => 'telefoon', 'required' => true],
+				['name' => 'opmerking'],
+				['name' => 'kamers', 'type' => 'group', 'fields' => [['name' => 'naam']]],
+				['name' => 'together', 'required' => true],
+			]
+		);
+		$answers = [
+			'together' => 'No',
+			'partnerName' => 'Sam',
+			'partnerBirthDate' => '1990-01-01',
+			'bewoners' => [['naam' => 'Ans'], ['naam' => ' ']],
+			'soort' => 'gehackt',
+			'opmerking' => '',
+			'invented' => 'x',
+		];
+
+		$result = $this->validator()->validate(fields: $fields, answers: $answers);
+
+		$this->assertSame(
+			[
+				'valid' => false,
+				'errors' => ['bewoners[1].naam' => 'This answer is required.', 'telefoon' => 'This answer is required.'],
+				'answers' => ['together' => 'No', 'bewoners' => [['naam' => 'Ans'], []]],
+			],
+			$result
+		);
+	}//end testAMixedFormIsAsRecorded()
 
 	/**
 	 * The validator with a translator that answers the text it was given.

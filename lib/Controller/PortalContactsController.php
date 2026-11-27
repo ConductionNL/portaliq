@@ -17,18 +17,18 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\Identity\PortalAccountLookup;
-use OCA\Portaliq\Service\Identity\PortalContactService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContactServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -40,7 +40,7 @@ use OCP\IRequest;
 /**
  * The bearer's own contacts. Every answer is scoped to the bearer's own rows.
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
  */
 class PortalContactsController extends Controller implements PortalProtected {
 
@@ -48,17 +48,17 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalContactService $contacts The contact rules.
-	 * @param PortalAccountLookup $accounts Reads the bearer's name.
+	 * @param BearerSessionResolverInterface $session Resolves the subject from the bearer.
+	 * @param PortalContactServiceInterface $contacts The contact rules.
+	 * @param PortalAccountLookupInterface $accounts Reads the bearer's name.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly PortalContactService $contacts,
-		private readonly PortalAccountLookup $accounts,
+		private readonly BearerSessionResolverInterface $session,
+		private readonly PortalContactServiceInterface $contacts,
+		private readonly PortalAccountLookupInterface $accounts,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -66,7 +66,7 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse The overview, or 401 without a session.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -88,7 +88,7 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{sent: true}`, or 400, 409 or 429 with the reason.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -112,7 +112,7 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{sent: true}`, 404 or 401.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -137,7 +137,7 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{sent: true}`, 404 or 401.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -158,7 +158,7 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{sent: true}`, 404 or 401.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -179,7 +179,7 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{sent: true}`, 404 or 401.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -200,7 +200,7 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{sent: true}` when joined, 404 for a link that is unknown, expired or used.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -225,11 +225,11 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 */
 	private function answer(string $result): JSONResponse {
 		$status = match ($result) {
-			PortalContactService::SENT => Http::STATUS_OK,
-			PortalContactService::INVALID => Http::STATUS_BAD_REQUEST,
-			PortalContactService::DUPLICATE => Http::STATUS_CONFLICT,
-			PortalContactService::LIMIT => Http::STATUS_TOO_MANY_REQUESTS,
-			PortalContactService::NOT_FOUND => Http::STATUS_NOT_FOUND,
+			PortalContactServiceInterface::SENT => Http::STATUS_OK,
+			PortalContactServiceInterface::INVALID => Http::STATUS_BAD_REQUEST,
+			PortalContactServiceInterface::DUPLICATE => Http::STATUS_CONFLICT,
+			PortalContactServiceInterface::LIMIT => Http::STATUS_TOO_MANY_REQUESTS,
+			PortalContactServiceInterface::NOT_FOUND => Http::STATUS_NOT_FOUND,
 			default => Http::STATUS_INTERNAL_SERVER_ERROR,
 		};
 		if ($status === Http::STATUS_OK) {
@@ -245,7 +245,7 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 * @return JSONResponse
 	 */
 	private function unauthenticated(): JSONResponse {
-		return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		return (new SignedInSubject())->unauthenticated();
 	}//end unauthenticated()
 
 	/**
@@ -254,8 +254,8 @@ class PortalContactsController extends Controller implements PortalProtected {
 	 * @return array<string, mixed>|null
 	 */
 	private function subject(): ?array {
-		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
-		if ($subject === null || (string)($subject['subjectRef'] ?? '') === '') {
+		$subject = (new SignedInSubject())->resolve(session: $this->session, request: $this->request);
+		if ($subject === null) {
 			return null;
 		}
 

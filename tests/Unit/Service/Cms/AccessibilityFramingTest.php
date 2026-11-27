@@ -22,7 +22,7 @@ use PHPUnit\Framework\TestCase;
  * The site may be framed by its own origin only for a measurement request
  * from a user who may measure (site-accessibility-statement REQ-SAS-001).
  *
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
  */
 class AccessibilityFramingTest extends TestCase {
 

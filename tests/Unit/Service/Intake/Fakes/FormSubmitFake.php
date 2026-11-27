@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Intake\Fakes;
 
+use OCA\OpenRegister\Service\Form\FormSubmission;
+use OCA\OpenRegister\Service\Form\FormSubmitter;
 use Throwable;
 
 /**
@@ -29,20 +31,18 @@ class FormSubmitFake {
 	}//end __construct()
 
 	/**
-	 * OpenRegister's signature.
+	 * OpenRegister's submit: one FormSubmission and the Idempotency-Key.
 	 *
-	 * @param array<string, mixed>      $destination    The destination.
-	 * @param array<string, mixed>|null $mapping        The mapping.
-	 * @param array<string, mixed>      $payload        The payload.
-	 * @param mixed                     $subject        The subject.
-	 * @param string|null               $idempotencyKey The key.
-	 * @param string                    $scope          The scope.
-	 * @param string|null               $draftId        The draft.
+	 * Recorded flat (destination = the first write without its mapping) so the
+	 * tests read what was asked, not how it was packed.
+	 *
+	 * @param FormSubmission $submission     The writes, payload and submitter.
+	 * @param string|null    $idempotencyKey The key, when sent.
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function submit(array $destination, ?array $mapping, array $payload, mixed $subject = null, ?string $idempotencyKey = null, string $scope = '', ?string $draftId = null, mixed $owner = null): array {
-		$this->calls[] = compact('destination', 'mapping', 'payload', 'subject', 'idempotencyKey', 'scope', 'draftId', 'owner');
+	public function submit(FormSubmission $submission, ?string $idempotencyKey = null): array {
+		$this->calls[] = $this->flatten(submission: $submission) + ['idempotencyKey' => $idempotencyKey];
 		if ($this->outcome instanceof Throwable) {
 			throw $this->outcome;
 		}
@@ -50,13 +50,15 @@ class FormSubmitFake {
 		return $this->outcome;
 	}//end submit()
 
-		/**
-	 * FormSubmitService::saveDraft's signature (decisions 180 and 195).
+	/**
+	 * OpenRegister's draft save: one FormSubmission.
+	 *
+	 * @param FormSubmission $submission The one write, payload and submitter.
 	 *
 	 * @return array<string, mixed>
 	 */
-	public function saveDraft(array $destination, ?array $mapping, array $payload, mixed $subject, ?string $draftId = null, string $scope = '', mixed $owner = null): array {
-		$this->calls[] = ['saveDraft' => true] + compact('destination', 'mapping', 'payload', 'subject', 'draftId', 'scope', 'owner');
+	public function saveDraft(FormSubmission $submission): array {
+		$this->calls[] = ['saveDraft' => true] + $this->flatten(submission: $submission);
 		if ($this->outcome instanceof Throwable) {
 			throw $this->outcome;
 		}
@@ -65,12 +67,16 @@ class FormSubmitFake {
 	}//end saveDraft()
 
 	/**
-	 * FormSubmitService::findDraft's signature: answers `$found`.
+	 * OpenRegister's draft lookup: the destination pair, the submitter and the match.
+	 *
+	 * @param array<string, mixed> $destination The destination pair.
+	 * @param FormSubmitter        $submitter   The subject and owner.
+	 * @param array<string, mixed> $match       Values the draft must hold.
 	 *
 	 * @return array<string, mixed>|null
 	 */
-	public function findDraft(array $destination, mixed $subject, mixed $owner = null, array $match = []): ?array {
-		$this->calls[] = ['findDraft' => true] + compact('destination', 'subject', 'owner', 'match');
+	public function findDraft(array $destination, FormSubmitter $submitter, array $match = []): ?array {
+		$this->calls[] = ['findDraft' => true, 'destination' => $destination, 'subject' => $submitter->subject, 'owner' => $submitter->owner, 'match' => $match];
 		if ($this->found instanceof Throwable) {
 			throw $this->found;
 		}
@@ -79,10 +85,29 @@ class FormSubmitFake {
 	}//end findDraft()
 
 	/**
-	 * What findDraft answers.
+	 * A submission as the flat record the tests assert on.
 	 *
-	 * @var array<string, mixed>|Throwable|null
+	 * @param FormSubmission $submission The submission.
+	 *
+	 * @return array<string, mixed>
 	 */
+	private function flatten(FormSubmission $submission): array {
+		$write   = ($submission->writes[0] ?? []);
+		$mapping = ($write['mapping'] ?? null);
+		unset($write['mapping']);
+
+		return [
+			'destination' => $write,
+			'mapping' => $mapping,
+			'writes' => $submission->writes,
+			'payload' => $submission->payload,
+			'subject' => $submission->subject,
+			'scope' => $submission->scope,
+			'draftId' => $submission->draftId,
+			'owner' => $submission->owner,
+		];
+	}//end flatten()
+
 	public array|Throwable|null $found = null;
 
 	/**

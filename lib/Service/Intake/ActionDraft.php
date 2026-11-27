@@ -33,15 +33,17 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Contribution\EndpointDraftSchema;
 use DateTimeImmutable;
 use OCA\Portaliq\Contribution\ActionScopeResolver;
-use OCA\Portaliq\Contribution\CreateBody;
-use OCA\Portaliq\Contribution\FileFieldConfigNormaliser;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
+use OCA\Portaliq\Kernel\Contracts\ActionDraftInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Contribution\FieldMap;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSessionService;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\CreateBodyInterface;
 
 /**
  * Resolves a create action's draft: its action, destination, body and retention.
@@ -49,8 +51,9 @@ use Throwable;
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
  *
  * @SuppressWarnings(PHPMD.StaticAccess) -- PortalSessionService::trustSatisfies, the one trust rule every portal path uses.
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class ActionDraft {
+class ActionDraft implements ActionDraftInterface {
 	/**
 	 * Retention when the action declares none (decision 201).
 	 */
@@ -69,16 +72,18 @@ class ActionDraft {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalContributionRegistry $registry The subject's aggregate of actions.
+	 * @param PortalContributionRegistryInterface $registry The subject's aggregate of actions.
 	 * @param PortalObjectReader         $reader   Resolves the action's scope claim.
 	 * @param PortalObjectWriter         $writer   Applies the create's ownership stamps.
 	 * @param DestinationDraft           $drafts   Finds and discards drafts in OpenRegister.
+	 * @param CreateBodyInterface $createBody The CreateBody helper.
 	 */
 	public function __construct(
-		private readonly PortalContributionRegistry $registry,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly DestinationDraft $drafts,
+		private readonly CreateBodyInterface $createBody,
 	) {
 	}//end __construct()
 
@@ -111,6 +116,98 @@ class ActionDraft {
 	}//end actionFor()
 
 	/**
+	 * The subject's live drafts, one per action that declares a draft and can
+	 * keep one: its app, action, label, last save and expiry. A draft past its
+	 * retention is discarded on the way, as find() does (REQ-FSR-003).
+	 *
+	 * @param array<string, mixed> $subject The resolved portal subject.
+	 *
+	 * @return array<int, array{app: string, action: string, label: string, updatedAt: string, expiresAt: string}>
+	 *
+	 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+	 */
+	public function liveDrafts(array $subject): array {
+		$subjectRef = (string)($subject['subjectRef'] ?? '');
+		$live       = [];
+		foreach (($this->registry->aggregateFor($subject)['contributions'] ?? []) as $contribution) {
+			if (is_array($contribution) === false) {
+				continue;
+			}
+
+			array_push($live, ...$this->liveDraftsOf(contribution: $contribution, subject: $subject, subjectRef: $subjectRef));
+		}
+
+		return $live;
+	}//end liveDrafts()
+
+	/**
+	 * One contribution's live drafts, one per action that declares a draft and can keep one.
+	 *
+	 * @param array<string, mixed> $contribution The contribution.
+	 * @param array<string, mixed> $subject      The resolved portal subject.
+	 * @param string               $subjectRef   The subject's reference.
+	 *
+	 * @return array<int, array{app: string, action: string, label: string, updatedAt: string, expiresAt: string}>
+	 *
+	 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+	 */
+	private function liveDraftsOf(array $contribution, array $subject, string $subjectRef): array {
+		$live  = [];
+		$appId = (string)($contribution['app'] ?? '');
+		foreach ((array)($contribution['actions'] ?? []) as $action) {
+			if ($this->keepsDraft(action: $action, subject: $subject) === false) {
+				continue;
+			}
+
+			$draft = $this->find(action: $action, subjectRef: $subjectRef);
+			if ($draft === null) {
+				continue;
+			}
+
+			$live[] = $this->draftEntry(appId: $appId, action: $action, draft: $draft);
+		}
+
+		return $live;
+	}//end liveDraftsOf()
+
+	/**
+	 * Whether an action declares a draft and can keep one for the subject.
+	 *
+	 * @param mixed                $action  The action.
+	 * @param array<string, mixed> $subject The resolved portal subject.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+	 */
+	private function keepsDraft(mixed $action, array $subject): bool {
+		return is_array($action) === true
+			&& is_array($action['draft'] ?? null) === true
+			&& $this->isDraftable(action: $action, subject: $subject) === true;
+	}//end keepsDraft()
+
+	/**
+	 * The listed entry of one live draft.
+	 *
+	 * @param string               $appId  The contributing app.
+	 * @param array<string, mixed> $action The action.
+	 * @param array<string, mixed> $draft  The live draft.
+	 *
+	 * @return array{app: string, action: string, label: string, updatedAt: string, expiresAt: string}
+	 *
+	 * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
+	 */
+	private function draftEntry(string $appId, array $action, array $draft): array {
+		return [
+			'app'       => $appId,
+			'action'    => (string)($action['id'] ?? ''),
+			'label'     => (string)($action['label'] ?? ''),
+			'updatedAt' => (string)($draft['updatedAt'] ?? ''),
+			'expiresAt' => (string)$draft['expiresAt'],
+		];
+	}//end draftEntry()
+
+	/**
 	 * Where the action's draft lives: the register and schema it creates in.
 	 *
 	 * @param array<string, mixed> $action The create action.
@@ -118,8 +215,15 @@ class ActionDraft {
 	 * @return array{register: string, schema: string}
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
+	 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T2
 	 */
 	public function destinationOf(array $action): array {
+		// An endpoint action keeps its draft on the schema it declares (endpoint-forward-draft-schema).
+		$elsewhere = (new EndpointDraftSchema())->destinationOf(action: $action);
+		if ($elsewhere !== null) {
+			return $elsewhere;
+		}
+
 		return ['register' => (string)($action['register'] ?? ''), 'schema' => (string)($action['schema'] ?? '')];
 	}//end destinationOf()
 
@@ -134,6 +238,7 @@ class ActionDraft {
 	 * @return array<string, mixed>|null Null when the action's scope claim does not resolve.
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
+	 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T2
 	 */
 	public function bodyOf(array $match, array $subject, array $answers): ?array {
 		$action = $match['action'];
@@ -142,21 +247,57 @@ class ActionDraft {
 			return null;
 		}
 
+		$kept = $this->keptAnswers(action: $action, answers: $answers);
+
+		return $this->writer->stamp(
+			schema: $this->destinationOf(action: $action)['schema'],
+			scopeField: $this->draftScopeField(action: $action),
+			subjectRef: $stamp,
+			organisation: (string)($subject['organisation'] ?? ''),
+			data: (new FieldMap())->apply(action: $action, body: $this->createBody->build(action: $action, whitelisted: $kept))
+		);
+	}//end bodyOf()
+
+	/**
+	 * The field a draft is stamped with: a create action's `scopeField`, or for
+	 * an endpoint action that keeps its draft elsewhere the field it sends the
+	 * subject in.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T2
+	 */
+	private function draftScopeField(array $action): string {
+		$elsewhere = new EndpointDraftSchema();
+		if ($elsewhere->keepsDraftElsewhere(action: $action) === true) {
+			return $elsewhere->scopeFieldOf(action: $action);
+		}
+
+		return (string)($action['scopeField'] ?? 'subjectRef');
+	}//end draftScopeField()
+
+	/**
+	 * The declared, non-file answers that were sent and are not null.
+	 *
+	 * @param array<string, mixed> $action  The create action.
+	 * @param array<string, mixed> $answers The answers sent.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
+	 */
+	private function keptAnswers(array $action, array $answers): array {
 		$kept = [];
-		foreach ($this->answerFields(action: $action) as $field) {
+		foreach ((new ActionAnswerFields())->forAction(action: $action) as $field) {
 			if (array_key_exists($field, $answers) === true && $answers[$field] !== null) {
 				$kept[$field] = $answers[$field];
 			}
 		}
 
-		return $this->writer->stamp(
-			schema: (string)($action['schema'] ?? ''),
-			scopeField: (string)($action['scopeField'] ?? 'subjectRef'),
-			subjectRef: $stamp,
-			organisation: (string)($subject['organisation'] ?? ''),
-			data: (new CreateBody())->build(action: $action, whitelisted: $kept)
-		);
-	}//end bodyOf()
+		return $kept;
+	}//end keptAnswers()
 
 	/**
 	 * The subject's live draft of the action, or null. An expired one is discarded and reads as none.
@@ -198,9 +339,9 @@ class ActionDraft {
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 	 */
 	public function answersOf(array $action, array $draft): array {
-		$data    = (array)($draft['data'] ?? []);
+		$data    = (new FieldMap())->reverse(action: $action, data: (array)($draft['data'] ?? []));
 		$answers = [];
-		foreach ($this->answerFields(action: $action) as $field) {
+		foreach ((new ActionAnswerFields())->forAction(action: $action) as $field) {
 			if (array_key_exists($field, $data) === true) {
 				$answers[$field] = $data[$field];
 			}
@@ -285,38 +426,16 @@ class ActionDraft {
 	 * @param array<string, mixed> $subject The subject.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T2
 	 */
 	private function isDraftable(array $action, array $subject): bool {
 		$destination = $this->destinationOf(action: $action);
+		$kind        = (($action['type'] ?? '') === 'create' || (new EndpointDraftSchema())->keepsDraftElsewhere(action: $action) === true);
 
-		return ($action['type'] ?? '') === 'create'
+		return $kind === true
 			&& $destination['register'] !== ''
 			&& $destination['schema'] !== ''
 			&& PortalSessionService::trustSatisfies(($subject['trust'] ?? ''), ($action['minTrust'] ?? null)) === true;
 	}//end isDraftable()
-
-	/**
-	 * The action's answer fields: declared, not `claims`, not a file.
-	 *
-	 * @param array<string, mixed> $action The action.
-	 *
-	 * @return array<int, string>
-	 */
-	private function answerFields(array $action): array {
-		$files = [];
-		foreach ((array)($action['fieldConfigs'] ?? []) as $field => $config) {
-			if (is_array($config) === true && ($config['type'] ?? null) === FileFieldConfigNormaliser::TYPE_FILE) {
-				$files[] = (string)$field;
-			}
-		}
-
-		$fields = [];
-		foreach ((array)($action['fields'] ?? []) as $field) {
-			if (is_string($field) === true && $field !== '' && $field !== 'claims' && in_array($field, $files, true) === false) {
-				$fields[] = $field;
-			}
-		}
-
-		return $fields;
-	}//end answerFields()
 }//end class

@@ -38,7 +38,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
 use OCP\IAppConfig;
 
 /**
@@ -46,7 +47,7 @@ use OCP\IAppConfig;
  *
  * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
  */
-class PortalPartyTreeResolver {
+class PortalPartyTreeResolver implements PortalPartyTreeResolverInterface {
 	/**
 	 * The default maximum depth of the walk.
 	 */
@@ -268,7 +269,7 @@ class PortalPartyTreeResolver {
 	 * @return string The value.
 	 */
 	private function config(string $key, string $default): string {
-		$value = trim($this->appConfig->getValueString(Application::APP_ID, $key, ''));
+		$value = trim($this->appConfig->getValueString(AppIdentity::APP_ID, $key, ''));
 		if ($value === '') {
 			return $default;
 		}

@@ -32,11 +32,39 @@ class OidcStateStoreServiceTest extends TestCase {
 
 		$consumed = $service->consume(state: 'state-1');
 		$this->assertSame(
-			['nonce' => 'nonce-1', 'codeVerifier' => 'verifier-1', 'org' => 'gemeente-x', 'provider' => 'eherkenning', 'returnTo' => '/portal', 'route' => 'oidc', 'silent' => false],
+			['nonce' => 'nonce-1', 'codeVerifier' => 'verifier-1', 'org' => 'gemeente-x', 'provider' => 'eherkenning', 'returnTo' => '/portal', 'route' => 'oidc', 'silent' => false, 'portal' => ''],
 			$consumed
 		);
 
 	}//end testCreateThenConsumeReturnsTheStoredPayload()
+
+	/**
+	 * portal-scoping-and-auth Task 4: an OIDC and a broker row both keep the
+	 * portal the login started on, fit the real portalOidcState schema, and
+	 * hand it back once consumed, so the callback binds the session to it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-session-must-be-scoped-to-the-portal-that-minted-it
+	 */
+	public function testARowKeepsThePortalTheLoginStartedOn(): void {
+		$store   = [];
+		$service = $this->serviceWithStore(store: $store);
+
+		$this->assertTrue($service->create(state: 'state-p', nonce: 'nonce-p', codeVerifier: 'verifier-p', org: 'gemeente-x', provider: 'digid', returnTo: '/portal', portal: 'portal-a'));
+		$this->assertTrue($service->createBroker(state: 'relay-p', org: 'gemeente-x', provider: 'digid', returnTo: '/portal', portal: 'portal-b'));
+
+		$register   = json_decode((string)file_get_contents(__DIR__ . '/../../../lib/Settings/portaliq_register.json'), true);
+		$schema     = $register['components']['schemas']['portalOidcState'];
+		$jsonSchema = json_decode((string)json_encode(['type' => 'object', 'required' => $schema['required'], 'properties' => $schema['properties'], 'additionalProperties' => false]), false);
+		foreach ($store as $row) {
+			unset($row['uuid']);
+			$this->assertTrue((new Validator())->validate(json_decode((string)json_encode($row), false), $jsonSchema)->isValid(), 'the row fits portalOidcState with nothing undeclared');
+		}
+
+		$this->assertSame('portal-a', $service->consume(state: 'state-p')['portal']);
+		$this->assertSame('portal-b', $service->consume(state: 'relay-p')['portal']);
+	}//end testARowKeepsThePortalTheLoginStartedOn()
 
 	/**
 	 * signin-integriq-broker-login T03: a broker row records its route, has no

@@ -15,21 +15,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t02
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Identity;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Contribution\ConfirmationMailKeys;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\ConfirmationMailKeysInterface;
+use OCA\Portaliq\Kernel\Contracts\ContactConfirmationMailerInterface;
 use OCA\Portaliq\Service\Mail\MailLog;
+use OCA\Portaliq\Service\Mail\MailSite;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCA\Portaliq\Service\PortalAccountService;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
-use OCA\Portaliq\Service\PortalOrganisationConfigService;
-use OCA\Portaliq\Service\PortalResolver;
+use OCP\IL10N;
 use OCP\L10N\IFactory;
 use OCP\Mail\IMailer;
 use Psr\Log\LoggerInterface;
@@ -41,23 +42,18 @@ use Throwable;
  * The mail names the subject the resident chose and links to the portal. It
  * never repeats the question text: no content in mail, as for every notice.
  * It goes to the account's confirmed address and to nobody else; without one,
- * nothing is sent and nothing is claimed.
+ * or for a withdrawn (void) account, nothing is sent and nothing is claimed.
  *
- * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t02
  */
-class ContactConfirmationMailer {
-	private const DEFAULT_LANGUAGE = 'nl';
-
-	private const DEFAULT_NAME = 'Portaliq';
-
+class ContactConfirmationMailer implements ContactConfirmationMailerInterface {
 	/**
 	 * Constructor.
 	 *
 	 * @param IMailer                       $mailer        Sends the mail.
 	 * @param IFactory                      $l10nFactory   Gives the portal's language.
 	 * @param PortalDeepLinkBuilder         $deepLinks     Builds the portal link.
-	 * @param PortalResolver                $portals       Finds the organisation's portal.
-	 * @param PortalOrganisationConfigService $organisations Names the organisation.
+	 * @param MailSite                $site       The portal, name and language a mail is sent with.
 	 * @param PortalAccountService          $accounts      Reads the account's address.
 	 * @param LoggerInterface               $logger        Logs a mail that was not sent.
 	 * @param MailTemplateRenderer|null     $renderer      Swaps in a portal's own text.
@@ -67,8 +63,7 @@ class ContactConfirmationMailer {
 		private readonly IMailer $mailer,
 		private readonly IFactory $l10nFactory,
 		private readonly PortalDeepLinkBuilder $deepLinks,
-		private readonly PortalResolver $portals,
-		private readonly PortalOrganisationConfigService $organisations,
+		private readonly MailSite $site,
 		private readonly PortalAccountService $accounts,
 		private readonly LoggerInterface $logger,
 		private readonly ?MailTemplateRenderer $renderer=null,
@@ -88,16 +83,15 @@ class ContactConfirmationMailer {
 	 *
 	 * @return bool True when a mail went out.
 	 *
-	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t02
 	 */
 	public function afterCreate(array $subject, array $action, array $data): bool {
-		if (in_array(($action['confirmationMail'] ?? null), ConfirmationMailKeys::TEMPLATES, true) === false) {
+		if (in_array(($action['confirmationMail'] ?? null), ConfirmationMailKeysInterface::TEMPLATES, true) === false) {
 			return false;
 		}
 
 		try {
-			$account = $this->accounts->findBySubjectRef(subjectRef: (string)($subject['subjectRef'] ?? ''));
-			$email   = trim((string)($account['email'] ?? ''));
+			$email = $this->address(subjectRef: (string)($subject['subjectRef'] ?? ''));
 			if ($email === '' || $this->mailer->validateMailAddress($email) === false) {
 				return false;
 			}
@@ -115,6 +109,23 @@ class ContactConfirmationMailer {
 			return false;
 		}
 	}//end afterCreate()
+
+	/**
+	 * The account's address, or '' when there is none or the account was withdrawn.
+	 *
+	 * @param string $subjectRef The resident.
+	 *
+	 * @return string
+	 */
+	private function address(string $subjectRef): string {
+		$account = $this->accounts->findBySubjectRef(subjectRef: $subjectRef);
+		if (($account['status'] ?? '') === PortalAccountService::STATUS_VOID) {
+			$this->logger->info('Portaliq: no question confirmation to a withdrawn account', ['account' => (string)($account['id'] ?? '')]);
+			return '';
+		}
+
+		return trim((string)($account['email'] ?? ''));
+	}//end address()
 
 	/**
 	 * The subject the resident chose, in the words the action gives it.
@@ -149,18 +160,32 @@ class ContactConfirmationMailer {
 	 * @return bool True when the mail server took it.
 	 */
 	private function send(string $email, string $organisation, string $topic): bool {
-		$portal = $this->portalOf(organisation: $organisation);
-		$name   = $this->nameOf(portal: $portal, organisation: $organisation);
+		$portal = $this->site->portal(organisation: $organisation);
+		$name   = $this->site->name(portal: $portal, organisation: $organisation);
 		$link   = $this->deepLinks->forSite(portalSlug: trim((string)($portal['slug'] ?? '')), organisation: $organisation);
-		$l10n   = $this->l10nFactory->get(Application::APP_ID, $this->languageOf(portal: $portal));
-
-		$subject = $l10n->t('We have received your question');
-		$body    = $l10n->t('Your question has reached %1$s. You find it back under My questions.', [$name]);
-		if ($topic !== '') {
-			$body = $l10n->t('Your question about %1$s has reached %2$s. You find it back under My questions.', [$topic, $name]);
-		}
+		$l10n   = $this->l10nFactory->get(AppIdentity::APP_ID, $this->site->language(portal: $portal));
 
 		$slug = trim((string)($portal['slug'] ?? ''));
+		$text = $this->confirmationText(l10n: $l10n, name: $name, topic: $topic, slug: $slug);
+		$sent = $this->sendMail(l10n: $l10n, text: $text, link: $link, email: $email);
+		$this->logSend(slug: $slug, email: $email, sent: $sent);
+
+		return $sent;
+	}//end send()
+
+	/**
+	 * The confirmation's subject and body, through the portal's mail template when one renders.
+	 *
+	 * @param IL10N  $l10n  The portal's language.
+	 * @param string $name  The organisation's name.
+	 * @param string $topic The chosen subject, or ''.
+	 * @param string $slug  The portal slug.
+	 *
+	 * @return array{subject: string, body: string}
+	 */
+	private function confirmationText(IL10N $l10n, string $name, string $topic, string $slug): array {
+		$subject = $l10n->t('We have received your question');
+		$body    = $this->confirmationBody(l10n: $l10n, name: $name, topic: $topic);
 		if ($this->renderer !== null) {
 			$text    = $this->renderer->render(
 				portal: $slug,
@@ -173,11 +198,43 @@ class ContactConfirmationMailer {
 			$body    = $text['body'];
 		}
 
+		return ['subject' => $subject, 'body' => $body];
+	}//end confirmationText()
+
+	/**
+	 * The confirmation's default body, naming the topic when there is one.
+	 *
+	 * @param IL10N  $l10n  The portal's language.
+	 * @param string $name  The organisation's name.
+	 * @param string $topic The chosen subject, or ''.
+	 *
+	 * @return string
+	 */
+	private function confirmationBody(IL10N $l10n, string $name, string $topic): string {
+		$body = $l10n->t('Your question has reached %1$s. You find it back under My questions.', [$name]);
+		if ($topic !== '') {
+			$body = $l10n->t('Your question about %1$s has reached %2$s. You find it back under My questions.', [$topic, $name]);
+		}
+
+		return $body;
+	}//end confirmationBody()
+
+	/**
+	 * Write and send the confirmation mail.
+	 *
+	 * @param IL10N                                $l10n  The portal's language.
+	 * @param array{subject: string, body: string} $text  The subject and body.
+	 * @param string                               $link  The link to My questions.
+	 * @param string                               $email The confirmed address.
+	 *
+	 * @return bool True when the mail server took it.
+	 */
+	private function sendMail(IL10N $l10n, array $text, string $link, string $email): bool {
 		$mail = $this->mailer->createEMailTemplate('portaliq.contact.confirmation', []);
-		$mail->setSubject($subject);
+		$mail->setSubject($text['subject']);
 		$mail->addHeader();
 		$mail->addHeading($l10n->t('We have received your question'));
-		$mail->addBodyText($body);
+		$mail->addBodyText($text['body']);
 
 		$mail->addBodyButton($l10n->t('Open My questions'), $link);
 		$mail->addFooter();
@@ -186,7 +243,19 @@ class ContactConfirmationMailer {
 		$message->setTo([$email]);
 		$message->useTemplate($mail);
 
-		$sent = (count($this->mailer->send($message)) === 0);
+		return (count($this->mailer->send($message)) === 0);
+	}//end sendMail()
+
+	/**
+	 * Log the send, when there is a mail log.
+	 *
+	 * @param string $slug  The portal slug.
+	 * @param string $email The confirmed address.
+	 * @param bool   $sent  Whether the mail server took it.
+	 *
+	 * @return void
+	 */
+	private function logSend(string $slug, string $email, bool $sent): void {
 		if ($this->mailLog !== null) {
 			$status = 'failed';
 			if ($sent === true) {
@@ -195,65 +264,5 @@ class ContactConfirmationMailer {
 
 			$this->mailLog->record(portal: $slug, templateKey: 'contact-confirmation', email: $email, status: $status);
 		}
-
-		return $sent;
-	}//end send()
-
-	/**
-	 * The organisation's portal, or null.
-	 *
-	 * @param string $organisation The organisation slug.
-	 *
-	 * @return array<string, mixed>|null
-	 */
-	private function portalOf(string $organisation): ?array {
-		try {
-			return $this->portals->resolveByOrganisation(organisation: $organisation);
-		} catch (Throwable) {
-			return null;
-		}
-	}//end portalOf()
-
-	/**
-	 * The name the mail speaks for.
-	 *
-	 * @param array<string, mixed>|null $portal       The portal.
-	 * @param string                    $organisation The organisation slug.
-	 *
-	 * @return string
-	 */
-	private function nameOf(?array $portal, string $organisation): string {
-		$title = trim((string)($portal['title'] ?? ''));
-		if ($title !== '') {
-			return $title;
-		}
-
-		try {
-			$name = trim((string)($this->organisations->resolve(orgSlug: $organisation)['organisationName'] ?? ''));
-		} catch (Throwable) {
-			$name = '';
-		}
-
-		if ($name === '') {
-			return self::DEFAULT_NAME;
-		}
-
-		return $name;
-	}//end nameOf()
-
-	/**
-	 * The portal's language: its first locale.
-	 *
-	 * @param array<string, mixed>|null $portal The portal.
-	 *
-	 * @return string
-	 */
-	private function languageOf(?array $portal): string {
-		$locales = ($portal['locales'] ?? []);
-		if (is_array($locales) === true && is_string($locales[0] ?? null) === true && trim($locales[0]) !== '') {
-			return trim($locales[0]);
-		}
-
-		return self::DEFAULT_LANGUAGE;
-	}//end languageOf()
+	}//end logSend()
 }//end class

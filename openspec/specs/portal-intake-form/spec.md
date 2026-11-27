@@ -39,7 +39,7 @@ prefill from earlier cases, a challenge, and the confirmation text.
 - **GIVEN** a binding naming an audience for which no form is published
 - **WHEN** an administrator opens the page in the CMS admin
 - **THEN** the admin surface states that the binding resolves to no form
-- **AND** the portal page renders a message and no fields
+- **AND** the portal page renders a message and no fields, such as "Dit formulier is niet meer beschikbaar"
 - @e2e exclude A toast over an admin row action; pinned by FormBindingAdminControllerTest::testABindingThatResolvesToNoFormSaysSoInTheAdmin and tests/form-binding-preview.spec.mjs
 
 ### Requirement: Intake can point at an externally hosted start form (REQ-PIFO-002)
@@ -174,3 +174,12 @@ A submission from a form whose binding says `deliverTo: wooRequest` MUST be deli
 - WHEN the delivery job takes a `wooRequest` submission
 - THEN no provider is located, and the submission is marked failed with "opencatalogi is not installed"
 - @e2e exclude needs an instance without opencatalogi; pinned by `PortalWooRequestDeliveryTest`
+
+### Requirement: A request form has a settings page (REQ-FBS-001)
+
+Each request form binding SHALL open a settings page from the Request forms list, with the tabs Algemeen (form, sign-in, status), Bevestiging, Verklaringen, Mede-ondertekenen and Historie. Every setting the page writes SHALL be a field of `portalFormBinding`, and every choice SHALL be one of that field's allowed values.
+
+#### Scenario: Requiring DigiD
+- **WHEN** an administrator opens the Woo-verzoek form, chooses "DigiD of eHerkenning, substantieel" under Inloggen and saves
+- **THEN** the binding's `minTrust` is `substantial`
+- **AND** the form asks for that sign-in before it is shown

@@ -20,16 +20,17 @@ use OCA\Portaliq\Contribution\PublicIndexItems;
 use OCA\Portaliq\Contribution\PublicIndexKinds;
 use OCA\Portaliq\Controller\ContentCatalogueController;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCA\Portaliq\Service\PublicCatalogue;
 use OCA\Portaliq\Service\PublicCatalogueQuery;
 use OCA\Portaliq\Service\PublicNewsReader;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\App\IAppManager;
 use OCP\ICache;
 use OCP\ICacheFactory;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Contribution\PublicDetailShape;
 
 class PublicIndexSourceTest extends TestCase {
 
@@ -89,19 +90,20 @@ class PublicIndexSourceTest extends TestCase {
 	}
 
 	public function testTheEndpointOffersTheDeclaredKindsAndResolvesVisitorOnlyForASignedInPerson(): void {
-		$anonymous = $this->controller(subject: null);
+		$asked     = ['types' => 'test', 'filters' => '{"Afdeling":["visitor"]}', 'sort' => 'date'];
+		$anonymous = $this->controller(subject: null, query: $asked);
 		$kinds     = $anonymous->kinds('vaartveld')->getData()['kinds'];
 		$this->assertSame('test', $kinds[0]['type']);
 
-		$all = $anonymous->index('vaartveld', '', 'test', '{"Afdeling":["visitor"]}', 'date');
+		$all = $anonymous->index('vaartveld');
 		$this->assertSame(2, $all->getData()['total'], 'an anonymous visitor leaves the filter empty');
 
-		$signedIn = $this->controller(subject: ['sub' => 'p-1']);
-		$mine     = $signedIn->index('vaartveld', '', 'test', '{"Afdeling":["visitor"]}', 'date', 1, 10, '', 'learniq');
+		$signedIn = $this->controller(subject: ['sub' => 'p-1'], query: $asked + ['app' => 'learniq']);
+		$mine     = $signedIn->index('vaartveld');
 		$this->assertSame(['learniq:t1'], array_column($mine->getData()['items'], 'id'), "the visitor's own class");
 
-		$other = $this->controller(subject: ['sub' => 'p-2']);
-		$this->assertSame(2, $other->index('vaartveld', '', 'test', '{"Afdeling":["visitor"]}', 'date', 1, 10, '', 'learniq')->getData()['total'], 'a person the app cannot place narrows nothing');
+		$other = $this->controller(subject: ['sub' => 'p-2'], query: $asked + ['app' => 'learniq']);
+		$this->assertSame(expected: 2, actual: $other->index('vaartveld')->getData()['total'], message: 'a person the app cannot place narrows nothing');
 	}
 
 	/**
@@ -111,7 +113,7 @@ class PublicIndexSourceTest extends TestCase {
 	 *
 	 * @return ContentCatalogueController
 	 */
-	private function controller(?array $subject): ContentCatalogueController {
+	private function controller(?array $subject, array $query = []): ContentCatalogueController {
 		$apps = $this->createMock(IAppManager::class);
 		$apps->method('getInstalledApps')->willReturn(['learniq']);
 
@@ -136,15 +138,16 @@ class PublicIndexSourceTest extends TestCase {
 		$cache->method('get')->willReturn(null);
 		$caches = $this->createMock(ICacheFactory::class);
 		$caches->method('createDistributed')->willReturn($cache);
-		$catalogue = new PublicCatalogue($apps, $locator, $reader, $caches, $this->createMock(LoggerInterface::class));
+		$catalogue = new PublicCatalogue($apps, $locator, $reader, $caches, $this->createMock(LoggerInterface::class), new PublicDetailShape(), new PublicIndexKinds());
 
 		$request = $this->createMock(IRequest::class);
+		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null): mixed => ($query[$key] ?? $default));
 		$request->method('getHeader')->willReturn($subject === null ? '' : 'Bearer x');
 		$resolver = $this->createMock(PortalResolver::class);
 		$resolver->method('resolve')->willReturn(['slug' => 'vaartveld', 'authentication' => ['modes' => ['public']]]);
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 
-		return new ContentCatalogueController('portaliq', $request, $resolver, $session, $catalogue);
+		return new ContentCatalogueController('portaliq', $request, $resolver, $session, $catalogue, new PublicCatalogueQuery());
 	}//end controller()
 }

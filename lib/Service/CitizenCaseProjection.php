@@ -19,22 +19,23 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser;
+use OCA\Portaliq\Kernel\Contracts\CitizenCaseProjectionInterface;
+use OCA\Portaliq\Kernel\Contracts\CitizenWriteConfigNormaliserInterface;
 use Psr\Log\LoggerInterface;
 
 /**
  * Projects the citizen's case to what the case screen may show.
  *
- * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+ * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
  */
-class CitizenCaseProjection {
+class CitizenCaseProjection implements CitizenCaseProjectionInterface {
 	/**
 	 * The fields a withdrawal writes. The case screen shows them as the
 	 * withdrawn state, so they travel with the case whatever the collection
@@ -72,7 +73,8 @@ class CitizenCaseProjection {
 	 *
 	 * @return array<string, mixed> The projected case.
 	 *
-	 * @spec openspec/changes/citizen-case-shows-only-its-fields/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/specs/citizen-writes-on-their-own-case/spec.md
+	 * @spec openspec/changes/archive/2026-11-24-case-outcome-on-the-case-page/specs/citizen-writes-on-their-own-case/spec.md
 	 */
 	public function visible(array $context, array $case): array {
 		$declared = ($context['fields'] ?? null);
@@ -87,13 +89,14 @@ class CitizenCaseProjection {
 		}
 
 		$action = (array)($context['action'] ?? []);
-		$config = (array)($action[CitizenWriteConfigNormaliser::KEY] ?? []);
+		$config = (array)($action[CitizenWriteConfigNormaliserInterface::KEY] ?? []);
 		$whitelist = array_merge(
 			array_values($declared),
 			(array)($action['fields'] ?? []),
 			array_keys((array)($context['set']['fields'] ?? [])),
 			[(string)($config['statusField'] ?? 'status')],
-			self::WITHDRAWAL_FIELDS
+			self::WITHDRAWAL_FIELDS,
+			array_values((array)($context['outcome'] ?? []))
 		);
 
 		return (new PortalFieldProjector(logger: $this->logger))->projectRow(

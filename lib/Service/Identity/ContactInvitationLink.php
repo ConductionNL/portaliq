@@ -19,7 +19,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
  */
 
 declare(strict_types=1);
@@ -27,27 +27,27 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 use OCA\Portaliq\Service\PortalObjectWriter;
 
 /**
  * The secret is only ever compared by its hash (ContactRows::byToken); a
  * joined or expired invitation answers like an unknown one.
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
  */
 class ContactInvitationLink {
 
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader Reads the rows held for a new account.
+	 * @param ScopedCollectionReaderInterface $reader Reads the rows held for a new account.
 	 * @param ContactRows $rows Finds the invitation by its secret.
 	 * @param PortalObjectWriter $writer Writes both sides.
 	 * @param PortalAccountLookup $accounts Reads the inviter's name.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly ContactRows $rows,
 		private readonly PortalObjectWriter $writer,
 		private readonly PortalAccountLookup $accounts,
@@ -64,7 +64,7 @@ class ContactInvitationLink {
 	 *
 	 * @return string SENT when joined, else NOT_FOUND (also for an expired or used link), or FAILED.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function accept(array $subject, string $token, string $displayName, ?DateTimeImmutable $now=null): string {
 		$newRef       = (string)($subject['subjectRef'] ?? '');
@@ -97,7 +97,7 @@ class ContactInvitationLink {
 	 *
 	 * @return bool Whether an open invitation was held.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function holdForRegistration(string $token, string $newRef, string $organisation, ?DateTimeImmutable $now=null): bool {
 		if ($token === '' || $newRef === '' || $organisation === '') {
@@ -129,7 +129,7 @@ class ContactInvitationLink {
 	 *
 	 * @return int How many invitations joined.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function joinOnActivation(array $account, ?DateTimeImmutable $now=null): int {
 		$newRef       = (string)($account['subjectRef'] ?? '');
@@ -160,7 +160,7 @@ class ContactInvitationLink {
 	 *
 	 * @return string The address, or '' for a link that is unknown, expired or used.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t05
 	 */
 	public function invitationEmail(string $token, string $organisation, ?DateTimeImmutable $now=null): string {
 		if ($token === '' || $organisation === '') {
@@ -223,6 +223,9 @@ class ContactInvitationLink {
 		}
 
 		$inviterAccount = $this->accounts->bySubjectRef(subjectRef: $inviter);
+		if (($inviterAccount['status'] ?? '') === PortalAccountLookup::STATUS_VOID) {
+			$inviterAccount = null;
+		}
 		$this->writer->createObject(
 			register: PortalContactService::REGISTER,
 			schema: PortalContactService::SCHEMA,

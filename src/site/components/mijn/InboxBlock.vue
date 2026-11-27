@@ -54,6 +54,9 @@
 				:key="entry.key"
 				class="pq-inbox-block__plain-row"
 				data-testid="mijn-inbox-plain-row">
+				<span class="pq-inbox-block__plain-mark" aria-hidden="true">
+					<svg viewBox="0 0 24 24" focusable="false"><path d="M20,8L12,13L4,8V6L12,11L20,6M20,4H4C2.89,4 2,4.89 2,6V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V6C22,4.89 21.1,4 20,4Z" /></svg>
+				</span>
 				<a
 					class="utrecht-link pq-inbox-block__plain-title"
 					:class="{ 'pq-inbox-block__plain-title--unread': entry.unread }"
@@ -98,6 +101,7 @@ import {
 	recordRoute,
 	sessionStore,
 } from '../../pages/inbox/inbox.js'
+import { messageRoute } from '../../pages/inbox/message.js'
 import { dayInWords } from './cases.js'
 import { inboxRows, mijnTranslator, receivedInWords, siteHref } from './rows.js'
 
@@ -107,7 +111,7 @@ const DAY_MS = 24 * 60 * 60 * 1000
 const INBOX_ROUTE = routeForNav({ special: 'inbox' })
 
 /**
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
  */
 export default {
 	name: 'InboxBlock',
@@ -149,7 +153,7 @@ export default {
 	computed: {
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		tr() {
 			return mijnTranslator(this.t, this.locale)
@@ -157,7 +161,7 @@ export default {
 
 		/**
 		 * @return {string} The block's heading, or ''.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		label() {
 			return this.block?.label || ''
@@ -165,7 +169,7 @@ export default {
 
 		/**
 		 * @return {string} The heading's id.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		headingId() {
 			return `pq-inbox-${String(this.block?.collection || 'all').replace(/[^A-Za-z0-9_-]/g, '')}`
@@ -177,7 +181,7 @@ export default {
 		 * open record such a block shows none.
 		 *
 		 * @return {Array<object>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-tasks-and-inbox-blocks-may-narrow-to-the-open-record-and-leave-rows-out-by-a-lookup-req-smo-025
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-tasks-and-inbox-blocks-may-narrow-to-the-open-record-and-leave-rows-out-by-a-lookup-req-smo-025
 		 */
 		aboutTheRecord() {
 			const field = this.block?.recordField
@@ -197,7 +201,7 @@ export default {
 
 		/**
 		 * @return {string} The inbox's real address.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		allHref() {
 			return siteHref(INBOX_ROUTE)
@@ -215,13 +219,16 @@ export default {
 		 * The rows on screen, each with where it leads.
 		 *
 		 * @return {Array<object>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		entries() {
 			return inboxRows(this.aboutTheRecord, this.block, this.app).map(
 				(message, index) => {
 					const link = message.recordLink?.id ? message.recordLink : null
 					const recordAt = link ? recordRoute(this.nav, link) : null
+					// Each message opens on its own page
+					// (a-resident-opens-one-message T06).
+					const own = messageRoute(message, INBOX_ROUTE)
 					return {
 						key: String(message.id || message.uuid || index),
 						title: message.subject || '',
@@ -237,8 +244,8 @@ export default {
 							.filter(Boolean)
 							.join(', '),
 						unread: message.read !== true,
-						link: recordAt ? link : null,
-						route: recordAt || INBOX_ROUTE,
+						link: !own && recordAt ? link : null,
+						route: own || recordAt || INBOX_ROUTE,
 						day: this.dayOf(message.receivedAt),
 					}
 				},
@@ -249,7 +256,7 @@ export default {
 	/**
 	 * Read on arrival.
 	 *
-	 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+	 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 	 */
 	created() {
 		if (this.messages === null) {
@@ -315,7 +322,7 @@ export default {
 		 * Read the unified inbox; a read that fails says so, it is not empty.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		async load() {
 			let answer
@@ -332,7 +339,7 @@ export default {
 		 * Try the read again after it failed, showing the skeleton meanwhile.
 		 *
 		 * @return {Promise<void>}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-loading-and-empty-states-must-say-what-is-happening-req-smo-009
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-loading-and-empty-states-must-say-what-is-happening-req-smo-009
 		 */
 		async retry() {
 			this.failed = false
@@ -345,7 +352,7 @@ export default {
 		 *
 		 * @param {object} entry The row.
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		open(entry) {
 			if (entry.link) {
@@ -357,7 +364,7 @@ export default {
 		/**
 		 * @param {MouseEvent} event The click.
 		 * @return {void}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-tasks-and-messages-must-render-as-action-rows-with-text-badges-req-smo-004
 		 */
 		openAll(event) {
 			if (event?.ctrlKey || event?.metaKey || event?.shiftKey) {
@@ -385,7 +392,7 @@ export default {
 }
 
 /* The plain list (zuiddrecht-resident-pages-match-the-boards): hairlines
-   between the rows, the title as a link, the day at the end. */
+   between the rows, a round mark, the title as a link, the day at the end. */
 .pq-inbox-block__head {
 	display: flex;
 	flex-wrap: wrap;
@@ -412,13 +419,33 @@ export default {
 .pq-inbox-block__plain-row {
 	display: flex;
 	flex-wrap: wrap;
+	align-items: flex-start;
 	justify-content: space-between;
-	gap: 0.5rem 1rem;
+	gap: 0.5rem 0.875rem;
 	padding-block: 1rem;
 	border-block-end: 1px solid var(--nldesign-color-border, currentcolor);
 }
 
+.pq-inbox-block__plain-mark {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	inline-size: 36px;
+	block-size: 36px;
+	border-radius: 50%;
+	background: var(--nldesign-color-primary-light, transparent);
+	color: var(--nldesign-color-primary-light-text, var(--nldesign-color-primary, currentcolor));
+}
+
+.pq-inbox-block__plain-mark svg {
+	inline-size: 20px;
+	block-size: 20px;
+	fill: currentcolor;
+}
+
 .pq-inbox-block__plain-title {
+	flex: 1 1 auto;
 	font-size: 1.125rem;
 	font-weight: 600;
 }

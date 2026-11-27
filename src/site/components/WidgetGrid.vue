@@ -27,7 +27,7 @@
 				v-if="run.band && componentFor(run.widget.widgetKey)"
 				:data-testid="`widget-${run.widget.id || run.widget.widgetKey}`"
 				:data-widget-key="run.widget.widgetKey"
-				v-bind="propsFor(run.widget)"
+				v-bind="widgetProps(run.widget)"
 				@subject="$emit('subject', $event)"
 				@navigate="$emit('navigate', $event)"
 				@search="forwardSearch" />
@@ -36,18 +36,18 @@
 			     container is here rather than around the whole component so a
 			     band between two runs still reaches the viewport edge. -->
 			<div v-else-if="!run.band" class="container">
-				<div class="pq-grid">
+				<div class="pq-grid" :style="gridStyle(run)">
 					<div
 						v-for="widget in run.widgets"
 						:key="widget.id || `${widget.gridX}-${widget.gridY}`"
 						class="pq-grid__cell"
 						:data-testid="`widget-${widget.id || widget.widgetKey}`"
 						:data-widget-key="widget.widgetKey"
-						:style="cellStyle(widget, run.rowOffset)">
+						:style="placeCell(widget, run)">
 						<component
 							:is="componentFor(widget.widgetKey)"
 							v-if="componentFor(widget.widgetKey)"
-							v-bind="propsFor(widget)"
+							v-bind="widgetProps(widget)"
 							@subject="$emit('subject', $event)"
 							@navigate="$emit('navigate', $event)"
 							@search="forwardSearch" />
@@ -75,9 +75,18 @@ import { defineAsyncComponent } from 'vue'
 import HeroBlock from './HeroBlock.vue'
 import MarkdownBlock from './MarkdownBlock.vue'
 import { assistantAvailable } from '../lib/assistantAvailable.js'
-import { withoutStyling } from '../lib/blockProps.js'
-import { cellStyle, ownBand, runsFor } from '../lib/gridPlacement.js'
-import { loaders as siteWidgetLoaders } from '../widgets/loaders.js'
+import { heroWithPortalImage, languageNavProps, withoutStyling } from '../lib/blockProps.js'
+import {
+	asideCellStyle,
+	cellStyle,
+	isAsideRun,
+	ownBand,
+	runsFor,
+} from '../lib/gridPlacement.js'
+import {
+	SIGNED_IN_WIDGETS,
+	loaders as siteWidgetLoaders,
+} from '../widgets/loaders.js'
 
 /**
  * LOADED ON DEMAND, and that is a budget decision rather than a style one.
@@ -132,6 +141,10 @@ const IntakeCatalogueBlock = defineAsyncComponent(
 )
 const ContactForm = defineAsyncComponent(() => import('./ContactForm.vue'))
 const IntakeFormBlock = defineAsyncComponent(() => import('./IntakeFormBlock.vue'))
+const ReportBlock = defineAsyncComponent(() => import('./ReportBlock.vue'))
+const ReportThreadBlock = defineAsyncComponent(
+	() => import('./ReportThreadBlock.vue'),
+)
 const PublicRecordsBlock = defineAsyncComponent(
 	() => import('./PublicRecordsBlock.vue'),
 )
@@ -251,6 +264,11 @@ const PUBLIC_WIDGETS = {
 	assistant: AssistantBlock,
 	// site-member-voting-record-and-confidential-papers: a contributed public record list.
 	publicRecords: PublicRecordsBlock,
+	// intake-report-pages: a report without an account and its follow-up with
+	// the receipt code. They call this app's own anonymous report routes and
+	// send no traffic event.
+	report: ReportBlock,
+	reportThread: ReportThreadBlock,
 	intakeStatus: IntakeStatusBlock,
 	...nldsWidgets,
 	...siteBlockRegistry,
@@ -305,6 +323,24 @@ export default {
 	},
 
 	props: {
+		/**
+		 * The portal's hero image, resolved to its public address by the
+		 * content API: a hero block without its own image shows it.
+		 */
+		heroImage: {
+			type: String,
+			default: '',
+		},
+
+		/**
+		 * The page's aside column (`asideOf(page.body)`): a run of a main
+		 * column beside an aside then gives the aside this fixed width.
+		 */
+		aside: {
+			type: Object,
+			default: null,
+		},
+
 		/** Widget placements in the canonical manifest-v2 widgetEntry shape. */
 		widgets: {
 			type: Array,
@@ -364,6 +400,15 @@ export default {
 			default: false,
 		},
 
+		/**
+		 * The site record's `publications`, `{errorReports, withheldNotices}`
+		 * (publication-error-reports-and-withheld-notices).
+		 */
+		publications: {
+			type: Object,
+			default: null,
+		},
+
 		/** The portal's help details, offered as "Hulp nodig?" on a form. */
 		portalHelp: {
 			type: Object,
@@ -378,6 +423,15 @@ export default {
 		searchInsideDocuments: {
 			type: Boolean,
 			default: true,
+		},
+
+		/**
+		 * The portal's organisation, `{id, name}`, from the site record.
+		 * Handed to the search block AFTER its authored props.
+		 */
+		organisation: {
+			type: Object,
+			default: null,
 		},
 
 		/**
@@ -413,6 +467,18 @@ export default {
 		signInRoutes: {
 			type: Array,
 			default: () => [],
+		},
+
+		/**
+		 * The signed-in shell's data for the Mijn omgeving widgets: `{api,
+		 * contributions, nav, t, locale}`, null when signed out. Handed to
+		 * those widgets AFTER their authored props, so a placement can name an
+		 * app and a collection but never bring data, an endpoint or a subject
+		 * of its own (site-nlds-widget-palette REQ-SNW-012).
+		 */
+		mijn: {
+			type: Object,
+			default: null,
 		},
 	},
 
@@ -457,7 +523,7 @@ export default {
 		 *
 		 * @param {*} query The words, or a browser event.
 		 * @return {void}
-		 * @spec openspec/changes/portal-subject-rate-limit/specs/site-search/spec.md#requirement-enter-in-a-search-field-must-search-for-the-typed-words
+		 * @spec openspec/specs/site-search/spec.md#requirement-enter-in-a-search-field-must-search-for-the-typed-words
 		 */
 		forwardSearch(query) {
 			if (typeof query === 'string') {
@@ -498,6 +564,41 @@ export default {
 		},
 
 		/**
+		 * The props handed to a mounted widget: a Mijn omgeving widget's own
+		 * (site-nlds-widget-palette T9), every other widget's from `propsFor()`.
+		 *
+		 * @param {object} widget The placement.
+		 * @return {object} The component props.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-a-mijn-omgeving-widget-must-show-only-the-visitors-own-data-req-snw-012
+		 */
+		widgetProps(widget) {
+			return SIGNED_IN_WIDGETS.includes(widget.widgetKey)
+				? this.signedInProps(withoutStyling(widget.props))
+				: this.propsFor(widget)
+		},
+
+		/**
+		 * The props of a Mijn omgeving widget: the authored ones, then the
+		 * shell's signed-in data, the ways in, the page language and the
+		 * route's record id, so none of those can be authored.
+		 *
+		 * @param {object} props The authored props.
+		 * @return {object} The component props.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portaliq-cms/spec.md#requirement-a-mijn-omgeving-widget-must-show-only-the-visitors-own-data-req-snw-012
+		 */
+		signedInProps(props) {
+			return {
+				...props,
+				mijn: this.signedIn === true ? this.mijn : null,
+				signInRoutes: this.signInRoutes,
+				locale: this.languages?.current || 'nl',
+				routeParam: this.routeParam,
+			}
+		},
+
+		/**
 		 * The props handed to a mounted widget.
 		 *
 		 * Only the placement's declared `props` are passed through, never the
@@ -509,8 +610,9 @@ export default {
 		 * @return {object} The component props.
 		 *
 		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-blocks-must-take-their-data-as-props-and-nothing-else-req-ptb-007
-		 * @spec openspec/changes/language-switch-reaches-the-content/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-language-switch-offers-the-portals-locales-and-the-choice-reaches-the-content
 		 * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-the-sign-in-card-offers-the-portals-own-ways-in
+		 * @spec openspec/specs/portal-federated-search/spec.md
 		 */
 		propsFor(widget) {
 			// `style` and `class` never reach a block (REQ-PTB-007).
@@ -573,7 +675,21 @@ export default {
 					...props,
 					subjectId: this.routeParam,
 					signedIn: this.signedIn === true,
+					// The two opt-in publication features, from the site
+					// record, after the authored props so a page cannot
+					// switch them on (publication-error-reports-and-withheld-notices).
+					publications: this.publications,
+					portal: this.portal,
 				}
+			}
+
+			// The subject page takes its subject from the route, like the
+			// publication detail: after the authored props, so a placement
+			// cannot pin the page to one subject. Read from the address itself
+			// it found `site` under `?route=` addressing
+			// (home-and-theme-landing-pages REQ-HTL-002).
+			if (widget.widgetKey === 'nlSubjectLanding') {
+				return { ...props, routeParam: this.routeParam }
 			}
 
 			// The search block learns the signed-in state the same way
@@ -583,6 +699,15 @@ export default {
 					...props,
 					signedIn: this.signedIn === true,
 					searchInsideDocuments: this.searchInsideDocuments !== false,
+					// The organisation filter reads the portal's organisation
+					// by name, not by id (woo-search-names-the-organisation).
+					facetNames: this.organisation?.id
+						? {
+								organization: {
+									[this.organisation.id]: this.organisation.name,
+								},
+							}
+						: {},
 				}
 			}
 
@@ -616,20 +741,9 @@ export default {
 			}
 
 			// SAME RULE, SIXTH SUBJECT. The languages on offer are the
-			// PORTAL's, so the host supplies them after the authored props: a
-			// placement can rename the landmark but cannot add a language
-			// (design D1 row 52). Without this branch the switch kept its
-			// empty default and never rendered.
+			// PORTAL's; see languageNavProps().
 			if (widget.widgetKey === 'nlLanguageNav') {
-				const languages = this.languages || {}
-				return {
-					...props,
-					locales: Array.isArray(languages.locales)
-						? languages.locales
-						: [],
-
-					current: languages.current || '',
-				}
+				return languageNavProps(props, this.languages)
 			}
 
 			// site-school-blocks: the news widgets read this portal's public
@@ -698,8 +812,10 @@ export default {
 
 			// The hero hands the portal on to the list beside it, which reads
 			// this portal's catalogue or news (hero-on-the-school-boards).
+			// A hero without its own image shows the portal's
+			// (portal-identity-from-the-admin REQ-PIA-002).
 			if (widget.widgetKey === 'hero') {
-				return { ...props, portal: this.portal }
+				return { ...heroWithPortalImage(props, this.heroImage), portal: this.portal }
 			}
 
 			// The host names the portal, the session and the ways in; the
@@ -718,6 +834,14 @@ export default {
 			}
 
 			// The assistant asks THIS portal's route; the portal comes from the host.
+			// The report blocks file and read on THIS portal's report routes.
+			if (
+				widget.widgetKey === 'report'
+				|| widget.widgetKey === 'reportThread'
+			) {
+				return { ...props, portal: this.portal }
+			}
+
 			if (widget.widgetKey === 'assistant') {
 				return { ...props, portal: this.portal }
 			}
@@ -750,16 +874,45 @@ export default {
 		},
 
 		/**
-		 * Place one widget on the 12-column grid, re-based onto its run.
+		 * Whether this run draws as main column and fixed aside.
 		 *
-		 * @param {object} widget    The placement.
-		 * @param {number} rowOffset The run's first authored row.
-		 * @return {object} The style bindings.
-		 *
-		 * @spec openspec/changes/portal-theme-blocks-and-contributed-pages/specs/portaliq-cms/spec.md#requirement-the-hero-must-cap-its-calls-to-action-and-keep-one-outline-entry-req-ptb-006
+		 * @param {object} run A run of ordinary widgets.
+		 * @return {boolean}
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
 		 */
-		cellStyle(widget, rowOffset) {
-			return cellStyle(widget, rowOffset)
+		asideRun(run) {
+			return this.aside !== null && isAsideRun(run.widgets)
+		},
+
+		/**
+		 * The run's grid columns: twelve, or the main column and the aside.
+		 *
+		 * @param {object} run A run of ordinary widgets.
+		 * @return {object|null} The style bindings.
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+		 */
+		gridStyle(run) {
+			if (!this.asideRun(run)) {
+				return null
+			}
+			return {
+				gridTemplateColumns: `minmax(0, 1fr) ${this.aside.width}px`,
+				columnGap: `${this.aside.gap}px`,
+			}
+		},
+
+		/**
+		 * One widget's place in its run.
+		 *
+		 * @param {object} widget The placement.
+		 * @param {object} run    Its run.
+		 * @return {object} The style bindings.
+		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-may-give-its-aside-a-fixed-width
+		 */
+		placeCell(widget, run) {
+			return this.asideRun(run)
+				? asideCellStyle(widget, run.rowOffset)
+				: cellStyle(widget, run.rowOffset)
 		},
 	},
 }

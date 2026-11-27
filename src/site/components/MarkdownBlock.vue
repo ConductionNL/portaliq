@@ -21,6 +21,69 @@
 
 <script>
 import { cnRenderMarkdown } from '@conduction/nextcloud-vue'
+import { runtimeConfig } from '../lib/contentApi.js'
+import { isSiteRoute } from '../lib/shellData.js'
+import { addressOfRoute } from '../lib/siteAddress.js'
+
+/**
+ * The design system's class for each element markdown renders bare.
+ *
+ * @type {Record<string, string>}
+ */
+const DESIGN_SYSTEM_CLASSES = {
+	H1: 'utrecht-heading-1',
+	H2: 'utrecht-heading-2',
+	H3: 'utrecht-heading-3',
+	H4: 'utrecht-heading-4',
+	H5: 'utrecht-heading-5',
+	H6: 'utrecht-heading-6',
+	P: 'utrecht-paragraph',
+	A: 'utrecht-link',
+	UL: 'utrecht-unordered-list',
+	OL: 'utrecht-ordered-list',
+	BLOCKQUOTE: 'utrecht-blockquote',
+	// site-nlds-widget-palette T6: the inline marks and the blocks
+	// an author writes in markdown but had no class for, so a
+	// portal's own tokens style them like everything else. The
+	// list is the design system's own: LI carries no class,
+	// because the list element styles its items.
+	STRONG: 'utrecht-strong',
+	EM: 'utrecht-em',
+	SUB: 'utrecht-sub',
+	SUP: 'utrecht-sup',
+	MARK: 'utrecht-mark',
+	CODE: 'utrecht-code',
+	PRE: 'utrecht-code-block',
+	HR: 'utrecht-separator',
+	IMG: 'utrecht-img',
+	// portal-theme-application Task 2: a markdown table rendered bare, so the
+	// design system's table styles never reached it. The parts carry the
+	// same classes the collection table uses.
+	TABLE: 'utrecht-table',
+	CAPTION: 'utrecht-table__caption',
+	THEAD: 'utrecht-table__header',
+	TBODY: 'utrecht-table__body',
+	TFOOT: 'utrecht-table__footer',
+	TR: 'utrecht-table__row',
+	TH: 'utrecht-table__header-cell',
+	TD: 'utrecht-table__cell',
+}
+
+/**
+ * Give each element the class when it has none, so authored HTML that already
+ * carries design-system classes is left alone.
+ *
+ * @param {Iterable<Element>} elements The elements of one tag.
+ * @param {string} className The design system's class for them.
+ * @return {void}
+ */
+function addMissingClass(elements, className) {
+	for (const el of elements) {
+		if (el.className === '') {
+			el.className = className
+		}
+	}
+}
 
 /**
  * Renders markdown through the SHARED library helper.
@@ -58,7 +121,9 @@ export default {
 				return ''
 			}
 
-			return this.withDesignSystemClasses(cnRenderMarkdown(this.source))
+			return this.withSiteAddresses(
+				this.withDesignSystemClasses(cnRenderMarkdown(this.source)),
+			)
 		},
 	},
 
@@ -85,50 +150,46 @@ export default {
 		 * @return {string} The same HTML, with typography classes applied.
 		 *
 		 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+		 * @spec openspec/changes/archive/2026-11-25-portal-theme-application/specs/portaliq-cms/spec.md#requirement-markup-must-carry-nl-design-component-classes
 		 */
 		withDesignSystemClasses(html) {
-			const template = document.createElement('template')
-			template.innerHTML = html
+			const body = new DOMParser().parseFromString(html, 'text/html').body
 
-			const MAP = {
-				H1: 'utrecht-heading-1',
-				H2: 'utrecht-heading-2',
-				H3: 'utrecht-heading-3',
-				H4: 'utrecht-heading-4',
-				H5: 'utrecht-heading-5',
-				H6: 'utrecht-heading-6',
-				P: 'utrecht-paragraph',
-				A: 'utrecht-link',
-				UL: 'utrecht-unordered-list',
-				OL: 'utrecht-ordered-list',
-				BLOCKQUOTE: 'utrecht-blockquote',
-				// site-nlds-widget-palette T6: the inline marks and the blocks
-				// an author writes in markdown but had no class for, so a
-				// portal's own tokens style them like everything else. The
-				// list is the design system's own: LI carries no class,
-				// because the list element styles its items.
-				STRONG: 'utrecht-strong',
-				EM: 'utrecht-em',
-				SUB: 'utrecht-sub',
-				SUP: 'utrecht-sup',
-				MARK: 'utrecht-mark',
-				CODE: 'utrecht-code',
-				PRE: 'utrecht-code-block',
-				HR: 'utrecht-separator',
-				IMG: 'utrecht-img',
+			for (const [tag, className] of Object.entries(DESIGN_SYSTEM_CLASSES)) {
+				addMissingClass(body.querySelectorAll(tag.toLowerCase()), className)
 			}
 
-			for (const [tag, className] of Object.entries(MAP)) {
-				for (const el of template.content.querySelectorAll(
-					tag.toLowerCase(),
-				)) {
-					if (el.className === '') {
-						el.className = className
-					}
+			return body.innerHTML
+		},
+
+		/**
+		 * Write each link to a site page in the site's own address, as the
+		 * hero and the menus do: `/grofvuil` opens the portal's page where the
+		 * site is served under the app path too, and the portal and the chosen
+		 * language (`?portal=`, `?lang=`) stay on it. Links elsewhere stay.
+		 *
+		 * Runs on the sanitiser's output and only rewrites an `href` it holds.
+		 *
+		 * @param {string} html Sanitised HTML.
+		 * @return {string} The same HTML, site links addressed.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/tasks.md#t8c
+		 */
+		withSiteAddresses(html) {
+			if (typeof window === 'undefined' || !html.includes('href="/')) {
+				return html
+			}
+			const body = new DOMParser().parseFromString(html, 'text/html').body
+			for (const link of body.querySelectorAll('a[href]')) {
+				const href = link.getAttribute('href')
+				if (isSiteRoute(href)) {
+					link.setAttribute(
+						'href',
+						addressOfRoute(href, window.location.href, runtimeConfig()).toString(),
+					)
 				}
 			}
-
-			return template.innerHTML
+			return body.innerHTML
 		},
 	},
 }

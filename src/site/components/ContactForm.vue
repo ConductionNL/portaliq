@@ -25,7 +25,7 @@
 			</p>
 			<ul v-if="ways.length > 0">
 				<li v-for="way in ways" :key="way.id">
-					<a :href="way.href">{{ way.label }}</a>
+					<a class="pq-contact-form__sign-in" :href="way.href">{{ way.label }}</a>
 				</li>
 			</ul>
 		</div>
@@ -62,6 +62,7 @@
 			v-else-if="state === 'ready'"
 			:action="resolved"
 			:api="api"
+			:t="translate"
 			@submitted="state = 'sent'" />
 	</div>
 </template>
@@ -75,7 +76,10 @@ import {
 	storeSessionToken,
 } from '../lib/authApi.js'
 import { resolveApiBase, runtimeConfig } from '../lib/contentApi.js'
-import { pageLocale } from '../pages/inbox/translate.js'
+import { linkAddress } from '../lib/shellData.js'
+import { addressOfRoute } from '../lib/siteAddress.js'
+import formStrings from '../pages/c/strings.js'
+import { pageLocale, withBundles } from '../pages/inbox/translate.js'
 
 import '@utrecht/paragraph-css/dist/index.css'
 
@@ -97,7 +101,7 @@ const STRINGS = {
 }
 
 /**
- * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t01
+ * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t01
  */
 export default {
 	name: 'ContactForm',
@@ -133,14 +137,25 @@ export default {
 
 	computed: {
 		/**
-		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t01
+		 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t01
 		 */
 		words() {
 			return STRINGS[pageLocale(this.locale)] || STRINGS.nl
 		},
 
 		/**
-		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t01
+		 * The form's translator: the schema form's own words in the page's
+		 * language, as the account pages hand it.
+		 *
+		 * @return {(key: string, vars?: object) => string} The translator.
+		 * @spec openspec/specs/site-forms/spec.md#requirement-the-contact-question-form-reads-in-the-pages-language
+		 */
+		translate() {
+			return withBundles(formStrings, null, this.locale)
+		},
+
+		/**
+		 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t01
 		 */
 		api() {
 			if (this.apiOverride) {
@@ -161,15 +176,26 @@ export default {
 		},
 
 		/**
-		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t01
+		 * The "Naar Mijn vragen" link in the site's own addressing: under the
+		 * app path a bare `/mijn` leaves the site, so an in-site route gets the
+		 * portal and route the site is served with. Another link stays as it is.
+		 *
+		 * @return {string} The href.
+		 *
+		 * @spec openspec/specs/site-contact/spec.md#requirement-the-example-contact-page-follows-the-contact-board-req-scn-003
 		 */
 		questionsHref() {
-			return this.questionsRoute
+			if (typeof window === 'undefined') {
+				return this.questionsRoute
+			}
+			return linkAddress(this.questionsRoute, (route) =>
+				addressOfRoute(route, window.location.href, runtimeConfig()).toString(),
+			)
 		},
 	},
 
 	/**
-	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t01
+	 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t01
 	 */
 	mounted() {
 		if (this.signedIn) {
@@ -184,7 +210,7 @@ export default {
 		 * action's whitelist and audience are the server's.
 		 *
 		 * @return {Promise<void>} Resolves when found or missing.
-		 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t01
+		 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t01
 		 */
 		async load() {
 			this.state = 'loading'
@@ -205,3 +231,18 @@ export default {
 	},
 }
 </script>
+
+<style scoped>
+/*
+ * A sign-in way (DigiD, eHerkenning, ...) is a 24px target. The bare list
+ * links were 19px high with less than 24px between them, and WCAG 2.2 SC
+ * 2.5.8 asks 24 by 24 CSS pixels or that much space; axe flagged them on the
+ * Zuiddrecht /contact/vraag page (the only finding left in a 55-page sweep).
+ * @spec openspec/changes/archive/2026-11-25-public-site-meets-wcag-aa/tasks.md#t05
+ */
+.pq-contact-form__sign-in {
+	display: inline-flex;
+	align-items: center;
+	min-block-size: 24px;
+}
+</style>

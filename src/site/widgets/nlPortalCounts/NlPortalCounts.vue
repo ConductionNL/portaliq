@@ -30,7 +30,7 @@
 				:key="entry.value"
 				class="nl-portal-counts__item"
 				data-testid="nl-portal-count">
-				<a class="utrecht-link" :href="entry.href">
+				<a class="utrecht-link" :href="hrefOf(entry)">
 					<span class="nl-portal-counts__number">{{ entry.count }}</span>
 					<span class="nl-portal-counts__label">{{ entry.label }}</span>
 				</a>
@@ -40,6 +40,7 @@
 </template>
 
 <script>
+import { authoredLink } from '../../components/mijn/links.js'
 import { fetchCounts } from '../../lib/subjects.js'
 import { pageLocale } from '../../pages/inbox/translate.js'
 import strings from './strings.js'
@@ -49,7 +50,7 @@ import '@utrecht/link-css/dist/index.css'
 import '@utrecht/paragraph-css/dist/index.css'
 
 /**
- * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+ * @spec openspec/specs/portal-federated-search/spec.md
  */
 export default {
 	name: 'NlPortalCounts',
@@ -70,7 +71,7 @@ export default {
 	/**
 	 * Read the counts once the widget is on the page.
 	 *
-	 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+	 * @spec openspec/specs/portal-federated-search/spec.md
 	 */
 	async mounted() {
 		const answer = await fetchCounts(this.by, {
@@ -83,9 +84,18 @@ export default {
 
 	methods: {
 		/**
+		 * @param {{href: string}} entry A count.
+		 * @return {string} Its search page in the site's own addressing.
+		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
+		 */
+		hrefOf(entry) {
+			return authoredLink(entry.href)?.href || ''
+		},
+
+		/**
 		 * @param {string} key A string key.
 		 * @return {string} The words in the page language.
-		 * @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+		 * @spec openspec/specs/portal-federated-search/spec.md
 		 */
 		say(key) {
 			return (strings[pageLocale()] || strings.nl)[key]

@@ -10,6 +10,8 @@
 //
 // @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-the-messages-page-groups-conversations-per-record-and-lets-a-resident-write-and-reply
 
+import { formatMessageMoment } from './inbox.js'
+
 /** The words of the messages page per record, in Dutch and English. */
 export const conversationStrings = {
 	nl: {
@@ -36,6 +38,7 @@ export const conversationStrings = {
 		'No messages about {name} yet.': 'Nog geen berichten over {name}.',
 		New: 'Nieuw',
 		You: 'U',
+		'Read by {name} on {moment}': 'Gelezen door {name} op {moment}',
 	},
 	en: {
 		'All messages': 'All messages',
@@ -61,6 +64,7 @@ export const conversationStrings = {
 		'No messages about {name} yet.': 'No messages about {name} yet.',
 		New: 'New',
 		You: 'You',
+		'Read by {name} on {moment}': 'Read by {name} on {moment}',
 	},
 }
 
@@ -142,12 +146,20 @@ export function recordTabs(threads, contacts, tr) {
  * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-the-messages-page-groups-conversations-per-record-and-lets-a-resident-write-and-reply
  */
 export function threadsInTab(threads, key) {
-	const moment = (thread) =>
-		String(thread?.summary?.lastSentAt || thread?.createdAt || '')
 	return (threads || [])
 		.filter((thread) => !key || String(thread?.recordRef || '') === key)
 		.slice()
-		.sort((a, b) => moment(b).localeCompare(moment(a)))
+		.sort((a, b) => threadMoment(b).localeCompare(threadMoment(a)))
+}
+
+/**
+ * When a conversation last moved: its last message, else its start.
+ *
+ * @param {object|null} thread The thread with its `summary`.
+ * @return {string} The moment, or ''.
+ */
+function threadMoment(thread) {
+	return String(thread?.summary?.lastSentAt || thread?.createdAt || '')
 }
 
 /**
@@ -159,20 +171,42 @@ export function threadsInTab(threads, key) {
  * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-the-messages-page-groups-conversations-per-record-and-lets-a-resident-write-and-reply
  */
 export function threadCard(thread, tr) {
-	const fallback =
-		thread?.kind === 'group'
-			? tr('Group conversation')
-			: tr('Conversation with school')
 	const who = String(thread?.staffName || '').trim()
 	const name = shortName(thread?.recordLabel)
 	return {
-		title: String(thread?.title || '').trim() || fallback,
+		title: String(thread?.title || '').trim() || untitledThread(thread, tr),
 		who: who || tr('School'),
 		initials: initialsOf(who || tr('School')),
 		about: name ? tr('about {name}', { name }) : '',
-		when: String(thread?.summary?.lastSentAt || thread?.createdAt || ''),
-		preview: String(thread?.summary?.lastBody || ''),
-		isNew: Number(thread?.summary?.unread || 0) > 0,
+		when: threadMoment(thread),
+		...lastMessage(thread?.summary),
+	}
+}
+
+/**
+ * The title of a conversation that has none: a group conversation, else a
+ * conversation with the school.
+ *
+ * @param {object|null} thread The thread.
+ * @param {(key: string, vars?: object) => string} tr The translator.
+ * @return {string} The title.
+ */
+function untitledThread(thread, tr) {
+	return thread?.kind === 'group'
+		? tr('Group conversation')
+		: tr('Conversation with school')
+}
+
+/**
+ * The card's preview of the last message and whether any is unread.
+ *
+ * @param {object|undefined} summary The thread's summary.
+ * @return {{preview: string, isNew: boolean}} The preview and the unread mark.
+ */
+function lastMessage(summary) {
+	return {
+		preview: String(summary?.lastBody || ''),
+		isNew: Number(summary?.unread || 0) > 0,
 	}
 }
 
@@ -309,4 +343,73 @@ export async function markRead(api, threadId) {
 			{},
 		)
 	}
+}
+
+/**
+ * When the other side read the resident's own message: "Gelezen door juf
+ * Esra op 5 oktober 2026, 10:12" (zuiddrecht/Berichten), or '' while unread.
+ *
+ * @param {{readAt?: string}} message The resident's own message.
+ * @param {{who: string, locale: string, tr: (key: string, vars?: object) => string}} context Who she wrote to, the page language and the translator.
+ * @return {string}
+ * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-the-sender-sees-when-her-message-was-read
+ */
+export function readLine(message, { who, locale, tr }) {
+	const moment = formatMessageMoment(message?.readAt, locale)
+	return moment ? tr('Read by {name} on {moment}', { name: who, moment }) : ''
+}
+
+/** Where a "Bericht aan ..." button leaves whom the message form opens for. */
+export const MESSAGE_TO_STORAGE_KEY = 'portaliq.messageTo'
+
+/**
+ * Keep whom the messages page opens its form for: the open record and the
+ * staff member its "Bericht aan ..." button names.
+ *
+ * @param {object|null} storage sessionStorage.
+ * @param {{recordRef: string, staffRef: string}} target The record and the staff member.
+ * @return {void}
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+ */
+export function keepMessageTo(storage, target) {
+	try {
+		storage?.setItem(MESSAGE_TO_STORAGE_KEY, JSON.stringify(target))
+	} catch {
+		// Without storage the form opens with no one chosen.
+	}
+}
+
+/**
+ * Take whom the form opens for, once: it is forgotten as it is read.
+ *
+ * @param {object|null} storage sessionStorage.
+ * @return {{recordRef?: string, staffRef?: string}|null}
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+ */
+export function takeMessageTo(storage) {
+	try {
+		const kept = storage?.getItem(MESSAGE_TO_STORAGE_KEY)
+		storage?.removeItem(MESSAGE_TO_STORAGE_KEY)
+		return kept ? JSON.parse(kept) : null
+	} catch {
+		return null
+	}
+}
+
+/**
+ * The "to" choice for a kept target: the record and staff member it names,
+ * else the record's only contact; '' when neither is offered.
+ *
+ * @param {Array<{value: string, recordRef: string}>} options The "to" choices.
+ * @param {{recordRef?: string, staffRef?: string}|null} target The kept target.
+ * @return {string} The chosen value.
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-message-button-opens-the-form-with-its-teacher-chosen
+ */
+export function chosenContact(options, target) {
+	if (!target?.recordRef) {
+		return ''
+	}
+	const exact = options.find((o) => o.value === `${target.recordRef}|${target.staffRef}`)
+	const ofRecord = options.filter((o) => o.recordRef === target.recordRef)
+	return exact?.value || (ofRecord.length === 1 ? ofRecord[0].value : '')
 }

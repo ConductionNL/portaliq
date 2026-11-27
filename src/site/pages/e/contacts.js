@@ -13,7 +13,7 @@ export const ROLE_FILTERS = ['all', 'begeleider', 'contact', 'organisatie']
  * @param {string} role The role.
  * @return {string} The label key.
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
  */
 export function roleLabel(role) {
 	const labels = {
@@ -32,7 +32,7 @@ export function roleLabel(role) {
  * @param {string} role The chip.
  * @return {Array<object>} The contacts to list.
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
  */
 export function contactsOfRole(contacts, role) {
 	const all = Array.isArray(contacts) ? contacts : []
@@ -45,7 +45,7 @@ export function contactsOfRole(contacts, role) {
  * @param {string} name The display name.
  * @return {string} The initials, upper case, or '?'.
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
  */
 export function initialsOf(name) {
 	const words = String(name || '')
@@ -67,7 +67,7 @@ export function initialsOf(name) {
  * @param {{status?: number, error?: string}} answer The answer of the invite call.
  * @return {string} The sentence key.
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
  */
 export function inviteProblem(answer) {
 	const reasons = {

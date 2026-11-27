@@ -28,9 +28,9 @@ use RuntimeException;
  * dedicated `sensitive` IAppConfig entry. `resolve()`'s `oidcProviders` (the
  * SPA-facing, secret-free list) only lists providers with a complete config.
  *
- * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.2
- * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.3
- * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.1
+ * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#1.2
+ * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#1.3
+ * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#3.1
  * @spec openspec/changes/portal-oidc-broker-login/tasks.md#T01
  */
 class PortalOrganisationConfigServiceTest extends TestCase {
@@ -124,6 +124,8 @@ class PortalOrganisationConfigServiceTest extends TestCase {
 
 		$this->assertSame('Gemeente X', $config['organisationName']);
 		$this->assertSame('gemeente-x', $config['organisationSlug']);
+		// woo-search-names-the-organisation: the id a public search names it by.
+		$this->assertSame('org-uuid-1', $config['organisationId']);
 		$this->assertSame('utrecht', $config['theme']);
 		$this->assertSame('/apps/portaliq/img/gemeente-x.svg', $config['logo']);
 		$this->assertSame(['https://gemeente-x.example'], $config['allowedEmbedOrigins']);

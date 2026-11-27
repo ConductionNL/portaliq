@@ -243,6 +243,10 @@ test('every widget with its own stylesheet is one design D5 names', () => {
 		// warning mark inside the melding, and a plain white card, which
 		// Utrecht's alert does not draw. Layout and theme tokens only.
 		'nlAlert',
+		// site-location-map: chips, a sketch map with numbered markers and the
+		// numbered list beside it, which no Utrecht component draws. Layout and
+		// theme tokens only.
+		'nlLocationMap',
 	]
 
 	for (const { key, source } of components()) {

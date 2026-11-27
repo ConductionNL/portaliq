@@ -90,12 +90,38 @@ export function addressLine(block) {
  * @return {string} The message, or ''.
  */
 export function addressProblem(block) {
-	const whole =
-		block
+	return isWholeAddress(block) ? '' : 'Vul postcode, huisnummer, straat en plaats in.'
+}
+
+/**
+ * @param {unknown} value A part of the address.
+ * @return {string} The part as text, trimmed.
+ */
+function partOf(value) {
+	return String(value ?? '').trim()
+}
+
+/**
+ * @param {object} block The address block.
+ * @return {boolean} Whether it has a valid postcode, a house number, a street and a town.
+ */
+function isWholeAddress(block) {
+	return (
+		Boolean(block)
 		&& typeof block === 'object'
-		&& normaliseFormat('postcode', block.postcode ?? '') !== null
-		&& /^[1-9]\d{0,4}$/.test(String(block.number ?? '').trim())
-		&& String(block.street ?? '').trim() !== ''
-		&& String(block.town ?? '').trim() !== ''
-	return whole ? '' : 'Vul postcode, huisnummer, straat en plaats in.'
+		&& hasPostcodeAndNumber(block)
+		&& partOf(block.street) !== ''
+		&& partOf(block.town) !== ''
+	)
+}
+
+/**
+ * @param {object} block The address block.
+ * @return {boolean} Whether its postcode is valid and its house number is a number.
+ */
+function hasPostcodeAndNumber(block) {
+	return (
+		normaliseFormat('postcode', block.postcode ?? '') !== null
+		&& /^[1-9]\d{0,4}$/.test(partOf(block.number))
+	)
 }

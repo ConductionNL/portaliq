@@ -62,6 +62,8 @@
 						:accountHref="accountHref"
 						:session="session"
 						:accountLink="accountLink"
+						:pillLabel="pillLabel"
+						:signedInLabel="signedInLabel"
 						:signOutLabel="signOutLabel"
 						:hasMenu="showNavigation && menus.length > 0"
 						:menuOpen="menuOpen"
@@ -238,6 +240,10 @@ export default {
 		session: { type: Object, default: null },
 		/** How to name the signed-in visitor. */
 		sessionLabel: { type: String, default: '' },
+		/** The account pill's accessible name (designed header). */
+		pillLabel: { type: String, default: '' },
+		/** The account pill's text without a name (designed header). */
+		signedInLabel: { type: String, default: '' },
 		/** `{route, href, label}` of the resident's own area, or null. */
 		accountLink: { type: Object, default: null },
 		/** The sign-in routes the portal declares. */
@@ -308,7 +314,7 @@ export default {
 		 *
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-header-must-carry-the-search-box-and-one-way-to-the-own-area
 		 */
 		designed() {
 			return Boolean(this.accountLabel) || this.searchBox.enabled === true
@@ -379,5 +385,20 @@ export default {
 	display: flex;
 	align-items: center;
 	gap: 8px;
+}
+
+/*
+ * A crumb link is a 24px target. As bare text it was 19px high, and WCAG 2.2
+ * SC 2.5.8 (target size, minimum) asks 24 by 24 CSS pixels or that much space;
+ * axe flagged it on every page with a trail (site-accessibility S13b, S13d,
+ * S13e and the statement case). The link keeps its text and line, only its
+ * box grows to the minimum.
+ * @spec openspec/changes/archive/2026-11-25-public-site-meets-wcag-aa/tasks.md#t03
+ */
+.ac-breadcrumb__item > .utrecht-link {
+	display: inline-flex;
+	align-items: center;
+	min-block-size: 24px;
+	min-inline-size: 24px;
 }
 </style>

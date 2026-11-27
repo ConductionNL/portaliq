@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md
+ * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md
  */
 
 declare(strict_types=1);
@@ -32,7 +32,7 @@ namespace OCA\Portaliq\Service\Cms;
 /**
  * Holds help details and section help texts to a fixed shape.
  *
- * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md
+ * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md
  */
 class PortalHelp {
 	public const SECTIONS = ['overview', 'cases', 'tasks', 'messages', 'contacts'];
@@ -48,13 +48,26 @@ class PortalHelp {
 	 *
 	 * @return array<string, string> Empty when the portal sets none.
 	 *
-	 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
+	 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-form-offers-help-without-losing-the-answers-req-htf-001
 	 */
 	public function details(mixed $help): array {
 		if (is_array($help) === false) {
 			return [];
 		}
 
+		$out = $this->keyTexts(help: $help);
+
+		return $this->withContact(out: $out, help: $help);
+	}//end details()
+
+	/**
+	 * The help texts under the known keys, left out when empty.
+	 *
+	 * @param array<array-key, mixed> $help The record's `help`.
+	 *
+	 * @return array<string, string>
+	 */
+	private function keyTexts(array $help): array {
 		$out = [];
 		foreach (self::KEYS as $key) {
 			$text = $this->text(value: ($help[$key] ?? null));
@@ -63,6 +76,18 @@ class PortalHelp {
 			}
 		}
 
+		return $out;
+	}//end keyTexts()
+
+	/**
+	 * The details with a valid e-mail address and a local or https image, when given.
+	 *
+	 * @param array<string, string>   $out  The details so far.
+	 * @param array<array-key, mixed> $help The record's `help`.
+	 *
+	 * @return array<string, string>
+	 */
+	private function withContact(array $out, array $help): array {
 		$email = $this->text(value: ($help['email'] ?? null));
 		if (filter_var($email, FILTER_VALIDATE_EMAIL) !== false) {
 			$out['email'] = $email;
@@ -74,7 +99,7 @@ class PortalHelp {
 		}
 
 		return $out;
-	}//end details()
+	}//end withContact()
 
 	/**
 	 * The help text of each part of Mijn omgeving; unknown parts and empty
@@ -84,7 +109,7 @@ class PortalHelp {
 	 *
 	 * @return array<string, string>
 	 *
-	 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
+	 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
 	 */
 	public function sections(mixed $sections): array {
 		if (is_array($sections) === false) {
@@ -109,7 +134,7 @@ class PortalHelp {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
+	 * @spec openspec/changes/archive/2026-11-25-help-texts-and-form-help/specs/site-help-texts/spec.md#requirement-a-page-and-each-part-of-mijn-omgeving-can-carry-a-help-text-req-htf-002
 	 */
 	public function pageText(mixed $value): string {
 		return $this->text(value: $value);

@@ -34,13 +34,13 @@ test('fetchFamily sends the bearer and turns every failure into null', async () 
 		seen = { url, init }
 		return { ok: true, json: async () => ({ members: PEOPLE }) }
 	}
-	assert.deepEqual(await fetchFamily('/api', 'tok', true, ok), PEOPLE)
+	assert.deepEqual(await fetchFamily({ base: '/api', token: 'tok', fetchImpl: ok }, true), PEOPLE)
 	assert.match(seen.url, /\/api\/intake\/family\?sameAddressOnly=1$/)
 	assert.equal(seen.init.headers.Authorization, 'Bearer tok')
 
-	assert.equal(await fetchFamily('/api', 'tok', true, async () => ({ ok: false })), null)
-	assert.equal(await fetchFamily('/api', 'tok', true, async () => { throw new Error('x') }), null)
-	assert.equal(await fetchFamily('/api', 'tok', true, async () => ({ ok: true, json: async () => ({}) })), null)
+	assert.equal(await fetchFamily({ base: '/api', token: 'tok', fetchImpl: async () => ({ ok: false }) }, true), null)
+	assert.equal(await fetchFamily({ base: '/api', token: 'tok', fetchImpl: async () => { throw new Error('x') } }, true), null)
+	assert.equal(await fetchFamily({ base: '/api', token: 'tok', fetchImpl: async () => ({ ok: true, json: async () => ({}) }) }, true), null)
 })
 
 test('a family field starts with nobody chosen', () => {

@@ -17,22 +17,22 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t04
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use OCA\Portaliq\Service\ActionReminderService;
-use OCA\Portaliq\Service\Plans\PlanEndReminderService;
+use OCA\Portaliq\Kernel\Contracts\ActionReminderServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PlanEndReminderServiceInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 
 /**
  * Runs the action reminders and the plan end reminders once a day.
  *
- * @spec openspec/changes/personal-action-list/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t04
  */
 class ActionReminderJob extends TimedJob {
 	private const INTERVAL = 86400;
@@ -41,13 +41,13 @@ class ActionReminderJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory          $time      The scheduler's clock.
-	 * @param ActionReminderService $reminders Sends the reminders.
-	 * @param PlanEndReminderService $planReminders Sends the reminders before a plan's end date.
+	 * @param ActionReminderServiceInterface $reminders Sends the reminders.
+	 * @param PlanEndReminderServiceInterface $planReminders Sends the reminders before a plan's end date.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly ActionReminderService $reminders,
-		private readonly PlanEndReminderService $planReminders,
+		private readonly ActionReminderServiceInterface $reminders,
+		private readonly PlanEndReminderServiceInterface $planReminders,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: self::INTERVAL);
@@ -60,7 +60,7 @@ class ActionReminderJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/personal-action-list/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/tasks.md#t04
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
 	 * the signature; dropping the parameter breaks the override.

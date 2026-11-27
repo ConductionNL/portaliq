@@ -15,7 +15,7 @@ use ReflectionMethod;
  * portal reads of the content API is a routed public path. The test reads
  * routes.php and the portal's sources, nothing else of Portaliq.
  *
- * @spec openspec/changes/portal-headless-content-api/tasks.md#task-4
+ * @spec openspec/changes/archive/2026-11-25-portal-headless-content-api/tasks.md#task-4
  */
 class HeadlessConformanceTest extends TestCase {
 	/**
@@ -67,7 +67,15 @@ class HeadlessConformanceTest extends TestCase {
 		}
 
 		$this->assertNotSame([], $urls, 'the portal reads the content API');
-		$routed = array_map(static fn (array $r): string => (string)$r['url'], $this->contentRoutes());
+		// A route with a parameter ('/api/content/media/{id}') is read as its
+		// fixed part, which is all a reader's literal can name before the id.
+		$routed = [];
+		foreach ($this->contentRoutes() as $route) {
+			$url      = (string)$route['url'];
+			$routed[] = $url;
+			$routed[] = explode(separator: '/{', string: $url)[0];
+		}
+
 		foreach ($urls as $url => $reader) {
 			$this->assertContains($url, $routed, $reader . ' reads ' . $url . ' which the public API does not route');
 		}

@@ -9,6 +9,16 @@
 
 export default {
 	nl: {
+		'More actions for this case': 'Meer acties voor deze zaak',
+		'You can no longer do this on this case.': 'Dit kan niet meer bij deze zaak.',
+		'We have received it.': 'Wij hebben het ontvangen.',
+		'We have received it. Reference {reference}.': 'Wij hebben het ontvangen. Kenmerk {reference}.',
+		'You will find it as a case of its own in My cases.': 'U vindt het als eigen zaak in Mijn zaken.',
+		'How you are signed in, how we reach you and what we let you know about.':
+			'Hoe u bent ingelogd, hoe wij u bereiken en waarover wij u laten weten.',
+		'Contact preferences': 'Contactvoorkeuren',
+		'For example the name or the KvK number of a company':
+			'Bijvoorbeeld de naam of het KvK-nummer van een bedrijf',
 		'Send the invitation': 'Uitnodiging sturen',
 		'Who may arrange matters for you, and for whom you arrange matters.':
 			'Wie zaken voor u mag regelen, en voor wie u zaken regelt.',
@@ -33,9 +43,9 @@ export default {
 			'Kiest u een bedrijf of persoon? Dan ziet u bij Mijn zaken hun zaken.',
 		'Your mandate for {party}': 'Uw machtiging voor {party}',
 		'given by {party} on {date}': 'gegeven door {party} op {date}',
-		'given by the municipality on {date}': 'gegeven door de gemeente op {date}',
+		'given by {organisation} on {date}': 'gegeven door {organisation} op {date}',
 		'given by {party}': 'gegeven door {party}',
-		'given by the municipality': 'gegeven door de gemeente',
+		'given by {organisation}': 'gegeven door {organisation}',
 		'Reaches: the company only': 'Reikt tot: alleen het bedrijf',
 		'Reaches: the company and the organisation below it':
 			'Reikt tot: het bedrijf en de organisatie eronder',
@@ -71,6 +81,7 @@ export default {
 			'Heeft u iemand gemachtigd via DigiD Machtigen? Die machtiging ziet u hier niet. U regelt en bekijkt haar op digid.nl.',
 		'What do I need to arrange': 'Wat moet ik regelen',
 		'View all tasks ({count})': 'Bekijk alle taken ({count})',
+		'View all my cases': 'Bekijk al mijn zaken',
 		'What can I arrange': 'Wat kan ik regelen',
 		'My {products}': 'Mijn {products}',
 		products: 'producten',
@@ -93,6 +104,11 @@ export default {
 		'People and organisations you work with. With a contact you can send messages and make a plan together.':
 			'Mensen en organisaties met wie u samenwerkt. Met een contact kunt u berichten sturen en samen een plan maken.',
 		'Waiting for approval': 'Wacht op goedkeuring',
+		'{name} wants to add you as a contact': '{name} wil u toevoegen als contact',
+		'Invitation to {email}': 'Uitnodiging aan {email}',
+		'Waiting for a reply': 'Wacht op reactie',
+		'Someone only becomes your contact once you have both approved each other.': 'Iemand wordt pas uw contact als u elkaar allebei heeft goedgekeurd.',
+		'Requested on {date}': 'Gevraagd op {date}',
 		'Not accepted': 'Niet geaccepteerd',
 		'Sent on {date}': 'Verstuurd op {date}',
 		Accept: 'Accepteren',
@@ -122,6 +138,13 @@ export default {
 		'E-mail address': 'E-mailadres',
 		'Message (optional)': 'Bericht (niet verplicht)',
 		'What happens after you send it?': 'Wat gebeurt er na het versturen?',
+		'Invite someone to become your contact, for example a family member or someone who helps you. We send an e-mail with a personal link.': 'Nodig iemand uit om uw contact te worden, bijvoorbeeld een familielid of iemand die u helpt. Wij sturen een e-mail met een persoonlijke link.',
+		'Of the person you want to invite.': 'Van de persoon die u wilt uitnodigen.',
+		'This message is in the e-mail, below your name.': 'Dit bericht staat in de e-mail, onder uw naam.',
+		'The person gets an e-mail with a link. The link works for 14 days.': 'De persoon krijgt een e-mail met een link. De link werkt 14 dagen.',
+		'With the link they create an account. The e-mail address is already filled in.': 'Met de link maakt hij of zij een account. Het e-mailadres staat dan al ingevuld.',
+		'Once the account is made you are contacts of each other. You do not have to approve anything else.': 'Na het aanmaken van het account bent u elkaars contact. U hoeft niets meer goed te keuren.',
+		'Does this person already have an account? Then they get no invitation, but a request to approve you.': 'Heeft deze persoon al een account? Dan krijgt hij of zij geen uitnodiging, maar een verzoek om u goed te keuren.',
 		'The person receives your invitation.': 'De ander ontvangt uw uitnodiging.',
 		'If they have no account yet, they can create one with the link. It works for 14 days.':
 			'Heeft de ander nog geen account, dan kan die er met de link een aanmaken. De link werkt 14 dagen.',
@@ -164,6 +187,7 @@ export default {
 		'By phone': 'Telefonisch',
 		'By post': 'Per post',
 		Cancel: 'Annuleren',
+		Close: 'Sluiten',
 		'Check the address and try again.':
 			'Controleer het adres en probeer het opnieuw.',
 		'Choose another preferred address first.':
@@ -235,7 +259,7 @@ export default {
 		'The portal cannot show registered details for this way of signing in.':
 			'Bij deze manier van inloggen kan het portaal geen geregistreerde gegevens tonen.',
 		'There are no documents on this case yet.':
-			'Er staan nog geen documenten bij deze zaak.',
+			'Er staan nog geen stukken bij deze zaak.',
 		'There is no portal account for this sign-in.':
 			'Er is geen portaalaccount voor deze inlog.',
 		'These are the details the Chamber of Commerce (KvK) holds about your company.':
@@ -256,12 +280,11 @@ export default {
 		'We sent a link to {address}. Follow it to confirm the address.':
 			'We hebben een link gestuurd naar {address}. Open de link om het adres te bevestigen.',
 		'Whose cases do you need access to?': 'Voor wiens zaken wilt u toegang?',
-		'Why are you withdrawing? (optional)':
-			'Waarom trekt u de aanvraag in? (niet verplicht)',
+		'Why are you withdrawing? (optional)': 'Waarom trekt u in? (niet verplicht)',
 		'Why do you need access?': 'Waarom hebt u toegang nodig?',
 		'Withdraw request': 'Aanvraag intrekken',
-		'Withdraw this request': 'Deze aanvraag intrekken',
-		'Withdraw this request?': 'Deze aanvraag intrekken?',
+		'Withdraw this request': 'Aanvraag intrekken',
+		'Withdraw this request?': 'Wilt u deze aanvraag intrekken?',
 		'Withdrawn on {date}.': 'Ingetrokken op {date}.',
 		'We still need documents from you. Send them before {due}, and we will decide by {legal}.':
 			'Wij hebben nog stukken van u nodig. Stuur ze voor {due}, dan nemen wij uiterlijk {legal} een besluit.',
@@ -271,7 +294,16 @@ export default {
 		'Your tasks could not be loaded.': 'Uw taken konden niet worden geladen.',
 		'Expected decision': 'Verwacht besluit',
 		'Ready by': 'Uiterlijk klaar op',
+		'See the result': 'Bekijk het resultaat',
+		'Please answer before {date}': 'Graag antwoord voor {date}',
+		'We have your answer. The handler is looking at it.': 'Wij hebben uw antwoord. De behandelaar kijkt ernaar.',
+		'Send answer': 'Antwoord versturen',
+		'Your reply': 'Uw antwoord',
+		'Add documents': 'Documenten toevoegen',
+		'Your answer could not be sent. Please try again.': 'Uw antwoord kon niet worden verstuurd. Probeer het opnieuw.',
+		'This question has already been dealt with.': 'Deze vraag is al afgehandeld.',
 		'Next step: {step}': 'Volgende stap: {step}',
+		Outcome: 'Uitkomst',
 		'Yes, remove my account': 'Ja, verwijder mijn account',
 		'You have no e-mail address on your account.':
 			'Er staat geen e-mailadres bij uw account.',
@@ -302,6 +334,16 @@ export default {
 		'{name} has been added to your case.': '{name} is aan uw zaak toegevoegd.',
 	},
 	en: {
+		'More actions for this case': 'More actions for this case',
+		'You can no longer do this on this case.': 'You can no longer do this on this case.',
+		'We have received it.': 'We have received it.',
+		'We have received it. Reference {reference}.': 'We have received it. Reference {reference}.',
+		'You will find it as a case of its own in My cases.': 'You will find it as a case of its own in My cases.',
+		'How you are signed in, how we reach you and what we let you know about.':
+			'How you are signed in, how we reach you and what we let you know about.',
+		'Contact preferences': 'Contact preferences',
+		'For example the name or the KvK number of a company':
+			'For example the name or the KvK number of a company',
 		'Send the invitation': 'Send the invitation',
 		'Who may arrange matters for you, and for whom you arrange matters.':
 			'Who may arrange matters for you, and for whom you arrange matters.',
@@ -326,9 +368,9 @@ export default {
 			'Do you choose a company or person? Then My cases shows their cases.',
 		'Your mandate for {party}': 'Your mandate for {party}',
 		'given by {party} on {date}': 'given by {party} on {date}',
-		'given by the municipality on {date}': 'given by the municipality on {date}',
+		'given by {organisation} on {date}': 'given by {organisation} on {date}',
 		'given by {party}': 'given by {party}',
-		'given by the municipality': 'given by the municipality',
+		'given by {organisation}': 'given by {organisation}',
 		'Reaches: the company only': 'Reaches: the company only',
 		'Reaches: the company and the organisation below it':
 			'Reaches: the company and the organisation below it',
@@ -364,6 +406,7 @@ export default {
 			'Did you authorise someone through DigiD Machtigen? You do not see that mandate here. You arrange and view it on digid.nl.',
 		'What do I need to arrange': 'What do I need to arrange',
 		'View all tasks ({count})': 'View all tasks ({count})',
+		'View all my cases': 'View all my cases',
 		'What can I arrange': 'What can I arrange',
 		'My {products}': 'My {products}',
 		products: 'products',
@@ -386,6 +429,11 @@ export default {
 		'People and organisations you work with. With a contact you can send messages and make a plan together.':
 			'People and organisations you work with. With a contact you can send messages and make a plan together.',
 		'Waiting for approval': 'Waiting for approval',
+		'{name} wants to add you as a contact': '{name} wants to add you as a contact',
+		'Invitation to {email}': 'Invitation to {email}',
+		'Waiting for a reply': 'Waiting for a reply',
+		'Someone only becomes your contact once you have both approved each other.': 'Someone only becomes your contact once you have both approved each other.',
+		'Requested on {date}': 'Requested on {date}',
 		'Not accepted': 'Not accepted',
 		'Sent on {date}': 'Sent on {date}',
 		Accept: 'Accept',
@@ -415,6 +463,13 @@ export default {
 		'E-mail address': 'E-mail address',
 		'Message (optional)': 'Message (optional)',
 		'What happens after you send it?': 'What happens after you send it?',
+		'Invite someone to become your contact, for example a family member or someone who helps you. We send an e-mail with a personal link.': 'Invite someone to become your contact, for example a family member or someone who helps you. We send an e-mail with a personal link.',
+		'Of the person you want to invite.': 'Of the person you want to invite.',
+		'This message is in the e-mail, below your name.': 'This message is in the e-mail, below your name.',
+		'The person gets an e-mail with a link. The link works for 14 days.': 'The person gets an e-mail with a link. The link works for 14 days.',
+		'With the link they create an account. The e-mail address is already filled in.': 'With the link they create an account. The e-mail address is already filled in.',
+		'Once the account is made you are contacts of each other. You do not have to approve anything else.': 'Once the account is made you are contacts of each other. You do not have to approve anything else.',
+		'Does this person already have an account? Then they get no invitation, but a request to approve you.': 'Does this person already have an account? Then they get no invitation, but a request to approve you.',
 		'The person receives your invitation.':
 			'The person receives your invitation.',
 		'If they have no account yet, they can create one with the link. It works for 14 days.':
@@ -458,6 +513,7 @@ export default {
 		'By phone': 'By phone',
 		'By post': 'By post',
 		Cancel: 'Cancel',
+		Close: 'Close',
 		'Check the address and try again.': 'Check the address and try again.',
 		'Choose another preferred address first.':
 			'Choose another preferred address first.',
@@ -561,7 +617,16 @@ export default {
 		'Your tasks could not be loaded.': 'Your tasks could not be loaded.',
 		'Expected decision': 'Expected decision',
 		'Ready by': 'Ready by',
+		'See the result': 'See the result',
+		'Please answer before {date}': 'Please answer before {date}',
+		'We have your answer. The handler is looking at it.': 'We have your answer. The handler is looking at it.',
+		'Send answer': 'Send answer',
+		'Your reply': 'Your reply',
+		'Add documents': 'Add documents',
+		'Your answer could not be sent. Please try again.': 'Your answer could not be sent. Please try again.',
+		'This question has already been dealt with.': 'This question has already been dealt with.',
 		'Next step: {step}': 'Next step: {step}',
+		Outcome: 'Outcome',
 		'Yes, remove my account': 'Yes, remove my account',
 		'You have no e-mail address on your account.':
 			'You have no e-mail address on your account.',

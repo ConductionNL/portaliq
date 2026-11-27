@@ -27,6 +27,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\CmsReaderInterface;
+use OCA\Portaliq\Service\Articles\PageArticle;
+use OCA\Portaliq\Service\Cms\ContentLocale;
 use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\Cms\PortalHelp;
 use OCA\Portaliq\Service\Cms\PortalShell;
@@ -52,7 +55,7 @@ use Psr\Log\LoggerInterface;
  *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods) -- one method per kind of content the headless API serves.
  */
-class CmsReader {
+class CmsReader implements CmsReaderInterface {
 
 	/**
 	 * The audience-keyed distributed cache.
@@ -92,6 +95,8 @@ class CmsReader {
 	 * @param MediaReferences       $media        Resolves a page's media:<id> references.
 	 * @param PortalRegionResolver  $regions      Groups a page's widgets by region.
 	 * @param PortalShell           $shell        Projects the portal's header, footer and regions.
+	 * @param PageArticle|null      $articles     Resolves the article a markdown page names.
+	 * @param ContentLocale         $locales      Chooses the rows in the visitor's language.
 	 *
 	 * @return void
 	 */
@@ -103,6 +108,8 @@ class CmsReader {
 		private readonly MediaReferences $media,
 		private readonly PortalRegionResolver $regions=new PortalRegionResolver(),
 		private readonly PortalShell $shell=new PortalShell(),
+		private readonly ?PageArticle $articles=null,
+		private readonly ContentLocale $locales=new ContentLocale(),
 	) {
 		$this->cache     = new CmsContentCache(cache: $cacheFactory->createDistributed('portaliq_cms'), logger: $logger);
 		$this->rows      = new CmsRows(container: $container, logger: $logger, context: $context);
@@ -110,26 +117,33 @@ class CmsReader {
 		$this->faqReader = new CmsFaq(cache: $this->cache, rows: $this->rows, reader: $this);
 	}//end __construct()
 
-
 	/**
 	 * Read the menus of a portal.
 	 *
 	 * @param string $portal  The portal slug.
 	 * @param string $locale   The locale.
 	 * @param string $audience The requesting audience.
+	 * @param string $defaultLocale The portal's default locale (its first), '' when unknown.
 	 *
 	 * @return array The menus, ordered by position.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-content-must-be-served-in-the-language-the-visitor-asked-for
 	 */
-	public function menus(string $portal, string $locale, string $audience): array {
+	public function menus(string $portal, string $locale, string $audience, string $defaultLocale=''): array {
 		$key = $this->cache->key(portal: $portal, kind: 'menus', selector: '', locale: $locale, audience: $audience);
 		$hit = $this->cache->lookup(key: $key);
 		if ($hit !== null) {
 			return json_decode($hit, true) ?? [];
 		}
 
-		$rows = $this->rows->query(schema: 'menu', filters: ['portal' => $portal]);
+		// Menus are translated as a set: the requested locale's when it has any,
+		// else the default locale's, plus every menu without a locale.
+		$rows = $this->locales->filter(
+			rows: $this->rows->query(schema: 'menu', filters: ['portal' => $portal]),
+			locale: $locale,
+			defaultLocale: $defaultLocale
+		);
 		usort($rows, static fn ($a, $b) => (int)($a['position'] ?? 0) <=> (int)($b['position'] ?? 0));
 
 		$menus = array_map(fn (array $row) => $this->shapeMenu(row: $row), $rows);
@@ -138,33 +152,40 @@ class CmsReader {
 		return $menus;
 	}//end menus()
 
-
 	/**
 	 * Read the published pages of a portal, without their bodies.
 	 *
 	 * @param string $portal  The portal slug.
 	 * @param string $locale   The locale.
 	 * @param string $audience The requesting audience.
+	 * @param string $defaultLocale The portal's default locale (its first), '' when unknown.
 	 *
 	 * @return array The page summaries.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-content-must-be-served-in-the-language-the-visitor-asked-for
 	 */
-	public function pages(string $portal, string $locale, string $audience): array {
+	public function pages(string $portal, string $locale, string $audience, string $defaultLocale=''): array {
 		$key = $this->cache->key(portal: $portal, kind: 'pages', selector: '', locale: $locale, audience: $audience);
 		$hit = $this->cache->lookup(key: $key);
 		if ($hit !== null) {
 			return json_decode($hit, true) ?? [];
 		}
 
-		$rows = $this->rows->query(schema: 'page', filters: ['portal' => $portal, 'status' => 'published']);
+		// One summary per route, in the language page() would serve there.
+		$byRoute = [];
+		foreach ($this->rows->query(schema: 'page', filters: ['portal' => $portal, 'status' => 'published']) as $row) {
+			$byRoute[(string)($row['route'] ?? '')][] = $row;
+		}
+
 		$pages = [];
-		foreach ($rows as $row) {
+		foreach ($byRoute as $candidates) {
+			$row = $this->locales->pick(rows: $candidates, locale: $locale, defaultLocale: $defaultLocale);
 			$pages[] = [
 				'title'   => (string)($row['title'] ?? ''),
 				'route'   => (string)($row['route'] ?? ''),
 				'summary' => (string)($row['summary'] ?? ''),
-			'helpText' => (new PortalHelp())->pageText(value: ($row['helpText'] ?? null)),
+				'helpText' => (new PortalHelp())->pageText(value: ($row['helpText'] ?? null)),
 				'locale'  => (string)($row['locale'] ?? ''),
 				'bodyType' => (string)($row['body']['type'] ?? ''),
 			];
@@ -176,7 +197,6 @@ class CmsReader {
 		return $pages;
 	}//end pages()
 
-
 	/**
 	 * Read one published page by route.
 	 *
@@ -185,50 +205,128 @@ class CmsReader {
 	 * @param string $locale   The locale.
 	 * @param string $audience The requesting audience.
 	 * @param string $organisation The serving portal's organisation, for shared blocks; '' leaves them unexpanded.
+	 * @param string $defaultLocale The portal's default locale (its first), '' when unknown.
 	 *
 	 * @return array|null The page, or null when there is no published page there.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
 	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-content-must-be-served-in-the-language-the-visitor-asked-for
 	 */
-	public function page(string $portal, string $route, string $locale, string $audience, string $organisation=''): ?array {
+	public function page(string $portal, string $route, string $locale, string $audience, string $organisation='', string $defaultLocale=''): ?array {
 		// The organisation is part of the key: a placed shared block expands for
 		// the organisation it is read for, and a read without one must not
 		// hand its unexpanded page to a read with one.
+		$selector = $this->pageSelector(route: $route, organisation: $organisation);
+
+		$key = $this->cache->key(portal: $portal, kind: 'page', selector: $selector, locale: $locale, audience: $audience);
+		$hit = $this->cache->lookup(key: $key);
+		if ($hit !== null) {
+			return $this->withArticle(page: $this->cachedPage(hit: $hit), portal: $portal, organisation: $organisation);
+		}
+
+		$page = $this->publishedPage(portal: $portal, route: $route, organisation: $organisation, locale: $locale, defaultLocale: $defaultLocale);
+
+		$this->cache->store($key, json_encode($page ?? []));
+
+		return $this->withArticle(page: $page, portal: $portal, organisation: $organisation);
+	}//end page()
+
+	/**
+	 * The page's cache selector: the route, with the organisation when there is one.
+	 *
+	 * @param string $route        The in-site route.
+	 * @param string $organisation The serving portal's organisation, or ''.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/site-shared-page-blocks/tasks.md#t02
+	 */
+	private function pageSelector(string $route, string $organisation): string {
 		$selector = $route;
 		if ($organisation !== '') {
 			$selector = $route . '#org=' . $organisation;
 		}
 
-		$key = $this->cache->key(portal: $portal, kind: 'page', selector: $selector, locale: $locale, audience: $audience);
-		$hit = $this->cache->lookup(key: $key);
-		if ($hit !== null) {
-			$decoded = json_decode($hit, true);
-			if ($decoded === []) {
-				return null;
-			}
+		return $selector;
+	}//end pageSelector()
 
-			return $decoded;
+	/**
+	 * A cached page, or null when the cache holds the empty answer.
+	 *
+	 * @param string $hit The cached JSON.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+	 */
+	private function cachedPage(string $hit): array|null {
+		$decoded = json_decode($hit, true);
+		if ($decoded === []) {
+			return null;
 		}
 
+		return $decoded;
+	}//end cachedPage()
+
+	/**
+	 * The published page on the route, shaped, or null.
+	 *
+	 * @param string $portal       The portal slug.
+	 * @param string $route        The in-site route.
+	 * @param string $organisation The serving portal's organisation, or ''.
+	 * @param string $locale        The requested locale.
+	 * @param string $defaultLocale The portal's default locale, '' when unknown.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-page-body-must-be-either-a-widget-grid-or-markdown
+	 */
+	private function publishedPage(string $portal, string $route, string $organisation, string $locale='', string $defaultLocale=''): array|null {
 		// The `status` filter is applied in the QUERY, not after. A draft page
 		// must never reach this process's memory, let alone a response: an
 		// unpublished route and a non-existent route are answered identically,
 		// so the API is not an existence oracle for unreleased content.
 		$rows = $this->rows->query(schema: 'page', filters: ['portal' => $portal, 'route' => $route, 'status' => 'published']);
-		$page = null;
-		foreach ($rows as $row) {
-			if ((string)($row['route'] ?? '') === $route) {
-				$page = $this->shapePage(row: $row, organisation: $organisation);
-				break;
-			}
+
+		// The route is re-checked here, not trusted to the filter: a filter
+		// that silently widened would serve a DIFFERENT page under this route.
+		// A route can hold one page per language; ContentLocale picks the one
+		// in the requested locale, else the default locale's, else one without
+		// a locale, else whichever there is.
+		$atRoute = array_filter($rows, static fn (array $row): bool => (string)($row['route'] ?? '') === $route);
+		$chosen  = $this->locales->pick(rows: array_values($atRoute), locale: $locale, defaultLocale: $defaultLocale);
+		$page    = null;
+		if ($chosen !== null) {
+			$page = $this->shapePage(row: $chosen, organisation: $organisation);
 		}
 
-		$this->cache->store($key, json_encode($page ?? []));
+		return $page;
+	}//end publishedPage()
+
+	/**
+	 * The page with the article its markdown body names, read now: only a
+	 * published or archived article of the portal's organisation shows, and
+	 * any other answer is null (marketing-articles-from-pipelinq).
+	 *
+	 * @param array|null $page         The shaped page, or null.
+	 * @param string     $portal       The portal slug.
+	 * @param string     $organisation The serving portal's organisation.
+	 *
+	 * @return array|null The page, with `body.article` when the body names one.
+	 *
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-page-can-show-an-article
+	 */
+	private function withArticle(?array $page, string $portal, string $organisation): ?array {
+		$ref = ($page['body']['articleRef'] ?? '');
+		if ($page === null || is_string($ref) === false || $ref === '' || $this->articles === null) {
+			return $page;
+		}
+
+		$page['body']['article'] = $this->articles->shown(portal: $portal, ref: $ref, organisation: $organisation);
 
 		return $page;
-	}//end page()
-
+	}//end withArticle()
 
 	/**
 	 * Resolve the stored identifier of a page at a route, published or not.
@@ -272,7 +370,6 @@ class CmsReader {
 		return null;
 	}//end identify()
 
-
 	/**
 	 * Every row of one schema for a portal, drafts included, for the editor's
 	 * publish check. The caller has already established that the person may
@@ -283,7 +380,7 @@ class CmsReader {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/portal-cms-admin-ui/tasks.md#task-2
+	 * @spec openspec/changes/archive/2026-11-25-portal-cms-admin-ui/tasks.md#task-2
 	 */
 	public function rowsForCheck(string $portal, string $schema): array {
 		if (in_array($schema, ['page', 'menu', 'glossaryTerm'], true) === false) {
@@ -299,19 +396,26 @@ class CmsReader {
 	 * @param string $portal  The portal slug.
 	 * @param string $locale   The locale.
 	 * @param string $audience The requesting audience.
+	 * @param string $defaultLocale The portal's default locale (its first), '' when unknown.
 	 *
 	 * @return array The glossary terms, alphabetical.
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-all-content-must-be-scoped-to-a-portal
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-content-must-be-served-in-the-language-the-visitor-asked-for
 	 */
-	public function glossary(string $portal, string $locale, string $audience): array {
+	public function glossary(string $portal, string $locale, string $audience, string $defaultLocale=''): array {
 		$key = $this->cache->key(portal: $portal, kind: 'glossary', selector: '', locale: $locale, audience: $audience);
 		$hit = $this->cache->lookup(key: $key);
 		if ($hit !== null) {
 			return json_decode($hit, true) ?? [];
 		}
 
-		$rows = $this->rows->query(schema: 'glossaryTerm', filters: ['portal' => $portal]);
+		// Translated as a set, like the menus.
+		$rows = $this->locales->filter(
+			rows: $this->rows->query(schema: 'glossaryTerm', filters: ['portal' => $portal]),
+			locale: $locale,
+			defaultLocale: $defaultLocale
+		);
 		$terms = [];
 		foreach ($rows as $row) {
 			$terms[] = [
@@ -328,7 +432,6 @@ class CmsReader {
 		return $terms;
 	}//end glossary()
 
-
 	/**
 	 * Shape a stored menu row for the API.
 	 *
@@ -339,37 +442,9 @@ class CmsReader {
 	private function shapeMenu(array $row): array {
 		$items = [];
 		foreach ((array)($row['items'] ?? []) as $item) {
-			if (is_array($item) === false) {
-				continue;
+			if (is_array($item) === true) {
+				$items[] = $this->shapeMenuItem(item: $item);
 			}
-
-			$children = [];
-			foreach ((array)($item['items'] ?? []) as $child) {
-				if (is_array($child) === false) {
-					continue;
-				}
-
-				// Only ONE level of children is emitted. A third level in
-				// stored data is dropped here rather than passed on, so a
-				// consumer never has to guess how deep the tree can go.
-				$children[] = [
-					'order' => (int)($child['order'] ?? 0),
-					'name'  => (string)($child['name'] ?? ''),
-					'link'  => (string)($child['link'] ?? ''),
-					'icon'  => (string)($child['icon'] ?? ''),
-				];
-			}
-
-			usort($children, static fn ($a, $b) => $a['order'] <=> $b['order']);
-
-			$items[] = [
-				'order'       => (int)($item['order'] ?? 0),
-				'name'        => (string)($item['name'] ?? ''),
-				'link'        => (string)($item['link'] ?? ''),
-				'description' => (string)($item['description'] ?? ''),
-				'icon'        => (string)($item['icon'] ?? ''),
-				'items'       => $children,
-			];
 		}
 
 		usort($items, static fn ($a, $b) => $a['order'] <=> $b['order']);
@@ -381,6 +456,52 @@ class CmsReader {
 		];
 	}//end shapeMenu()
 
+	/**
+	 * Shape one top-level menu item, with its children ordered.
+	 *
+	 * @param array $item The stored item.
+	 *
+	 * @return array The API shape.
+	 */
+	private function shapeMenuItem(array $item): array {
+		$children = [];
+		foreach ((array)($item['items'] ?? []) as $child) {
+			if (is_array($child) === true) {
+				$children[] = $this->shapeMenuChild(child: $child);
+			}
+		}
+
+		usort($children, static fn ($a, $b) => $a['order'] <=> $b['order']);
+
+		return [
+			'order'       => (int)($item['order'] ?? 0),
+			'name'        => (string)($item['name'] ?? ''),
+			'link'        => (string)($item['link'] ?? ''),
+			'description' => (string)($item['description'] ?? ''),
+			'icon'        => (string)($item['icon'] ?? ''),
+			'items'       => $children,
+		];
+	}//end shapeMenuItem()
+
+	/**
+	 * Shape one child of a menu item.
+	 *
+	 * Only ONE level of children is emitted. A third level in stored data is
+	 * dropped here rather than passed on, so a consumer never has to guess
+	 * how deep the tree can go.
+	 *
+	 * @param array $child The stored child.
+	 *
+	 * @return array The API shape.
+	 */
+	private function shapeMenuChild(array $child): array {
+		return [
+			'order' => (int)($child['order'] ?? 0),
+			'name'  => (string)($child['name'] ?? ''),
+			'link'  => (string)($child['link'] ?? ''),
+			'icon'  => (string)($child['icon'] ?? ''),
+		];
+	}//end shapeMenuChild()
 
 	/**
 	 * A page's search-engine fields, stored flat as `seo*` so the page form
@@ -402,7 +523,6 @@ class CmsReader {
 		];
 	}//end shapeSeo()
 
-
 	/**
 	 * The portal's shell as the public site contract serves it.
 	 *
@@ -416,7 +536,6 @@ class CmsReader {
 		return $this->shell->project(portal: $portal);
 	}//end shell()
 
-
 	/**
 	 * Shape a stored page row for the API.
 	 *
@@ -426,55 +545,112 @@ class CmsReader {
 	 * @return array The API shape.
 	 */
 	private function shapePage(array $row, string $organisation=''): array {
-		$body   = (array)($row['body'] ?? []);
-		$type   = (string)($body['type'] ?? 'markdown');
 		$portal = (string)($row['portal'] ?? '');
 
-		$shaped = [
+		return [
 			'title'   => (string)($row['title'] ?? ''),
 			'route'   => (string)($row['route'] ?? ''),
 			'summary' => (string)($row['summary'] ?? ''),
+			'helpText' => (new PortalHelp())->pageText(value: ($row['helpText'] ?? null)),
 			'locale'  => (string)($row['locale'] ?? ''),
 			'seo'     => $this->shapeSeo(row: $row),
 			'hero'    => $this->media->hero(portal: $portal, value: ($row['heroImage'] ?? null)),
-			'body'    => ['type' => $type],
+			'body'    => $this->shapeBody(row: $row, organisation: $organisation),
 		];
+	}//end shapePage()
+
+	/**
+	 * Shape a stored page's body: markdown source, or a widget grid.
+	 *
+	 * @param array  $row          The stored page.
+	 * @param string $organisation The serving portal's organisation, for shared blocks.
+	 *
+	 * @return array The API shape of the body.
+	 */
+	private function shapeBody(array $row, string $organisation): array {
+		$body = (array)($row['body'] ?? []);
+		$type = (string)($body['type'] ?? 'markdown');
 
 		// The regions this page empties on purpose (REQ-PTB-009). Served for
 		// both body types: a markdown page can clear the portal's hero too.
-		$shaped['body']['clearedRegions'] = $this->regions->cleared(cleared: ($body['clearedRegions'] ?? []));
-
-		if ($type === 'markdown') {
-			// Served as SOURCE. Rendering to HTML here would force every
-			// consumer that wants markdown — a Docusaurus build, most
-			// obviously — to parse it back out, losing fidelity for nothing.
-			// Only a media:<id> link target is rewritten to the item's address.
-			$shaped['body']['markdown'] = $this->media->markdown(portal: $portal, markdown: (string)($body['markdown'] ?? ''));
-			return $shaped;
+		$shaped = ['type' => $type, 'clearedRegions' => $this->regions->cleared(cleared: ($body['clearedRegions'] ?? []))];
+		if ($type !== 'markdown') {
+			return $shaped + $this->shapeGrid(row: $row, organisation: $organisation);
 		}
+
+		// Served as SOURCE. Rendering to HTML here would force every
+		// consumer that wants markdown — a Docusaurus build, most
+		// obviously — to parse it back out, losing fidelity for nothing.
+		// Only a media:<id> link target is rewritten to the item's address.
+		$shaped['markdown'] = $this->media->markdown(portal: (string)($row['portal'] ?? ''), markdown: (string)($body['markdown'] ?? ''));
+
+		// A markdown page may name an article (marketing-articles-from-pipelinq).
+		// The reference is cached with the page; the article itself is read
+		// per request in withArticle(), so publishing or archiving it shows
+		// at once without a page write to drop the cache.
+		$articleRef = $body['articleRef'] ?? '';
+		if (is_string($articleRef) === true && trim($articleRef) !== '') {
+			$shaped['articleRef'] = trim($articleRef);
+		}
+
+		return $shaped;
+	}//end shapeBody()
+
+	/**
+	 * Shape a grid body: its widgets ordered by row then column, its aside
+	 * column, and the same widgets grouped by region.
+	 *
+	 * @param array  $row          The stored page.
+	 * @param string $organisation The serving portal's organisation, for shared blocks.
+	 *
+	 * @return array `widgets`, `aside` when asked for, `regions` and `unknownRegions`.
+	 */
+	private function shapeGrid(array $row, string $organisation): array {
+		$body = (array)($row['body'] ?? []);
 
 		// The portal goes along for the form placements: each is served with
 		// its stored form's help details, read now and not when the page was
 		// made (help-texts-and-form-help).
 		$widgets = $this->blocks->shapeWidgets(raw: (array)($body['widgets'] ?? []));
-		$widgets = $this->blocks->expand(widgets: $widgets, organisation: $organisation, portal: $portal);
+		$widgets = $this->blocks->expand(widgets: $widgets, organisation: $organisation, portal: (string)($row['portal'] ?? ''));
 
 		usort(
 			$widgets,
 			static fn ($a, $b) => [$a['gridY'], $a['gridX']] <=> [$b['gridY'], $b['gridX']]
 		);
 
-		$shaped['body']['widgets'] = $widgets;
-
 		// The same widgets grouped by region, beside the flat list the
 		// Docusaurus plugin reads (REQ-PTB-008). A slot that names no region
 		// is reported, not dropped silently. An empty map stays an object.
 		$grouped = $this->regions->group(widgets: $widgets);
-		$shaped['body']['regions']        = $this->regions->forJson(regions: $grouped['regions']);
-		$shaped['body']['unknownRegions'] = $grouped['unknownRegions'];
 
-		return $shaped;
-	}//end shapePage()
+		return ['widgets' => $widgets] + $this->shapeAside(body: $body) + [
+			'regions'        => $this->regions->forJson(regions: $grouped['regions']),
+			'unknownRegions' => $grouped['unknownRegions'],
+		];
+	}//end shapeGrid()
+
+	/**
+	 * A fixed-width aside column, when the page asks for one
+	 * (site-aside-column); the site checks the range.
+	 *
+	 * @param array $body The stored body.
+	 *
+	 * @return array `['aside' => ...]`, or nothing.
+	 */
+	private function shapeAside(array $body): array {
+		$aside = $body['aside'] ?? null;
+		if (is_array($aside) === false || is_numeric($aside['width'] ?? null) === false) {
+			return [];
+		}
+
+		$gap = null;
+		if (is_numeric($aside['gap'] ?? null) === true) {
+			$gap = (int) $aside['gap'];
+		}
+
+		return ['aside' => ['width' => (int) $aside['width'], 'gap' => $gap]];
+	}//end shapeAside()
 
 	/**
 	 * Hits and misses of the content cache since it was first used.
@@ -528,7 +704,7 @@ class CmsReader {
 	 *
 	 * @return array The entries: question, answer, topic, pages.
 	 *
-	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t02
 	 */
 	public function faq(string $portal, string $locale, string $audience, string $page='', string $topic=''): array {
 		return $this->faqReader->faq(portal: $portal, locale: $locale, audience: $audience, page: $page, topic: $topic);
@@ -544,7 +720,7 @@ class CmsReader {
 	 *
 	 * @return array|null The finder, or null when there is none published.
 	 *
-	 * @spec openspec/changes/public-faq-and-product-finder/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-public-faq-and-product-finder/tasks.md#t02
 	 */
 	public function finder(string $portal, string $id, string $locale, string $audience): ?array {
 		return $this->faqReader->finder(portal: $portal, id: $id, locale: $locale, audience: $audience);

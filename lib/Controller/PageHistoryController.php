@@ -26,9 +26,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Cms\PageHistory;
-use OCA\Portaliq\Service\PageEditorService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PageEditorServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PageHistoryInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
@@ -48,15 +48,15 @@ class PageHistoryController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest          $request    The request.
-	 * @param PageEditorService $pageEditor Decides who is a page editor.
-	 * @param PageHistory       $history    The versions.
+	 * @param PageEditorServiceInterface $pageEditor Decides who is a page editor.
+	 * @param PageHistoryInterface       $history    The versions.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PageEditorService $pageEditor,
-		private readonly PageHistory $history,
+		private readonly PageEditorServiceInterface $pageEditor,
+		private readonly PageHistoryInterface $history,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**

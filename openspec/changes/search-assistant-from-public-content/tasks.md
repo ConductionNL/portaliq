@@ -18,4 +18,4 @@
 ## Docs, strings and validation
 
 - [x] **T07**: English and Dutch strings for every sentence in design D3 and D4; a docs page for organisations on what the assistant reads, where the model runs, and how to turn it on. Verification: `npm run lint`, `test:l10n`.
-- [ ] **T08**: `openspec validate search-assistant-from-public-content --strict`. — not run: the openspec CLI is not installed here.
+- [x] **T08**: `openspec validate search-assistant-from-public-content --strict`. Valid (20 Nov, openspec 2.1.1).

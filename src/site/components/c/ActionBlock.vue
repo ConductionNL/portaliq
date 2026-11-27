@@ -8,66 +8,32 @@
 		v-if="resolved"
 		class="pq-action-block"
 		:data-testid="`action-block-${resolved.id}`">
-		<template v-if="isForm">
-			<h2 v-if="headed" class="utrecht-heading-2">
-				{{ resolved.label || resolved.id }}
-			</h2>
-			<SchemaForm
-				:action="resolved"
-				:api="api"
-				:t="t"
-				@submitted="(object) => $emit('created', object, resolved)" />
-		</template>
-		<!-- A call to action that creates something about the open record
-		     (a bezwaar, a klacht on a case page): a button that opens the
-		     action's form, with the record already in its `recordField`
-		     (case-actions-on-the-case-page). -->
-		<template v-else-if="isRecordForm">
-			<div class="pq-action-button">
-				<button
-					type="button"
-					class="utrecht-button utrecht-button--primary-action"
-					:aria-expanded="String(open)"
-					:aria-controls="`pq-action-form-${resolved.id}`"
-					:data-testid="`action-open-${resolved.id}`"
-					@click="open = !open">
-					{{ block.label || resolved.label || resolved.id }}
-				</button>
-			</div>
-			<div
-				v-if="open"
-				:id="`pq-action-form-${resolved.id}`"
-				class="pq-action-block__form">
-				<h2 class="utrecht-heading-3">
-					{{ block.label || resolved.label || resolved.id }}
-				</h2>
-				<SchemaForm
-					:action="resolved"
-					:api="api"
-					:t="t"
-					:preset="{ [resolved.recordField]: block.record }"
-					@submitted="(object) => $emit('created', object, resolved)" />
-			</div>
-		</template>
-		<!-- An endpoint action that needs input, on an `action` block: its
-		     form, sent to the app's endpoint (site-action-forms). -->
-		<template v-else-if="isEndpointForm">
-			<h2 v-if="headed" class="utrecht-heading-2">
-				{{ resolved.label || resolved.id }}
-			</h2>
-			<SchemaForm
-				:action="resolved"
-				:api="api"
-				:t="t"
-				:send="sendForward"
-				@submitted="(object) => $emit('created', object, resolved)" />
-		</template>
-		<!-- A call to action (a cta, a greeting's button) whose action needs
-		     input: the button opens the form instead of sending nothing
+		<!-- An action block's form: a create or update action, or an endpoint
+		     action that needs input, sent to the app's endpoint
 		     (site-action-forms). -->
-		<template v-else-if="opensForm">
+		<template v-if="isForm || isEndpointForm">
+			<h2 v-if="headed" class="utrecht-heading-2">
+				{{ resolved.label || resolved.id }}
+			</h2>
+			<SchemaForm
+				:action="resolved"
+				:api="api"
+				:t="t"
+				:send="isForm ? null : sendForward"
+				cancellable
+				:portalHelp="portalHelp"
+				@cancel="leave"
+				@submitted="(object) => $emit('created', object, resolved)" />
+		</template>
+		<!-- A call to action whose action needs input: a button that opens the
+		     form instead of sending nothing (site-action-forms). One that
+		     creates something about the open record (a bezwaar, a klacht on a
+		     case page) carries the record in its `recordField`
+		     (case-actions-on-the-case-page). -->
+		<template v-else-if="isRecordForm || opensForm">
 			<div class="pq-action-button">
 				<button
+					ref="opener"
 					type="button"
 					class="utrecht-button utrecht-button--primary-action"
 					:aria-expanded="String(open)"
@@ -82,13 +48,16 @@
 				:id="`pq-action-form-${resolved.id}`"
 				class="pq-action-block__form">
 				<h2 class="utrecht-heading-3">
-					{{ resolved.label || block.label || resolved.id }}
+					{{ formHeading }}
 				</h2>
 				<SchemaForm
 					:action="resolved"
 					:api="api"
 					:t="t"
-					:send="endpoint ? sendForward : null"
+					:preset="recordPreset"
+					:send="!isRecordForm && endpoint ? sendForward : null"
+					cancellable
+					@cancel="close"
 					@submitted="(object) => $emit('created', object, resolved)" />
 			</div>
 		</template>
@@ -110,6 +79,7 @@ import SchemaForm from './SchemaForm.vue'
 import { redirectTarget } from '../../../shared/rowAction.js'
 import { forwardApi } from '../../lib/residentActions.js'
 import { residentAuthBase, residentToken } from '../../lib/residentSession.js'
+import { siteHref } from '../mijn/rows.js'
 import { asksInput, forwardResult, isEndpointAction } from './forms.js'
 
 /**
@@ -129,8 +99,8 @@ function goTo(url) {
  * action is a button that forwards it. The block's action is looked up in the
  * contribution, so a block can only run an action that contribution declares.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-an-endpoint-action-must-show-its-answer-or-follow-its-redirect-req-srp-027
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-an-endpoint-action-must-show-its-answer-or-follow-its-redirect-req-srp-027
+ * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
  */
 export default {
 	name: 'ActionBlock',
@@ -152,6 +122,8 @@ export default {
 		action: { type: Object, default: null },
 		/** Where a checked redirect goes; the browser by default. */
 		navigate: { type: Function, default: goTo },
+		/** The portal's help details, offered on a form with a page of its own. */
+		portalHelp: { type: Object, default: null },
 	},
 
 	emits: ['created'],
@@ -168,7 +140,7 @@ export default {
 		 * one under the other (zuiddrecht live test, 14 October 2026).
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/endpoint-action-forms-keep-their-field-shape/specs/site-forms/spec.md#requirement-a-form-on-a-page-of-its-own-does-not-repeat-the-page-title-req-eaf-004
+		 * @spec openspec/specs/site-forms/spec.md#requirement-a-form-on-a-page-of-its-own-does-not-repeat-the-page-title-req-eaf-004
 		 */
 		headed() {
 			const title = String(this.block.pageTitle || '').trim()
@@ -192,7 +164,7 @@ export default {
 		 * Whether the action goes to its app's own endpoint.
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
 		 */
 		endpoint() {
 			return isEndpointAction(this.resolved)
@@ -202,7 +174,7 @@ export default {
 		 * An `action` block on an endpoint action that needs input: its form.
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
 		 */
 		isEndpointForm() {
 			return (
@@ -218,7 +190,7 @@ export default {
 		 * only with that record, above (isRecordForm).
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
 		 */
 		opensForm() {
 			return (
@@ -239,12 +211,38 @@ export default {
 		},
 
 		/**
+		 * The heading over a call to action's open form: the block's label
+		 * first on the open record's form, the action's label first otherwise.
+		 *
+		 * @return {string} The heading.
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+		 */
+		formHeading() {
+			const labels = this.isRecordForm
+				? [this.block.label, this.resolved.label]
+				: [this.resolved.label, this.block.label]
+			return labels.find(Boolean) || this.resolved.id
+		},
+
+		/**
+		 * The open record in its field, for the form on the open record; none otherwise.
+		 *
+		 * @return {object|undefined} The preset, or undefined for the form's own default.
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+		 */
+		recordPreset() {
+			return this.isRecordForm
+				? Object.fromEntries([[this.resolved.recordField, this.block.record]])
+				: undefined
+		},
+
+		/**
 		 * Whether this is a call to action that creates something about the
 		 * open record: a `cta` with `withRecord`, on a record page (the page
 		 * sets `record`), for a create action that names its `recordField`.
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-cta-block-may-open-a-page-or-a-site-route-for-the-open-record-with-the-record-in-its-label-req-smo-024
 		 */
 		isRecordForm() {
 			return (
@@ -261,14 +259,43 @@ export default {
 
 	methods: {
 		/**
+		 * Leave a form that has a page of its own: back to where the
+		 * resident came from, or to the site's home when the form was the
+		 * first page they opened.
+		 *
+		 * @spec exclude navigation of the form's cancel button, no requirement yet
+		 */
+		leave() {
+			if (typeof window === 'undefined') {
+				return
+			}
+			if (window.history.length > 1) {
+				window.history.back()
+				return
+			}
+			window.location.assign(siteHref('/'))
+		},
+
+		/**
+		 * Close a form a button opened, and give the focus back to that
+		 * button.
+		 *
+		 * @spec exclude navigation of the form's cancel button, no requirement yet
+		 */
+		close() {
+			this.open = false
+			this.$nextTick(() => this.$refs.opener?.focus?.())
+		},
+
+		/**
 		 * Send the form's answers to the action's endpoint through the portal,
 		 * and follow a checked redirect the app answers with.
 		 *
 		 * @param {object} body The typed answers.
 		 * @param {{submissionKey?: string}} [options] The form's submission key (REQ-AFS-001).
 		 * @return {Promise<object>} The result in the form's send shape.
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
-		 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+		 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
 		 */
 		async sendForward(body, options = {}) {
 			const api =

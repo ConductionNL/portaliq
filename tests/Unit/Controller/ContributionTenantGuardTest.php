@@ -20,6 +20,7 @@ use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\SubjectAssertionIssuer;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Http;
 use OCP\Http\Client\IClientService;
@@ -28,6 +29,17 @@ use OCP\IURLGenerator;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\CaseRowMarker;
+use OCA\Portaliq\Contribution\CreateActionMatcher;
+use OCA\Portaliq\Contribution\CreateBody;
+use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Contribution\PageChoice;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Contribution\RowIdentifier;
+use OCA\Portaliq\Contribution\ThemeChoice;
+use OCA\Portaliq\Service\VisibleFromGate;
+use OCA\Portaliq\Service\WriteRefusal;
 
 /**
  * operate-portals-per-organisation REQ-OPO-002: a session that names no
@@ -63,12 +75,12 @@ class ContributionTenantGuardTest extends TestCase {
 			$this->createMock(PortalSchemaReader::class),
 			$this->createMock(PortalInboxReader::class),
 			$this->createMock(PortalAuditHook::class),
-			new PortalActionForwarder($request, new InstanceLoopback($this->createMock(IClientService::class), $this->createMock(IURLGenerator::class), $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $session),
+			new PortalActionForwarder($request, new InstanceLoopback($this->createMock(IClientService::class), $this->createMock(IURLGenerator::class), $this->createMock(InternalBaseUrl::class), $this->createMock(LoggerInterface::class)), $this->createMock(SubjectAssertionIssuer::class)),
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),
 			$this->createMock(LoggerInterface::class),
-			portals: $portals
+			portals: $portals, caseRowMarker: new CaseRowMarker(), createActionMatcher: new CreateActionMatcher(), createBody: new CreateBody(), inboxMessageFields: new InboxMessageFields(), pageChoice: new PageChoice(), requestedPortal: new RequestedPortal(), requiredFieldsGuard: new RequiredFieldsGuard(), rowIdentifier: new RowIdentifier(), themeChoice: new ThemeChoice(), visibleFromGate: new VisibleFromGate(), writeRefusal: new WriteRefusal()
 		);
 	}
 
@@ -93,7 +105,7 @@ class ContributionTenantGuardTest extends TestCase {
 	/**
 	 * Own-area pages are announced only for a portal that switched them on.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t06
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
 	 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t08
 	 */
 	public function testAreaPagesAreAnnouncedOnlyWhenThePortalSwitchedThemOn(): void {
@@ -101,6 +113,8 @@ class ContributionTenantGuardTest extends TestCase {
 			[['contactsEnabled' => true], ['contacts']],
 			[['plansEnabled' => true], ['samenwerken']],
 			[['contactsEnabled' => true, 'plansEnabled' => true], ['contacts', 'samenwerken']],
+			[['actionsEnabled' => true], ['acties']],
+			[['contactsEnabled' => true, 'plansEnabled' => true, 'actionsEnabled' => true], ['contacts', 'samenwerken', 'acties']],
 			[['contactsEnabled' => 'yes', 'plansEnabled' => 1], []],
 			[[], []],
 		];

@@ -22,7 +22,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service;
 
 /**
- * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
  */
 class NewsPhotoConsentGate {
 	/**
@@ -53,7 +53,7 @@ class NewsPhotoConsentGate {
 	 *
 	 * @return array<string, mixed> The row, `photoRefs` withheld when required.
 	 *
-	 * @spec openspec/changes/news-and-newsletter-authoring/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-photos-in-a-news-item-are-gated-by-the-target-childs-photo-consent
 	 */
 	public function apply(array $item): array {
 		$photoRefs = $item['photoRefs'] ?? [];
@@ -67,17 +67,33 @@ class NewsPhotoConsentGate {
 			return $item;
 		}
 
+		if ($this->anyConsentWithheld(childRefs: $childRefs) === true) {
+			$item['photoRefs'] = [];
+		}
+
+		return $item;
+	}//end apply()
+
+	/**
+	 * Whether any named child's photo consent for news is not granted,
+	 * asking in order and stopping at the first that withholds. An empty or
+	 * non-string ref names no child.
+	 *
+	 * @param array<int|string, mixed> $childRefs The targeted children.
+	 *
+	 * @return bool
+	 */
+	private function anyConsentWithheld(array $childRefs): bool {
 		foreach ($childRefs as $childRef) {
 			if (is_string($childRef) === false || $childRef === '') {
 				continue;
 			}
 
 			if ($this->audienceReader->childPhotoConsentGranted(childRef: $childRef, purpose: GuardianAudienceFixtureReader::PURPOSE_NEWS) === false) {
-				$item['photoRefs'] = [];
-				return $item;
+				return true;
 			}
 		}
 
-		return $item;
-	}//end apply()
+		return false;
+	}//end anyConsentWithheld()
 }//end class

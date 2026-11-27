@@ -3,37 +3,40 @@
 //
 // The plain rules of a theme page (life-domain-theme-pages): what a theme
 // gathers from the contributions, the validity of a product a resident holds,
-// and when an action is offered. Imports nothing, so the node specs run it as
-// a plain script.
+// the running cases of the theme, and when an action is offered. No Vue, so
+// the node specs run it as a plain script.
 //
 // @spec openspec/changes/life-domain-theme-pages/specs/life-domain-themes/spec.md
+
+export { runningCases, themeCaseCollections, themeCaseCounts } from './themeCases.js'
 
 /** The most products the theme page shows before it links to the full list. */
 export const PRODUCT_LIMIT = 3
 
+/** Where a tagged collection goes on the theme page, by its kind; any other kind lists as tasks. */
+const BUCKETS = { products: 'products', cases: 'cases' }
+
 /**
- * What a theme gathers: the tasks, products and actions of every contribution
- * that tagged themselves with its slug. The server already dropped tags the
- * portal does not declare.
+ * What a theme gathers: the tasks, products, cases and actions of every
+ * contribution that tagged themselves with its slug. The server already
+ * dropped tags the portal does not declare.
  *
  * @param {string} slug The theme.
  * @param {Array<object>} contributions The aggregate's contributions.
- * @return {{tasks: Array<object>, products: Array<object>, actions: Array<object>}} Each entry carries its `app`.
+ * @return {{tasks: Array<object>, products: Array<object>, cases: Array<object>, actions: Array<object>}} Each entry carries its `app`.
  *
  * @spec openspec/changes/life-domain-theme-pages/tasks.md#t03
+ * @spec openspec/changes/life-domain-theme-pages/tasks.md#t10
  */
 export function gather(slug, contributions) {
-	const out = { tasks: [], products: [], actions: [] }
+	const out = { tasks: [], products: [], cases: [], actions: [] }
 	for (const contribution of Array.isArray(contributions) ? contributions : []) {
 		const app = String(contribution?.app || '')
 		for (const collection of contribution?.collections || []) {
 			if (collection?.theme !== slug) {
 				continue
 			}
-			out[collection.kind === 'products' ? 'products' : 'tasks'].push({
-				app,
-				collection,
-			})
+			out[BUCKETS[collection.kind] || 'tasks'].push({ app, collection })
 		}
 		for (const action of contribution?.actions || []) {
 			if (action?.theme === slug) {
@@ -79,53 +82,113 @@ export function productState(row, collection, today) {
 }
 
 /**
- * A product as the board draws it: title, tag, meta line and last day.
+ * The label of a meta field: its configured label, else its column's.
+ *
+ * @param {object} collection The products collection.
+ * @param {string} field The meta field.
+ * @return {string} The label, or ''.
+ */
+function metaLabel(collection, field) {
+	return (
+		collection.fieldConfigs?.[field]?.label
+		|| (collection.columns || []).find((column) => column.field === field)?.label
+		|| ''
+	)
+}
+
+/**
+ * The meta parts of a product row: each meta field with a value, after its
+ * label.
  *
  * @param {object} row The product row.
  * @param {object} collection The products collection.
- * @param {string} today Today as `YYYY-MM-DD`.
- * @param {(date: string) => string} format A date as written for the reader.
- * @param {(key: string, vars?: object) => string} t The translator.
+ * @return {Array<string>} The parts.
+ */
+function metaParts(row, collection) {
+	return (collection?.metaFields || [])
+		.map((field) => {
+			const value = String(row?.[field] ?? '').trim()
+			return value === '' ? '' : `${metaLabel(collection, field)} ${value}`.trim()
+		})
+		.filter(Boolean)
+}
+
+/**
+ * A product as the board draws it: title, tag, meta line and last day.
+ *
+ * @param {object} row The product row.
+ * @param {{collection: object, today: string, format: (date: string) => string, t: (key: string, vars?: object) => string}} reading The products collection, today as `YYYY-MM-DD`, how a date is written for the reader, and the translator.
  * @return {{id: string, title: string, state: string, tag: string, meta: string, validUntil: string}} The view.
  *
  * @spec openspec/changes/life-domain-theme-pages/tasks.md#t05
  */
-export function productView(row, collection, today, format, t) {
+export function productView(row, reading) {
+	const { collection, today } = reading
 	const state = productState(row, collection, today)
 	const from = day(row?.[collection?.validFromField])
 	const until = day(row?.[collection?.validUntilField])
-	const title = String(
-		row?.[collection?.titleField] ?? row?.title ?? row?.name ?? '',
-	)
-	const meta = (collection?.metaFields || [])
-		.map((field) => {
-			const value = String(row?.[field] ?? '').trim()
-			const label =
-				collection.fieldConfigs?.[field]?.label
-				|| (collection.columns || []).find(
-					(column) => column.field === field,
-				)?.label
-				|| ''
-			return value === '' ? '' : `${label} ${value}`.trim()
-		})
-		.filter(Boolean)
-	if (from !== '' && state !== 'upcoming') {
-		meta.push(t('in effect since {date}', { date: format(from) }))
+	const meta = productMeta(row, { ...reading, state, from })
+	const tag = productTag(state, { ...reading, from })
+	return {
+		...productIdentity(row, collection),
+		state,
+		tag,
+		meta,
+		validUntil: lastDayLine(until, reading),
 	}
-	const tags = {
-		valid: t('Valid'),
-		expired: t('Expired'),
-		upcoming: t('Starts on {date}', { date: format(from) }),
-	}
+}
+
+/**
+ * @param {object} row The product row.
+ * @param {object} collection The products collection.
+ * @return {{id: string, title: string}} The product's id and title.
+ */
+function productIdentity(row, collection) {
 	return {
 		id: String(row?.id ?? row?.uuid ?? ''),
-		title,
-		state,
-		tag: tags[state],
-		meta: meta.join(' · '),
-		validUntil:
-			until === '' ? '' : t('Valid until {date}', { date: format(until) }),
+		title: String(row?.[collection?.titleField] ?? row?.title ?? row?.name ?? ''),
 	}
+}
+
+/**
+ * The meta line: the meta fields, and since when the product is in effect
+ * once it is.
+ *
+ * @param {object} row The product row.
+ * @param {{collection: object, format: (date: string) => string, t: (key: string, vars?: object) => string, state: string, from: string}} at The collection, the date format, the translator, the product's state and its first day.
+ * @return {string} The line.
+ */
+function productMeta(row, at) {
+	const parts = metaParts(row, at.collection)
+	if (at.from !== '' && at.state !== 'upcoming') {
+		parts.push(at.t('in effect since {date}', { date: at.format(at.from) }))
+	}
+	return parts.join(' · ')
+}
+
+/**
+ * @param {string} state The product's state.
+ * @param {{format: (date: string) => string, t: (key: string, vars?: object) => string, from: string}} at The date format, the translator and the product's first day.
+ * @return {string} The tag the board draws for the state.
+ */
+function productTag(state, at) {
+	const tags = {
+		valid: at.t('Valid'),
+		expired: at.t('Expired'),
+		upcoming: at.t('Starts on {date}', { date: at.format(at.from) }),
+	}
+	return tags[state]
+}
+
+/**
+ * @param {string} until The product's last day, or ''.
+ * @param {{format: (date: string) => string, t: (key: string, vars?: object) => string}} reading The date format and the translator.
+ * @return {string} The last-day line, or '' without a last day.
+ */
+function lastDayLine(until, reading) {
+	return until === ''
+		? ''
+		: reading.t('Valid until {date}', { date: reading.format(until) })
 }
 
 /**

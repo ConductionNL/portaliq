@@ -17,6 +17,8 @@
 
   The card sends the picked period as `days` through the `@range.preset`
   token; the manifest's `dateRange.default` opens the picker on 30 days.
+  With `content.days` (a token such as `@page.period`) the card follows the
+  page's period filter instead and draws no picker of its own.
   It links to the Traffic page with THIS portal selected: the portal's
   own slug, or on a page the page's `portal`.
 
@@ -27,8 +29,8 @@
   The manifest supplies `metric` (a key of the endpoint's answer), the
   label, the variant, the period presets and, for a page, `scope`.
 
-  @spec openspec/changes/portal-traffic-kpi-cards/specs/portal-traffic-kpi-cards/spec.md#requirement-the-portal-page-must-open-with-four-traffic-kpi-cards
-  @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
+  @spec openspec/specs/portal-traffic-kpi-cards/spec.md#requirement-the-portal-page-must-open-with-four-traffic-kpi-cards
+  @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
 -->
 <template>
 	<CnStatWidget ref="card" :content="cardContent" :data-testid="testId" />
@@ -54,7 +56,9 @@ export default {
 	props: {
 		/**
 		 * The widget's manifest content: `metric`, `label`, `variant`,
-		 * `dateRange`, an optional `testId` and an optional `scope`
+		 * `dateRange` or `days` (a token the period comes from, such as
+		 * `@page.period`, which replaces the card's own picker), an optional
+		 * `testId` and an optional `scope`
 		 * (`portal`, the default, or `page`).
 		 */
 		content: {
@@ -72,7 +76,7 @@ export default {
 	/**
 	 * On a page, the endpoint's answer.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
 	 * @return {object} The state.
 	 */
 	data() {
@@ -86,7 +90,7 @@ export default {
 		/**
 		 * The test id the manifest gave this card, or a default.
 		 *
-		 * @spec openspec/changes/portal-traffic-kpi-cards/specs/portal-traffic-kpi-cards/spec.md#requirement-the-portal-page-must-open-with-four-traffic-kpi-cards
+		 * @spec openspec/specs/portal-traffic-kpi-cards/spec.md#requirement-the-portal-page-must-open-with-four-traffic-kpi-cards
 		 * @return {string} The test id.
 		 */
 		testId() {
@@ -99,7 +103,7 @@ export default {
 		/**
 		 * Whether this card shows one page rather than a whole portal.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
 		 * @return {boolean} True for page scope.
 		 */
 		pageScope() {
@@ -109,7 +113,7 @@ export default {
 		/**
 		 * The portal slug: the portal's own, or the page's `portal`.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
 		 * @return {string} The slug, '' when unknown.
 		 */
 		slug() {
@@ -121,8 +125,8 @@ export default {
 		 * The CnStatWidget content: the endpoint for a measured portal,
 		 * "Not measured" for one that is not, the link either way.
 		 *
-		 * @spec openspec/changes/portal-traffic-kpi-cards/specs/portal-traffic-kpi-cards/spec.md#requirement-the-portal-page-must-open-with-four-traffic-kpi-cards
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
+		 * @spec openspec/specs/portal-traffic-kpi-cards/spec.md#requirement-the-portal-page-must-open-with-four-traffic-kpi-cards
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
 		 * @return {object} The content.
 		 */
 		cardContent() {
@@ -145,14 +149,29 @@ export default {
 			}
 			return {
 				...card,
-				dateRange: this.content.dateRange,
+				dateRange: this.period.dateRange,
 				endpointSource: {
 					url: '/apps/portaliq/api/traffic/summary',
-					params: { portal: this.slug, days: '@range.preset?' },
+					params: { portal: this.slug, days: this.period.days },
 				},
 
 				valueField: this.content.metric,
 			}
+		},
+
+		/**
+		 * Where the card's period comes from: the page's filter when the
+		 * manifest names a `days` token (no picker on the card), else the
+		 * card's own `dateRange` picker through `@range.preset`.
+		 *
+		 * @spec openspec/changes/portal-page-period/specs/portal-page-period/spec.md#requirement-the-portal-pages-traffic-figures-follow-one-period-selector
+		 * @return {{dateRange: (object|undefined), days: string}} The picker and the days token.
+		 */
+		period() {
+			if (typeof this.content.days === 'string' && this.content.days !== '') {
+				return { dateRange: undefined, days: this.content.days }
+			}
+			return { dateRange: this.content.dateRange, days: '@range.preset?' }
 		},
 	},
 
@@ -160,7 +179,7 @@ export default {
 	 * On a page, follow the card's answer: it says whether the portal is
 	 * measured and on how many days a figure was counted.
 	 *
-	 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
+	 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
 	 * @return {void}
 	 */
 	mounted() {
@@ -183,7 +202,7 @@ export default {
 		 * the period counted the figure. A figure only some days counted
 		 * says on how many.
 		 *
-		 * @spec openspec/changes/portal-page-traffic/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
+		 * @spec openspec/specs/portal-page-traffic/spec.md#requirement-the-page-detail-must-open-with-four-traffic-kpi-cards
 		 * @param {object} card The shared part: label, variant, link.
 		 * @return {object} The content.
 		 */
@@ -212,10 +231,10 @@ export default {
 				...card,
 				caption,
 				emptyText,
-				dateRange: this.content.dateRange,
+				dateRange: this.period.dateRange,
 				endpointSource: {
 					url: '/apps/portaliq/api/traffic/page',
-					params: { portal: this.slug, route, days: '@range.preset?' },
+					params: { portal: this.slug, route, days: this.period.days },
 				},
 
 				valueField: this.content.metric,

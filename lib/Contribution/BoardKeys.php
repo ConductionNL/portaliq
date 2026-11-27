@@ -15,7 +15,9 @@
  * - `tasks` with `display: highlight`: a `tone` (`warning` or `info`) and
  *   `dueInLine: true` (the due day joins the sub line);
  * - `inbox`: `display: list` (a title and the day, no badge);
- * - `documents`: `upload: true` (an outlined button that adds a document);
+ * - `documents`: `upload: true` (an outlined button that adds a document),
+ *   `groupBy`, `note`, `extraGroups` (media groups for the signed-in person)
+ *   and `bulkDownload` (the words on the bundle button);
  * - `detail`: a `label` over the facts and `timeline: false`;
  * - `citizenCase`: `display: actions` (the closed window sentence as a
  *   notice, no status block, no documents section);
@@ -64,6 +66,12 @@ class BoardKeys {
 	 * The longest note a documents block may carry.
 	 */
 	private const MAX_NOTE_LENGTH = 400;
+
+	/**
+	 * The authored sentences a documents block may carry: a note under the
+	 * list, a line beside its heading and the words when it lists nothing.
+	 */
+	private const DOCUMENTS_TEXT_KEYS = ['note', 'subtitle', 'emptyLabel'];
 
 	/**
 	 * How many turn values a cases block may name.
@@ -162,7 +170,8 @@ class BoardKeys {
 
 
 	/**
-	 * A documents block's board keys: `upload: true`, `groupBy` and `note`.
+	 * A documents block's board keys: `upload: true`, `groupBy`, `note`,
+	 * `extraGroups`, `bulkDownload`, `subtitle` and `emptyLabel`.
 	 *
 	 * @param array<string, mixed> $block The declared block.
 	 *
@@ -170,6 +179,7 @@ class BoardKeys {
 	 *
 	 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/portal-contribution-contract/spec.md#requirement-a-contribution-may-declare-the-board-displays
 	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-1
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
 	 */
 	public function documentsKeys(array $block): array {
 		$out = [];
@@ -184,17 +194,68 @@ class BoardKeys {
 			$out['groupBy'] = $groupBy;
 		}
 
-		// One authored sentence under the list.
-		$note = ($block['note'] ?? null);
-		if (is_string($note) === true) {
-			$note = trim($note);
-			if ($note !== '' && mb_strlen($note) <= self::MAX_NOTE_LENGTH) {
-				$out['note'] = $note;
+		// Groups of media for the signed-in person, read through OpenRegister's
+		// own access checks (documents-grouped-per-record task 3).
+		$extras = new DocumentsBlockExtras();
+		$extra  = $extras->extraGroups(value: ($block['extraGroups'] ?? null));
+		if ($extra !== []) {
+			$out['extraGroups'] = $extra;
+		}
+
+		// The words on the bundle button; whether the button shows is the
+		// collection's `documents.bundle` (ListBlockNormaliser).
+		$bundle = $extras->bundleLabel(value: ($block['bulkDownload'] ?? null));
+		if ($bundle !== '') {
+			$out['bulkDownload'] = ['label' => $bundle];
+		}
+
+		return $out + $this->documentsTexts(block: $block);
+	}//end documentsKeys()
+
+
+	/**
+	 * A documents block's authored sentences: under the list, beside the
+	 * heading, and when there is nothing.
+	 *
+	 * @param array<string, mixed> $block The declared block.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 */
+	private function documentsTexts(array $block): array {
+		$out = [];
+		foreach (self::DOCUMENTS_TEXT_KEYS as $key) {
+			$text = $this->shortText(value: ($block[$key] ?? null));
+			if ($text !== '') {
+				$out[$key] = $text;
 			}
 		}
 
 		return $out;
-	}//end documentsKeys()
+	}//end documentsTexts()
+
+	/**
+	 * A trimmed text no longer than a note may be, or ''.
+	 *
+	 * @param mixed $value The declared value.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-block-may-show-the-documents-of-every-record-it-can-read
+	 */
+	private function shortText(mixed $value): string {
+		if (is_string($value) === false) {
+			return '';
+		}
+
+		$text = trim($value);
+		if (mb_strlen($text) > self::MAX_NOTE_LENGTH) {
+			return '';
+		}
+
+		return $text;
+	}//end shortText()
 
 
 	/**

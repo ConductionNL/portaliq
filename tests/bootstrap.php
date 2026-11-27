@@ -180,13 +180,6 @@ if (interface_exists(\OCP\IUser::class) === false && is_dir(__DIR__ . '/../vendo
 	);
 }
 
-// Load the IMcpToolProvider stub when the openregister runtime (PR #1466,
-// ai-chat-companion-orchestrator) is absent. Also registered via autoload-dev
-// PSR-4 in composer.json (OCA\OpenRegister\ -> tests/Stubs/).
-if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
-	require_once __DIR__ . '/Stubs/Mcp/IMcpToolProvider.php';
-}
-
 // Integriq's connection-registry events (adopt-connection-registry).
 // ConnectionReporter sends them by string class name behind class_exists
 // (ADR-041), so portaliq stays installable without integriq. The stubs mirror
@@ -198,9 +191,31 @@ if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 // so the leaf tests run in CI where no sibling checkout exists.
 foreach ([
 	'Exception\\NotImplementedException' => 'Exception/NotImplementedException.php',
+	// What OpenRegister throws when an owning app's hook stops a write (the-owning-apps-refusal-reads-as-no-longer-possible).
+	'Exception\\HookStoppedException' => 'Exception/HookStoppedException.php',
 	'Service\\Integration\\IntegrationProvider' => 'Service/Integration/IntegrationProvider.php',
+	// The object-scoped CRUD half of the contract and the refs it takes (openregister main, 25 Nov 2026).
+	'Kernel\\Contracts\\RegisterSchemaRef' => 'Kernel/Contracts/RegisterSchemaRef.php',
+	'Kernel\\Contracts\\ObjectRef' => 'Kernel/Contracts/ObjectRef.php',
+	'Service\\Integration\\RefIntegrationProvider' => 'Service/Integration/RefIntegrationProvider.php',
+	'Service\\Integration\\LeafIdentity' => 'Service/Integration/LeafIdentity.php',
+	'Service\\Integration\\LeafAvailability' => 'Service/Integration/LeafAvailability.php',
+	'Service\\Integration\\LeafRendering' => 'Service/Integration/LeafRendering.php',
 	'Service\\Integration\\LeafDescriptor' => 'Service/Integration/LeafDescriptor.php',
 	'Event\\RegisterLeafProvidersEvent' => 'Event/RegisterLeafProvidersEvent.php',
+	// The form submit and draft value objects (openregister #7788, #7964):
+	// DraftOwner first, the others name it.
+	'Service\\Object\\DraftOwner' => 'Service/Object/DraftOwner.php',
+	'Service\\Object\\DiscardDraftRequest' => 'Service/Object/DiscardDraftRequest.php',
+	'Service\\Form\\FormSubmitter' => 'Service/Form/FormSubmitter.php',
+	'Service\\Form\\FormSubmission' => 'Service/Form/FormSubmission.php',
+	// What FormDestinationValidator::validate() takes (openregister main, 25 Nov 2026).
+	'Service\\Form\\FormDestination' => 'Service/Form/FormDestination.php',
+	// The concept register's reader (portal-identity-from-the-admin 3.1).
+	'Service\\Vocabulary\\ConceptRepository' => 'Service/Vocabulary/ConceptRepository.php',
+	// What ObjectService::saveObjects() takes (openregister #9108): the defaults first.
+	'Kernel\\Contracts\\Value\\BulkBatchDefaults' => 'Kernel/Contracts/Value/BulkBatchDefaults.php',
+	'Kernel\\Contracts\\Value\\BulkSaveOptions' => 'Kernel/Contracts/Value/BulkSaveOptions.php',
 ] as $orStubClass => $orStubFile) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false
@@ -237,3 +252,6 @@ foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'D
 }
 
 unset($integriqStubEvent);
+
+// Nextcloud runtime doubles (OC, Doctrine DBAL constants) for a run without Nextcloud.
+require_once __DIR__ . '/Stubs/Nextcloud/runtime.php';

@@ -27,7 +27,7 @@ A case card MUST be one link whose name is the case title. It MUST show the case
 #### Scenario: A running Woo request
 - GIVEN a case "Woo-verzoek bomenkap Lindelaan", status "In behandeling", reference "2026-0003", step 2 of 4, answer by 30 October, the resident's turn
 - WHEN the card renders, as in `DossiqOverview.dc.html`
-- THEN it reads "In behandeling", "Zaak 2026-0003", "Stap 2 van 4", "Antwoord uiterlijk 30 oktober" and "U bent aan zet"
+- THEN it reads "In behandeling", "Zaak 2026-0003", "Stap 2 van 4", "Antwoord uiterlijk 30 oktober" and "Wacht op u"
 
 #### Scenario: A case without progress data
 - GIVEN a `cases` collection without `steps`, `dueField` or `turnField`
@@ -73,13 +73,13 @@ The resident menu MUST render each page's declared `icon` before its label, deco
 
 ### Requirement: Mijn MUST open on what the resident still has to do (REQ-SMO-007)
 
-`/mijn` MUST render a home instead of redirecting to the first menu entry. It MUST start with a greeting and, when anything is open, "Dit moet u nog doen", listing open portal tasks and the rows of every `tasks` block on a home page, by deadline. It MUST then render every page a contribution marks `home: true`. Without any home page it MUST show the running cases and the newest messages. It MUST NOT be blank: with nothing to show it MUST show an empty state.
+`/mijn` MUST render a home instead of redirecting to the first menu entry. It MUST start with a greeting and, when anything is open, "Wat u nog moet doen" (board MijnOverzicht), listing open portal tasks and the rows of every `tasks` block on a home page, by deadline. It MUST then render every page a contribution marks `home: true`. Without any home page it MUST show the running cases and the newest messages. It MUST NOT be blank: with nothing to show it MUST show an empty state.
 
 #### Scenario: Sanne's overview in `DossiqOverview.dc.html`
 - GIVEN dossiq marks `overzicht` as `home: true` with a `tasks` block on `vragenAanU`
 - AND one open question with deadline 12 October
 - WHEN Sanne opens `/mijn`
-- THEN the first section is "Dit moet u nog doen" with "Beantwoord onze vraag over uw Woo-verzoek" and "Voor 12 oktober"
+- THEN the first section is "Wat u nog moet doen" with "Beantwoord onze vraag over uw Woo-verzoek" and "Voor 12 oktober"
 
 #### Scenario: A portal with nothing to do
 - GIVEN a resident with no tasks, cases or messages
@@ -88,12 +88,15 @@ The resident menu MUST render each page's declared `icon` before its label, deco
 
 ### Requirement: The resident MUST see and switch for whom they act (REQ-SMO-008)
 
-While a resident acts for someone else, every signed-in page MUST show a bar that names that party and offers a link back to acting for themselves. A page with `records` MUST show a switcher over the collection's rows as a radio group, with initials, a title and a subtitle. The chosen row MUST be part of the route. Switching MUST move focus to the page heading.
+While a resident acts for someone else, "Mijn overzicht" and "Mijn zaken" MUST show one bar: "U regelt nu zaken voor {party}", with the selector "Wissel naar" inside it (board `huisstijl/NamensBalk`). There is no second selector. The options MUST be the resident themselves ("Uzelf" with their name), each party they act for, named by its label, and "Iedereen voor wie u zaken regelt". The current party MUST be selected. Choosing a party MUST show only that party's cases. For the resident themselves the bar MUST read "U regelt nu uw eigen zaken.", and for everyone "U ziet nu de zaken van iedereen voor wie u zaken regelt." The bar MUST hold the link "Toegang tot zaken regelen". A page with `records` MUST show a switcher over the collection's rows as a radio group, with initials, a title and a subtitle. The chosen row MUST be part of the route. Switching MUST move focus to the page heading.
 
-#### Scenario: Linda acts for her father, `DossiqPhone.dc.html`
+#### Scenario: Linda acts for her father, `huisstijl/NamensBalk`
 - GIVEN Linda Bakker holds an active mandate for H. Bakker and has chosen it
-- WHEN any signed-in page renders
-- THEN a bar reads "U regelt nu zaken voor uw vader, H. Bakker" with "Wissel naar uzelf"
+- WHEN she opens "Mijn overzicht" or "Mijn zaken"
+- THEN the bar reads "U regelt nu zaken voor uw vader, H. Bakker"
+- AND "Wissel naar" offers "Uzelf, Linda Bakker", "Uw vader, H. Bakker" and "Iedereen voor wie u zaken regelt"
+- AND after "Uzelf" the bar reads "U regelt nu uw eigen zaken.", after "Iedereen" it reads "U ziet nu de zaken van iedereen voor wie u zaken regelt."
+- AND "Mijn zaken" shows only his cases
 
 #### Scenario: A guardian switches child, `Main.dc.html`
 - GIVEN the guardian overview declares `records: parentChildren` and the guardian has Vera and Sami
@@ -130,3 +133,27 @@ Without that range the tiles MUST start at today.
 - GIVEN items on Thursday 1, Monday 5, Wednesday 7, Thursday 8 and Friday 9 October, and today Thursday 8 October
 - WHEN "Deze maand" renders with `range: month`
 - THEN it shows 5, 7, 8 and 9 October, with 8 October marked as today
+
+### Requirement: A documents block for each record shows one group per record
+
+A documents block with `eachRecord: true` MUST load its collection and draw one group per row, in the collection's order. Each group MUST be headed by the row's `titleFields` joined by a space, else the block's `label`, with the row's `subtitleFields`, else the block's `subtitle`, beside the heading, and MUST carry a heading id of its own. A group that lists nothing MUST say the block's `emptyLabel` when it has one. A document of a collection that is not a case collection MUST read its day, then its type and size ("2 oktober 2026 · PDF, 84 kB"), without naming a sender.
+
+#### Scenario: Vera and Sami
+- GIVEN Fatima may read Vera (Groep 7) and Sami (Groep 4) in `parentChildren`
+- WHEN she opens "Rapporten en documenten"
+- THEN she sees a group "Vera" with "Groep 7" beside it and a group "Sami" with "Groep 4"
+- AND Vera's report reads "12 februari 2026 · PDF"
+- @e2e exclude page logic, covered by `node --test tests/site-documents-groups.spec.mjs` ("a page that is no record page draws a group per child the guardian may read", "a paper that is not a case's reads its day, type and size, without a sender")
+
+### Requirement: The steps may draw the step that matters now as a highlight
+
+A `steps` block MAY declare `display: "highlight"` with `eyebrow`, `buttonLabel` and `page`. The
+site MUST then draw one card: the current step, else the first step that is not done, with the
+step's name and its day (and time), its description, and a button that opens the page when the page
+belongs to the same contribution. When every step is done it MUST draw no card.
+
+#### Scenario: The next assessment
+@e2e exclude Rendered in node: tests/site-look/steps-highlight.spec.mjs; PHPUnit PortalBlockResolverTest
+- GIVEN the current step "Tussenbeoordeling" on 13 October 2026 at 10:00 with a description
+- WHEN the placement page renders the highlight
+- THEN the card reads "Volgende stap", "Tussenbeoordeling op dinsdag 13 oktober, 10.00 uur", the description and a button "Zelfbeoordeling afmaken"

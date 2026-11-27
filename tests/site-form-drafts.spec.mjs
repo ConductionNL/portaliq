@@ -119,6 +119,9 @@ test('the save button shows with a draft declared, and saves answers and step', 
 	await form.fire(el, 'input', { value: 'Rotonde' })
 	await form.fire(button, 'click')
 	await form.flush()
+	// The save dialog first (REQ-FSR-001), then "Opslaan en stoppen".
+	await form.fire(form.find('form-save-draft-save'), 'click')
+	await form.flush()
 
 	assert.equal(api.calls.saved.length, 1)
 	assert.equal(api.calls.saved[0].app, 'dossiq')
@@ -142,6 +145,8 @@ test('a wrong value is refused on its field and nothing reads as saved', async (
 	await form.flush()
 
 	await form.fire(form.find('schema-form-save-draft'), 'click')
+	await form.flush()
+	await form.fire(form.find('form-save-draft-save'), 'click')
 	await form.flush()
 
 	assert.match(form.text(), /Fill in words, not a number\./)
@@ -171,6 +176,8 @@ test('picked files are uploaded into the draft', async () => {
 	form.vm.files = { bijlage: [{ name: 'plan.pdf', size: 10 }] }
 
 	await form.fire(form.find('schema-form-save-draft'), 'click')
+	await form.flush()
+	await form.fire(form.find('form-save-draft-save'), 'click')
 	await form.flush()
 
 	assert.deepEqual(api.calls.uploaded, [
@@ -222,6 +229,11 @@ test('a resumed draft opens on the step with the gap', async () => {
 	const form = await mountSfc(FORM, { action: ACTION, api, locale: 'nl' })
 	await form.flush()
 
+	// The form asks first (REQ-FSR-002), then continues with the answers.
+	assert.ok(form.find('form-resume-draft-dialog'), 'the resume question shows')
+	await form.fire(form.find('form-resume-draft-resume'), 'click')
+	await form.flush()
+
 	assert.match(form.textOf(form.find('schema-form-step-heading')), /2 of 3/)
 	const el = form.findAll((n) => n.props.id === 'f-woo-request-omschrijving')[0]
 	assert.ok(el, 'the gap is on screen')
@@ -265,4 +277,45 @@ test('an endpoint action that declares a draft asks for none: the server keeps n
 		[['get', 'dossiq', 'woo-request']],
 		'a create action still resumes',
 	)
+})
+
+test('an endpoint action that declares draftSchema keeps its draft there: it resumes and offers the save button (endpoint-forward-draft-schema T4)', async () => {
+	const asked = []
+	const api = {
+		async fetchOptions() {
+			return []
+		},
+		async getDraft(app, id) {
+			asked.push(['get', app, id])
+			return null
+		},
+		async saveDraft(app, id) {
+			asked.push(['save', app, id])
+			return null
+		},
+	}
+	const endpoint = {
+		...ACTION,
+		type: 'endpoint-forward',
+		register: undefined,
+		schema: undefined,
+		endpoint: '/index.php/apps/dossiq/api/portal/woo-verzoek',
+		draftSchema: { register: 'dossiq', schema: 'woo-draft' },
+	}
+	const form = await mountSfc(FORM, {
+		action: endpoint,
+		api,
+		send: async () => ({ ok: true }),
+	})
+	await form.flush()
+	assert.deepEqual(asked, [['get', 'dossiq', 'woo-request']], 'its draft is read on open')
+	assert.ok(form.find('schema-form-save-draft'), 'the save button is offered')
+
+	const half = await mountSfc(FORM, {
+		action: { ...endpoint, draftSchema: { register: 'dossiq' } },
+		api,
+		send: async () => ({ ok: true }),
+	})
+	await half.flush()
+	assert.equal(half.find('schema-form-save-draft'), null, 'no schema, no save button')
 })

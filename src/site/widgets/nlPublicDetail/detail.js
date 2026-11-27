@@ -87,26 +87,49 @@ export function keepChoice(storage, path, choice) {
  * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-4
  */
 export function takeChoice(storage, path, dates, max = 20) {
-	let raw
-	try {
-		raw = storage?.getItem(CHOICE_PREFIX + path) ?? null
-		storage?.removeItem(CHOICE_PREFIX + path)
-	} catch {
-		return null
-	}
+	const raw = takeKept(storage, CHOICE_PREFIX + path)
 	if (!raw) {
 		return null
 	}
 	try {
 		const choice = JSON.parse(raw)
-		const date = (Array.isArray(dates) ? dates : []).find(
-			(entry) => entry.id === choice?.date && isChoosable(entry),
-		)
 		return {
-			date: date ? date.id : '',
+			date: choosableDate(dates, choice?.date),
 			count: clampCount(choice?.count, max),
 		}
 	} catch {
 		return null
 	}
+}
+
+/**
+ * Read a kept value and remove it; null when there is none or the storage
+ * refuses.
+ *
+ * @param {Storage|null} storage The storage.
+ * @param {string} key The key.
+ * @return {string|null} The value.
+ */
+function takeKept(storage, key) {
+	try {
+		const raw = storage?.getItem(key) ?? null
+		storage?.removeItem(key)
+		return raw
+	} catch {
+		return null
+	}
+}
+
+/**
+ * The id of the kept date when it is still offered and has places, else ''.
+ *
+ * @param {Array<object>} dates The item's dates.
+ * @param {string} id The kept date's id.
+ * @return {string} The id, or ''.
+ */
+function choosableDate(dates, id) {
+	const date = (Array.isArray(dates) ? dates : []).find(
+		(entry) => entry.id === id && isChoosable(entry),
+	)
+	return date ? date.id : ''
 }

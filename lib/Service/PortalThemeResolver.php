@@ -17,6 +17,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalThemeResolverInterface;
 use OCA\Portaliq\Service\Theme\PortalCustomThemeSets;
 use OCP\App\IAppManager;
 use Psr\Log\LoggerInterface;
@@ -47,8 +48,10 @@ use Psr\Log\LoggerInterface;
  * than disguise it.
  *
  * @spec openspec/specs/portaliq-cms/spec.md#requirement-a-portals-theme-must-change-what-a-visitor-sees
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
-class PortalThemeResolver {
+class PortalThemeResolver implements PortalThemeResolverInterface {
 
 	/**
 	 * The app that ships the token stylesheets, newest id first.
@@ -95,7 +98,6 @@ class PortalThemeResolver {
 	 */
 	private const LOGO_VARIANTS = ['' => '', 'dark' => '-dark', 'emblem' => '-emblem', 'emblem-grey' => '-emblem-grey'];
 
-
 	/**
 	 * Constructor.
 	 *
@@ -111,7 +113,6 @@ class PortalThemeResolver {
 		private readonly ?LoggerInterface $logger = null,
 	) {
 	}//end __construct()
-
 
 	/**
 	 * The token stylesheet for a theme reference, relative to the theme app's
@@ -130,12 +131,29 @@ class PortalThemeResolver {
 		// (ADR-086 section 6): the page then renders unthemed, and without this
 		// line nothing would say why.
 		if ($sheet === null && trim($theme) !== '') {
-			$this->logger?->warning('Portaliq: theme does not resolve, the portal renders unthemed', ['theme' => mb_substr($theme, 0, 64)]);
+			$this->logger?->warning($this->unresolvedMessage(), ['theme' => mb_substr($theme, 0, 64)]);
 		}
 
 		return $sheet;
 	}//end stylesheetFor()
 
+	/**
+	 * Why a named theme renders unthemed, in words an operator can act on.
+	 *
+	 * A missing theme app is named as the cause, so an installation without it
+	 * reports the dependency instead of only the theme it could not find.
+	 *
+	 * @return string The log message.
+	 *
+	 * @spec openspec/changes/archive/2026-11-25-portal-theme-application/specs/portaliq-cms/spec.md#requirement-portaliq-must-declare-its-dependency-on-themiq
+	 */
+	private function unresolvedMessage(): string {
+		if ($this->themeAppPath() === null) {
+			return 'Portaliq: theme does not resolve, the theme app ('.implode(' or ', self::THEME_APP_IDS).') is not installed; the portal renders unthemed';
+		}
+
+		return 'Portaliq: theme does not resolve, the portal renders unthemed';
+	}//end unresolvedMessage()
 
 	/**
 	 * The stylesheet a theme reference resolves to, or null.
@@ -188,7 +206,6 @@ class PortalThemeResolver {
 		return 'tokens/' . $theme;
 	}//end resolveStylesheet()
 
-
 	/**
 	 * The theme app's own stylesheets the site links beside a set, relative
 	 * to its `css/` directory, each null when the installed theme app ships
@@ -200,8 +217,8 @@ class PortalThemeResolver {
 	 *
 	 * @return array{bridge: string|null, fonts: string|null}
 	 *
-	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
-	 * @spec openspec/changes/site-links-the-theme-bridge/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-faces-the-theme-app-bundles-req-stb-002
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-theme-apps-public-bridge-before-a-resolved-token-set-req-stb-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-must-link-the-faces-the-theme-app-bundles-req-stb-002
 	 */
 	public function shippedStylesheets(): array {
 		$root = $this->themeAppPath();
@@ -212,7 +229,6 @@ class PortalThemeResolver {
 			'fonts'  => $asset->stylesheetIfShipped(root: $root, name: self::FONT_STYLESHEET),
 		];
 	}//end shippedStylesheets()
-
 
 	/**
 	 * The theme app path of a set's logo, relative to that app, or null.
@@ -263,7 +279,6 @@ class PortalThemeResolver {
 		return $relative;
 	}//end logoFileFor()
 
-
 	/**
 	 * Whether the theme app's catalogue offers this set.
 	 *
@@ -300,19 +315,53 @@ class PortalThemeResolver {
 	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
 	 */
 	public function catalogue(): array {
+		$path = $this->catalogueFile();
+		if ($path === null) {
+			return [];
+		}
+
+		$sets = $this->setsIn(decoded: json_decode((string)file_get_contents($path), true));
+		if ($sets === null) {
+			return [];
+		}
+
+		return $this->withCustomSets(sets: $sets);
+	}//end catalogue()
+
+	/**
+	 * The theme app's `token-sets.json`, or null when there is none.
+	 *
+	 * @return string|null
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+	 */
+	private function catalogueFile(): string|null {
 		$root = $this->themeAppPath();
 		if ($root === null) {
-			return [];
+			return null;
 		}
 
 		$path = $root . '/token-sets.json';
 		if (is_file($path) === false) {
-			return [];
+			return null;
 		}
 
-		$decoded = json_decode((string)file_get_contents($path), true);
+		return $path;
+	}//end catalogueFile()
+
+	/**
+	 * The entries of a decoded catalogue that carry a string `id`, or null
+	 * when the catalogue is malformed.
+	 *
+	 * @param mixed $decoded The decoded `token-sets.json`.
+	 *
+	 * @return array<int, array<string, mixed>>|null
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+	 */
+	private function setsIn(mixed $decoded): array|null {
 		if (is_array($decoded) === false) {
-			return [];
+			return null;
 		}
 
 		$sets = [];
@@ -322,6 +371,19 @@ class PortalThemeResolver {
 			}
 		}
 
+		return $sets;
+	}//end setsIn()
+
+	/**
+	 * The catalogue's sets with the theme app's custom sets merged in.
+	 *
+	 * @param array<int, array<string, mixed>> $sets The catalogue's sets.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+	 */
+	private function withCustomSets(array $sets): array {
 		// The sets an administrator made or received in the theme app
 		// (task 4.1): an upload, or a theme shared through OpenRegister that
 		// the theme app imported as a custom set.
@@ -330,7 +392,7 @@ class PortalThemeResolver {
 		}
 
 		return $sets;
-	}//end catalogue()
+	}//end withCustomSets()
 
 	/**
 	 * Why a custom set may not be linked, in the theme app's words, or null
@@ -402,9 +464,24 @@ class PortalThemeResolver {
 			return [];
 		}
 
+		$values = $this->declaredTokens(css: (string)file_get_contents($root . '/css/' . $sheet . '.css'));
+
+		return $this->withAliasesResolved(values: $values);
+	}//end tokenValuesFor()
+
+	/**
+	 * The custom-property declarations of a token file, name to value.
+	 *
+	 * @param string $css The token file.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+	 */
+	private function declaredTokens(string $css): array {
 		preg_match_all(
 			'/(--[a-z0-9-]+)\s*:\s*([^;}]+)[;}]/i',
-			(string)file_get_contents($root . '/css/' . $sheet . '.css'),
+			$css,
 			$matches,
 			PREG_SET_ORDER
 		);
@@ -414,6 +491,19 @@ class PortalThemeResolver {
 			$values[trim($match[1])] = trim($match[2]);
 		}
 
+		return $values;
+	}//end declaredTokens()
+
+	/**
+	 * The values with each `var()` alias resolved one hop against the same file.
+	 *
+	 * @param array<string, string> $values Token name to value.
+	 *
+	 * @return array<string, string>
+	 *
+	 * @spec openspec/changes/nldesign-theme-integration/specs/nldesign-theme-integration/spec.md
+	 */
+	private function withAliasesResolved(array $values): array {
 		foreach ($values as $name => $value) {
 			if (preg_match('/^var\(\s*(--[a-z0-9-]+)/i', $value, $alias) === 1) {
 				$values[$name] = ($values[$alias[1]] ?? $value);
@@ -421,8 +511,7 @@ class PortalThemeResolver {
 		}
 
 		return $values;
-	}//end tokenValuesFor()
-
+	}//end withAliasesResolved()
 
 	/**
 	 * The NL Design System token stylesheet this app ships for a theme, or
@@ -480,7 +569,6 @@ class PortalThemeResolver {
 		return null;
 	}//end nldsStylesheetFor()
 
-
 	/**
 	 * Whether a theme reference is safe to put in a filesystem path.
 	 *
@@ -497,7 +585,6 @@ class PortalThemeResolver {
 	private function isSafeThemeName(string $theme): bool {
 		return preg_match('/^[a-z0-9][a-z0-9-]{0,63}$/', $theme) === 1;
 	}//end isSafeThemeName()
-
 
 	/**
 	 * Which theme-app id this instance actually answers to.
@@ -522,7 +609,6 @@ class PortalThemeResolver {
 		return null;
 	}//end themeAppId()
 
-
 	/**
 	 * The theme app's directory, or null when it is not installed.
 	 *
@@ -542,6 +628,5 @@ class PortalThemeResolver {
 			return null;
 		}
 	}//end themeAppPath()
-
 
 }//end class

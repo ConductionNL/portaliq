@@ -86,6 +86,7 @@ class PortalShellTest extends TestCase {
 			actual: $projected['residentMenu']
 		);
 		$this->assertSame(expected: ['display' => 'rows'], actual: $projected['myCases']);
+		$this->assertSame(expected: ['display' => 'folders'], actual: (new PortalShell())->project(portal: ['myCases' => ['display' => 'folders']])['myCases']);
 		$this->assertSame(expected: [], actual: (new PortalShell())->project(portal: ['myCases' => ['display' => 'cards']])['myCases']);
 		$this->assertSame(expected: [], actual: (new PortalShell())->project(portal: [])['myCases']);
 	}//end testTheProjectionServesTheMenuGroupsAndTheCasesDisplay()
@@ -96,7 +97,7 @@ class PortalShellTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/resident-menu-leave-out/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
+	 * @spec openspec/specs/site-resident-menu/spec.md#requirement-a-portal-may-leave-items-out-of-the-resident-menu
 	 */
 	public function testTheProjectionServesTheItemsLeftOut(): void {
 		$projected = (new PortalShell())->project(portal: [

@@ -406,7 +406,7 @@ class TrafficRollupTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
 	 */
 	public function testTwoTermsFoundNothing(): void {
 		$record = $this->rollup(events: [
@@ -427,7 +427,7 @@ class TrafficRollupTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
 	 */
 	public function testAnUnknownCountIsNotAZero(): void {
 		$record = $this->rollup(events: [
@@ -445,7 +445,7 @@ class TrafficRollupTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-roll-up-counts-searches-that-found-nothing-req-pzr-001
 	 */
 	public function testAStringZeroIsNotReadAsUnknown(): void {
 		$record = $this->rollup(events: [

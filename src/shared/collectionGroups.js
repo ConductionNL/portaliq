@@ -21,10 +21,15 @@
  * Grouping only shows when it tells the resident something: with one group,
  * or none, the table renders as before.
  *
+ * Groups read in the order of their headings, unless the collection declares
+ * `groupOrder: 'rows'` (collection-group-order): then each group stands where
+ * its first row stands in the sorted rows, so a table sorted on expiry with a
+ * group per certificate shows the certificate that expires first on top.
+ *
  * Pure functions, no imports, so `tests/collection-groups.spec.mjs` runs
  * them as a plain node script.
  *
- * @spec openspec/changes/collection-group-by-field/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T1
  */
 
 /**
@@ -33,7 +38,7 @@
  *
  * @param {object|null} contribution The contribution.
  * @return {object|null}
- * @spec openspec/changes/collection-group-by-field/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T1
  */
 export function groupLabelCollection(contribution) {
 	const id = contribution?.guardianAudience?.children
@@ -51,7 +56,7 @@ export function groupLabelCollection(contribution) {
  *
  * @param {object|null} collection The collection.
  * @return {string}
- * @spec openspec/changes/collection-group-by-field/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T1
  */
 export function groupFieldOf(collection) {
 	const field = collection?.groupByField
@@ -59,11 +64,23 @@ export function groupFieldOf(collection) {
 }
 
 /**
+ * How a collection orders its groups: 'rows' (where each group's first row
+ * stands) when it declares so, else 'heading'.
+ *
+ * @param {object|null} collection The collection.
+ * @return {'rows'|'heading'}
+ * @spec openspec/changes/collection-group-order/tasks.md#T1
+ */
+export function groupOrderOf(collection) {
+	return collection?.groupOrder === 'rows' ? 'rows' : 'heading'
+}
+
+/**
  * Whether any collection of a set groups its rows.
  *
  * @param {Array<object>} collections The collections.
  * @return {boolean}
- * @spec openspec/changes/collection-group-by-field/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T1
  */
 export function anyGrouped(collections) {
 	return (collections || []).some((collection) => groupFieldOf(collection) !== '')
@@ -85,7 +102,7 @@ function idOf(row) {
  *
  * @param {object} row The row.
  * @return {string}
- * @spec openspec/changes/collection-group-by-field/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T1
  */
 export function nameOf(row) {
 	const person = [row?.givenName, row?.familyName]
@@ -125,19 +142,48 @@ function valueOf(row, field) {
  * The rows in groups, `[{value, label, rows}]`, or [] when the table should
  * render ungrouped: no group field, or fewer than two groups.
  *
- * Groups are ordered by their heading, rows keep their order inside a group,
- * and the rows without a value come last with an empty label.
+ * Groups are ordered by their heading, or with `order` 'rows' in the order
+ * their first rows arrive; rows keep their order inside a group, and the rows
+ * without a value come last with an empty label.
  *
  * @param {Array<object>} rows The collection's rows.
  * @param {string} field The group field.
  * @param {Array<object>} labelRows The rows that name the values (the children).
+ * @param {'rows'|'heading'} order How the groups are ordered.
  * @return {Array<{value: string, label: string, rows: Array<object>}>}
- * @spec openspec/changes/collection-group-by-field/tasks.md#T1
+ * @spec openspec/changes/archive/2026-10-07-collection-group-by-field/tasks.md#T1
+ * @spec openspec/changes/collection-group-order/tasks.md#T1
  */
-export function groupRows(rows, field, labelRows = []) {
+export function groupRows(rows, field, labelRows = [], order = 'heading') {
 	if (!field || !Array.isArray(rows) || rows.length === 0) {
 		return []
 	}
+	const groups = groupsOf(rows, { field, names: namesOf(labelRows) })
+	if (groups.size < 2) {
+		return []
+	}
+	// A Map keeps the order in which each value first occurred: with order
+	// 'rows' that is the order of the groups.
+	const named = [...groups.values()].filter((group) => group.value !== '')
+	if (order !== 'rows') {
+		named.sort((a, b) =>
+			a.label.localeCompare(b.label, undefined, {
+				numeric: true,
+				sensitivity: 'base',
+			}),
+		)
+	}
+	const rest = groups.get('')
+	return rest ? [...named, rest] : named
+}
+
+/**
+ * The name of each value, from the rows that name the values.
+ *
+ * @param {Array<object>|null} labelRows The rows that name the values (the children).
+ * @return {Map<string, string>} The name per value.
+ */
+function namesOf(labelRows) {
 	const names = new Map()
 	for (const row of labelRows || []) {
 		const id = idOf(row)
@@ -146,7 +192,17 @@ export function groupRows(rows, field, labelRows = []) {
 			names.set(id, name)
 		}
 	}
+	return names
+}
 
+/**
+ * The rows by their value, in the order the values first occur.
+ *
+ * @param {Array<object>} rows The rows.
+ * @param {{field: string, names: Map<string, string>}} by The group field and the name per value.
+ * @return {Map<string, {value: string, label: string, rows: Array<object>}>} The groups.
+ */
+function groupsOf(rows, { field, names }) {
 	const groups = new Map()
 	for (const row of rows) {
 		const value = valueOf(row, field)
@@ -159,17 +215,5 @@ export function groupRows(rows, field, labelRows = []) {
 		}
 		groups.get(value).rows.push(row)
 	}
-	if (groups.size < 2) {
-		return []
-	}
-
-	const named = [...groups.values()].filter((group) => group.value !== '')
-	named.sort((a, b) =>
-		a.label.localeCompare(b.label, undefined, {
-			numeric: true,
-			sensitivity: 'base',
-		}),
-	)
-	const rest = groups.get('')
-	return rest ? [...named, rest] : named
+	return groups
 }

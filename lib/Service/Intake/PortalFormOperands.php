@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ use DateTimeZone;
 /**
  * Resolves the arguments of a calculation against the answers so far.
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
  */
 class PortalFormOperands {
 	/**
@@ -41,7 +41,7 @@ class PortalFormOperands {
 	 *
 	 * @return int|null The count, or null when the argument is not a list.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
 	public function count(mixed $arg, array $answers): ?int {
 		$value = $answers[(string)$arg] ?? [];
@@ -60,7 +60,7 @@ class PortalFormOperands {
 	 *
 	 * @return string|null The date as `Y-m-d`, or null.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
 	public function addDays(array $args, array $answers): ?string {
 		$date = $this->date(arg: ($args[0] ?? null), answers: $answers);
@@ -80,7 +80,7 @@ class PortalFormOperands {
 	 *
 	 * @return int|null The whole days between them, or null.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
 	public function diffDays(array $args, array $answers): ?int {
 		$from = $this->date(arg: ($args[0] ?? null), answers: $answers);
@@ -100,7 +100,7 @@ class PortalFormOperands {
 	 *
 	 * @return DateTimeImmutable|null The date at midnight UTC, or null.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
 	 */
 	public function date(mixed $arg, array $answers): ?DateTimeImmutable {
 		$values = $this->values(arg: $arg, answers: $answers);
@@ -125,7 +125,9 @@ class PortalFormOperands {
 	 *
 	 * @return array<int, mixed> The values; empty when the argument names nothing answered.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+	 *
+	 * @psalm-suppress InvalidOperand `+ 0` keeps a numeric literal int or float as written.
 	 */
 	public function values(mixed $arg, array $answers): array {
 		if (is_int($arg) === true || is_float($arg) === true) {

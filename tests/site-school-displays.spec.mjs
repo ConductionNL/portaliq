@@ -26,6 +26,7 @@ import {
 } from '../src/site/components/mijn/displays.js'
 import { firstNameOf, greetingFor } from '../src/site/components/mijn/greeting.js'
 import { homeGreets } from '../src/site/components/mijn/home.js'
+import { decidedInWords, mijnTranslator, statusNoteInWords } from '../src/site/components/mijn/rows.js'
 import { resolveBlocks } from '../src/site/pages/collections/pageBlocks.js'
 
 const COLLECTION = {
@@ -43,6 +44,30 @@ test('a value reads as its word, a missing field as nothing', () => {
 	assert.equal(textOf({ nested: { a: 1 } }, 'nested'), '')
 	assert.equal(textOf({}, 'missing'), '')
 	assert.equal(textOf({ a: 'x' }, ''), '')
+})
+
+test('the line under a status says who set it and when, as wilgenboom/MijnLijst reads it', () => {
+	const [row] = dateRows(
+		[{ id: 'r1', status: 'approved', besluitDoor: 'Meester Daan', besluitOp: '2026-10-01T08:20:00' }],
+		{ statusField: 'status', statusNoteField: 'besluitDoor', statusNoteAtField: 'besluitOp' },
+	)
+	assert.equal(row.statusNoteAt, '2026-10-01T08:20:00')
+	const tr = mijnTranslator(null, 'nl')
+	const today = new Date(2026, 9, 5, 9, 0)
+	assert.equal(
+		decidedInWords({ who: row.statusNote, at: row.statusNoteAt }, { today, tr, locale: 'nl' }),
+		'Meester Daan, 1 oktober 8:20 uur',
+	)
+	assert.equal(
+		decidedInWords({ who: 'Juf Esra', at: '2026-10-05T08:12:00' }, { today, tr, locale: 'nl' }),
+		'Juf Esra, vandaag 8:12 uur',
+	)
+	assert.equal(decidedInWords({ who: 'Juf Esra', at: '' }, { today, tr, locale: 'nl' }), 'Juf Esra', 'no moment: the name alone')
+	assert.equal(decidedInWords({ who: '', at: '2026-10-05T08:12:00' }, { today, tr, locale: 'nl' }), 'Vandaag 8:12 uur')
+	assert.equal(
+		decidedInWords({ who: 'Ms Esra', at: '2026-10-01T08:20:00' }, { today, tr: mijnTranslator(null, 'en'), locale: 'en' }),
+		'Ms Esra, 1 October 8:20',
+	)
 })
 
 test('dated rows carry every part the block names, with the status tone', () => {
@@ -311,4 +336,42 @@ test('a calendar item carries its source meta line', () => {
 		null,
 	)
 	assert.equal(plain[0].meta, '')
+})
+
+// rows-status-note-per-state: learniq's absence page says who saw a report
+// while it is still being decided (wilgenboom/MijnLijst).
+test('a status with its own note reads its own field, moment and template; other statuses keep statusNoteField', () => {
+	const block = {
+		statusField: 'lifecycle',
+		statusNoteField: 'decidedBy',
+		statusNoteAtField: 'decidedAt',
+		statusNotes: {
+			submitted: { field: 'seenBy', atField: 'seenAt', template: 'Gezien door {name} om {time} uur' },
+		},
+	}
+	const [submitted, approved, unseen] = dateRows(
+		[
+			{ id: 'a', lifecycle: 'submitted', seenBy: 'Juf Esra', seenAt: '2026-10-05T08:12:00', decidedBy: '' },
+			{ id: 'b', lifecycle: 'approved', seenBy: 'Juf Esra', decidedBy: 'Meester Daan', decidedAt: '2026-10-01T08:20:00' },
+			{ id: 'c', lifecycle: 'submitted', seenBy: '', seenAt: '' },
+		],
+		block,
+	)
+	const today = new Date(2026, 9, 5, 9, 0)
+	const context = { today, tr: mijnTranslator(null, 'nl'), locale: 'nl' }
+	const words = (entry) => statusNoteInWords({ who: entry.statusNote, at: entry.statusNoteAt, template: entry.statusNoteTemplate }, context)
+
+	assert.equal(words(submitted), 'Gezien door Juf Esra om 8.12 uur')
+	assert.equal(words(approved), 'Meester Daan, 1 oktober 8:20 uur', 'a status without its own note keeps the decision line')
+	assert.equal(words(unseen), '', 'nobody saw it yet: no line')
+	assert.equal(
+		statusNoteInWords({ who: 'Ms Esra', at: '2026-10-01T08:12:00', template: 'Seen by {name} on {date} at {time}' }, { ...context, tr: mijnTranslator(null, 'en'), locale: 'en' }),
+		'Seen by Ms Esra on 1 October at 8:12',
+	)
+	assert.equal(statusNoteInWords({ who: 'Juf Esra', at: '', template: 'Gezien door {name} {time}' }, context), 'Gezien door Juf Esra', 'no moment: the placeholder is left out')
+	assert.deepEqual(
+		dateRows([{ lifecycle: 'toString', decidedBy: 'Meester Daan' }], block)[0].statusNote,
+		'Meester Daan',
+		'only the block\'s own entries count, not inherited object keys',
+	)
 })

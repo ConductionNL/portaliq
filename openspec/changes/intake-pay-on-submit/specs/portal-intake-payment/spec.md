@@ -1,7 +1,3 @@
----
-status: proposed
----
-
 # Spec: portal-intake-payment
 
 ## Purpose
@@ -19,23 +15,38 @@ Portaliq SHALL read a request's fee only from `portalCaseType.portalFee` of
 the binding's case type. The amount forwarded to the case app SHALL be the
 declared amount, and any amount in the request body SHALL be ignored.
 
+When the published form the binding resolves to serves its own `fee`
+(buildiq `forms-fee-on-submit`, REQ-OBRF-010), the form's `amount`,
+`currency` and `description` SHALL replace the case type's, and the
+`payAction` SHALL still come from the case type's `portalFee`. A form fee on a
+case type that declares no `payAction` SHALL be no fee: there is nothing to
+take the payment. The form page, the catalogue and the pay route SHALL all
+read the same fee.
+
 #### Scenario: A resident sees the declared fee
-- **GIVEN** a parking permit form whose case type declares a fee of 45.00 EUR
+- **GIVEN** a parking permit form whose case type declares a fee of 38.50 EUR
 - **WHEN** a signed-in resident submits it
-- **THEN** the confirmation says "This request costs €45.00." and offers "Pay €45.00 now"
+- **THEN** the confirmation says "Deze aanvraag kost € 38,50" and offers "Nu € 38,50 betalen"
 - e2e: `tests/e2e/intake-pay-on-submit.spec.ts`
 
 #### Scenario: The browser cannot lower the fee
 - **GIVEN** the same form
 - **WHEN** a crafted pay request carries `amount: "0.01"`
-- **THEN** the case app receives `amount: "45.00"`
+- **THEN** the case app receives `amount: "38.50"`
 - @e2e exclude Tamper assertion on a crafted body; pinned by PortalIntakeControllerTest::testPayForwardsTheDeclaredAmount
+
+#### Scenario: A form's own fee is the fee
+- **GIVEN** a case type whose `portalFee` declares 38.50 EUR and `payAction` `create-payment`
+- **AND** the published form for it serves `fee` 25 EUR "Leges standplaats"
+- **WHEN** a signed-in resident opens the form, reads the catalogue entry and pays
+- **THEN** all three show and forward 25.00 EUR "Leges standplaats" through `create-payment`
+- @e2e exclude Fee resolution between two declarations; pinned by PortalFeeTest::testTheFormsFeeReplacesTheAmountAndKeepsThePayAction and PortalIntakePaymentsTest::testThePayRouteChargesTheFormsFee
 
 ### Requirement: A fee-bearing form asks the visitor to sign in first (REQ-IPS-002)
 
 A binding whose case type declares a fee SHALL require a portal session at
-`substantial` trust. An anonymous visitor SHALL see "Log in to submit this
-request. It has a fee of {amount}." before the first question.
+`substantial` trust. An anonymous visitor SHALL see "Voor deze aanvraag betaalt u
+{amount} leges." and "Log eerst in." before the first question.
 
 #### Scenario: An anonymous visitor is asked to sign in
 - **GIVEN** a visitor without a session on a fee-bearing form
@@ -61,13 +72,13 @@ these.
 
 The pay route SHALL return a `checkoutUrl` only when it uses `https` and its
 host is in the portal's `paymentHosts`. Any other URL SHALL give 502
-`payment_unavailable`, and the resident SHALL see "You cannot pay right now.
-Try again later."
+`payment_unavailable`, and the resident SHALL see "U kunt nu niet betalen" with
+"Probeer het later opnieuw." (board BetalingResultaat).
 
 #### Scenario: A checkout on an unknown host is refused
 - **GIVEN** a portal whose `paymentHosts` is `["www.mollie.com"]` and a case app that returns `https://pay.example.org/checkout`
 - **WHEN** the resident presses "Pay now"
-- **THEN** they stay on the portal and see "You cannot pay right now. Try again later."
+- **THEN** they stay on the portal and see "U kunt nu niet betalen" and "Probeer het later opnieuw."
 - @e2e exclude Redirect guard; pinned by PortalIntakeControllerTest::testUndeclaredCheckoutHostIsRefused
 
 ### Requirement: The result is read from the payment record (REQ-IPS-005)

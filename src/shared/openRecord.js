@@ -53,23 +53,33 @@ export function parseOpenFragment(hash) {
  */
 export function consumeOpenTarget(location, history, storage) {
 	const fromHash = parseOpenFragment(location?.hash || '')
-	if (fromHash) {
-		try {
-			history?.replaceState(
-				null,
-				'',
-				`${location.pathname || ''}${location.search || ''}`,
-			)
-		} catch {
-			// An address bar that cannot be rewritten still opens the record.
-		}
-		try {
-			storage?.setItem(OPEN_STORAGE_KEY, JSON.stringify(fromHash))
-		} catch {
-			// Without storage the target lives as long as this page.
-		}
-		return fromHash
+	if (!fromHash) {
+		return keptOpenTarget(storage)
 	}
+	try {
+		history?.replaceState(
+			null,
+			'',
+			`${location.pathname || ''}${location.search || ''}`,
+		)
+	} catch {
+		// An address bar that cannot be rewritten still opens the record.
+	}
+	try {
+		storage?.setItem(OPEN_STORAGE_KEY, JSON.stringify(fromHash))
+	} catch {
+		// Without storage the target lives as long as this page.
+	}
+	return fromHash
+}
+
+/**
+ * The target kept before the sign-in, or null.
+ *
+ * @param {{getItem: (key: string) => string|null}|null} storage sessionStorage.
+ * @return {{app: string, collection: string, id: string}|null}
+ */
+function keptOpenTarget(storage) {
 	try {
 		const kept = JSON.parse(storage?.getItem(OPEN_STORAGE_KEY) || 'null')
 		if (
@@ -140,7 +150,7 @@ export function navKeyFor(nav, target) {
  * @param {object} entry The nav entry.
  * @param {string} collection The collection id.
  * @return {boolean}
- * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-opening-a-record-must-land-on-its-record-page-with-that-record-chosen-req-smo-010
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-opening-a-record-must-land-on-its-record-page-with-that-record-chosen-req-smo-010
  */
 export function opensAsRecordPage(entry, collection) {
 	if (!entry?.page) {
@@ -169,5 +179,71 @@ export function rowFor(objects, id) {
 		(objects || []).find(
 			(row) => (row.id || row.uuid || row['@self']?.id) === id,
 		) || null
+	)
+}
+
+/**
+ * The nav entry a list row of this collection opens: another page of the
+ * same app that is the collection's record page (REQ-SMO-010), or null. A
+ * page that shows the row itself keeps it: the list's own page when it is
+ * that record page, or when it carries a `detail` or `citizenCase` block on
+ * the collection.
+ *
+ * @param {Array<object>} nav The shell's nav entries.
+ * @param {object|null} current The nav entry of the page the list is on.
+ * @param {object|null} page The page the list is on.
+ * @param {{app: string, collection: string}} target The row's app and collection.
+ * @return {object|null}
+ * @spec openspec/changes/list-row-opens-its-record-page/specs/site-mijn-omgeving/spec.md#requirement-a-list-row-opens-its-collections-record-page
+ */
+export function recordPageForRow(nav, current, page, target) {
+	if (!target?.app || !target?.collection) {
+		return null
+	}
+	if (showsRowItself(page || current?.page || {}, target.collection)) {
+		return null
+	}
+	return (
+		(nav || []).find((entry) => isOtherRecordPage(entry, current, target))
+		|| null
+	)
+}
+
+/**
+ * Whether a nav entry is another page of the target's app that is the
+ * target collection's record page.
+ *
+ * @param {object} entry The nav entry.
+ * @param {object|null} current The nav entry of the page the list is on.
+ * @param {{app: string, collection: string}} target The row's app and collection.
+ * @return {boolean}
+ */
+function isOtherRecordPage(entry, current, target) {
+	if (entry === current || (current?.key && entry.key === current.key)) {
+		return false
+	}
+	return (
+		entry.contribution?.app === target.app
+		&& opensAsRecordPage(entry, target.collection)
+	)
+}
+
+/**
+ * Whether a page shows a chosen row of a collection itself: it is that
+ * collection's record page, or it carries a `detail` or `citizenCase` block
+ * on it.
+ *
+ * @param {object} page The page.
+ * @param {string} collection The collection id.
+ * @return {boolean}
+ */
+function showsRowItself(page, collection) {
+	if ((page.record || page.records)?.collection === collection) {
+		return true
+	}
+	return (page.blocks || []).some(
+		(block) =>
+			block?.collection === collection
+			&& ['detail', 'citizenCase'].includes(block.type),
 	)
 }

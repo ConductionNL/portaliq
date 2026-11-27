@@ -66,4 +66,45 @@ class PortalTokenCssTest extends TestCase {
 		$this->assertSame('', (new PortalTokenCss())->css('--nldesign-x: red'));
 		$this->assertSame('', (new PortalTokenCss())->css(['--nldesign-x' => ['red']]));
 	}//end testNothingButAMapRenders()
+
+	/**
+	 * Every token is kept or dropped exactly as recorded, in its declared order.
+	 *
+	 * @return void
+	 */
+	public function testEveryTokenIsAsRecorded(): void {
+		$c = new PortalTokenCss();
+		$tokens = [
+			'--nldesign-color-primary' => ' #123456 ',
+			'--utrecht-space-1'        => 'calc(1rem, 2%)',
+			'--c-x'                    => 'rgb(1, 2, 3)',
+			'--ams-font'               => 'Arial, sans-serif',
+			'--other-color'            => 'red',
+			'--nldesign-UPPER'         => 'red',
+			'nldesign-color'           => 'red',
+			'--tilburg-bg'             => 'url(x)',
+			'--tilburg-bg2'            => 'URL(x)',
+			'--tilburg-js'             => 'javascript:alert(1)',
+			'--tilburg-data'           => 'data:x',
+			'--tilburg-expr'           => 'Expression(1)',
+			'--tilburg-import'         => '@import x',
+			'--tilburg-slash'          => 'a\\b',
+			'--tilburg-semi'           => 'red;color:blue',
+			'--tilburg-blank'          => '   ',
+			'--tilburg-long'           => str_repeat('a', 201),
+			'--tilburg-max'            => str_repeat('a', 200),
+			'--conduction-num'         => 5,
+			7                          => 'red',
+			'--conduction-ok'          => 'a/b_c-d.e',
+		];
+
+		$this->assertSame(
+			':root{--nldesign-color-primary:#123456;--utrecht-space-1:calc(1rem, 2%);--c-x:rgb(1, 2, 3);--ams-font:Arial, sans-serif;'
+			. '--tilburg-max:' . str_repeat('a', 200) . ';--conduction-ok:a/b_c-d.e}',
+			$c->css(tokens: $tokens)
+		);
+		$this->assertSame('', $c->css(tokens: 'x'));
+		$this->assertSame('', $c->css(tokens: []));
+		$this->assertSame('', $c->css(tokens: ['--other-x' => 'red']));
+	}//end testEveryTokenIsAsRecorded()
 }//end class

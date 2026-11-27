@@ -43,6 +43,8 @@
 			:count="config.dateChoices || 2"
 			:locale="dayLocale"
 			:todayWord="translate('Today')"
+			:tomorrowWord="translate('Tomorrow')"
+			:wholeDayWords="translate('the whole day')"
 			:otherDayLabel="translate('Another day')"
 			:hint="translate('For example 1 3 2026')"
 			:required="required"
@@ -118,6 +120,7 @@
 			:id="id"
 			class="utrecht-textarea utrecht-textarea--html-textarea"
 			:class="{ 'utrecht-textarea--invalid': error !== '' }"
+			:rows="rows"
 			:value="modelValue"
 			:placeholder="config.placeholder || undefined"
 			:disabled="config.disabled === true"
@@ -163,7 +166,7 @@ import '@utrecht/textarea-css/dist/index.css'
  * "(niet verplicht)"; a required one has `aria-required` and no mark. A date
  * is asked as day, month and year in a fieldset (DateInputGroup).
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-schema-form-must-render-only-whitelisted-fields-req-srp-022
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-site-form-must-mark-the-fields-that-are-not-required-req-smf-001
  * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
  */
@@ -186,7 +189,7 @@ export default {
 		field: { type: String, required: true },
 		/** The visible label. */
 		label: { type: String, required: true },
-		/** The field config (`required`, `size`, `placeholder`, `help`, `disabled`, file keys). */
+		/** The field config (`required`, `size`, `rows`, `placeholder`, `help`, `disabled`, file keys). */
 		config: { type: Object, default: () => ({}) },
 		/** The input kind, from `fieldInput()`. */
 		input: { type: String, default: 'text' },
@@ -233,6 +236,19 @@ export default {
 		},
 
 		/**
+		 * A textarea's height in lines: the config's `rows`, else seven, so a
+		 * long answer has room before it scrolls.
+		 *
+		 * @return {number} The rows.
+		 *
+		 * @spec exclude presentation default of a textarea, no behavioural requirement
+		 */
+		rows() {
+			const rows = Number(this.config.rows)
+			return Number.isInteger(rows) && rows > 0 ? rows : 7
+		},
+
+		/**
 		 * The description: the field's own help, else a date's example.
 		 *
 		 * @spec openspec/changes/site-multi-step-forms/specs/site-forms/spec.md#requirement-a-date-field-must-be-asked-as-day-month-and-year-req-smf-003
@@ -251,7 +267,7 @@ export default {
 		 *
 		 * @return {number} The count.
 		 *
-		 * @spec openspec/changes/count-field/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
 		 */
 		countMin() {
 			return Number.isInteger(this.config.min) ? this.config.min : 1
@@ -262,7 +278,7 @@ export default {
 		 *
 		 * @return {number} The count.
 		 *
-		 * @spec openspec/changes/count-field/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
 		 */
 		countMax() {
 			return Number.isInteger(this.config.max) ? this.config.max : 99

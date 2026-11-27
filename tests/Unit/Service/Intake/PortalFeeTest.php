@@ -26,10 +26,11 @@ class PortalFeeTest extends TestCase {
 	}//end fee()
 
 	public function testTheDeclaredFeeIsReadFromTheCaseType(): void {
-		$fee = $this->fee(['portalFee' => ['amount' => '45', 'currency' => 'eur', 'description' => ' Parkeren ', 'payAction' => 'create-payment']]);
+		$declared = ['amount' => '38.5', 'currency' => 'eur', 'description' => ' Parkeren ', 'payAction' => 'create-payment'];
+		$fee      = $this->fee(caseType: ['portalFee' => $declared]);
 
 		$this->assertSame(
-			['amount' => '45.00', 'currency' => 'EUR', 'description' => 'Parkeren', 'payAction' => 'create-payment'],
+			['amount' => '38.50', 'currency' => 'EUR', 'description' => 'Parkeren', 'payAction' => 'create-payment'],
 			$fee->forBinding(['typeRegister' => 'dossiq', 'typeSchema' => 'zaaktype', 'typeId' => 't1'])
 		);
 	}//end testTheDeclaredFeeIsReadFromTheCaseType()
@@ -38,7 +39,7 @@ class PortalFeeTest extends TestCase {
 		$binding = ['typeRegister' => 'dossiq', 'typeSchema' => 'zaaktype', 'typeId' => 't1'];
 		$bad = [
 			null,
-			'45.00',
+			'38.50',
 			['amount' => '0', 'currency' => 'EUR', 'payAction' => 'x'],
 			['amount' => '-5', 'currency' => 'EUR', 'payAction' => 'x'],
 			['amount' => '12,50', 'currency' => 'EUR', 'payAction' => 'x'],
@@ -53,12 +54,70 @@ class PortalFeeTest extends TestCase {
 		$this->assertNull($this->fee(null)->forBinding($binding), 'no case type, no fee');
 	}//end testAnythingThatIsNotAUsableFeeIsNoFee()
 
+	/**
+	 * T09: the form's own fee sets the amount, currency and description; the
+	 * case type keeps the pay action. A callable is read only when the case
+	 * type declares a fee.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t09
+	 *
+	 * @return void
+	 */
+	public function testTheFormsFeeReplacesTheAmountAndKeepsThePayAction(): void {
+		$binding  = ['typeRegister' => 'dossiq', 'typeSchema' => 'zaaktype', 'typeId' => 't1'];
+		$caseType = ['portalFee' => ['amount' => '38.50', 'currency' => 'EUR', 'description' => 'Parkeren', 'payAction' => 'create-payment']];
+		$form     = ['name' => 'Standplaats', 'fee' => ['amount' => 25, 'currency' => 'EUR', 'description' => 'Leges standplaats']];
+		$expected = ['amount' => '25.00', 'currency' => 'EUR', 'description' => 'Leges standplaats', 'payAction' => 'create-payment'];
+
+		$this->assertSame(expected: $expected, actual: $this->fee(caseType: $caseType)->forBinding(binding: $binding, form: $form));
+		$fromCallable = $this->fee(caseType: $caseType)->forBinding(binding: $binding, form: static fn (): array => $form);
+		$this->assertSame(expected: $expected, actual: $fromCallable, message: 'a callable form reads the same');
+
+		$named = $this->fee(caseType: $caseType)->forBinding(binding: $binding, form: ['fee' => ['amount' => 12.5, 'currency' => 'usd']]);
+		$this->assertSame(
+			expected: ['amount' => '12.50', 'currency' => 'USD', 'description' => '', 'payAction' => 'create-payment'],
+			actual: $named,
+			message: 'a currency the form names is used, a missing description stays empty'
+		);
+
+		$noFormFee = $this->fee(caseType: $caseType)->forBinding(binding: $binding, form: ['fee' => null]);
+		$this->assertSame(expected: '38.50', actual: $noFormFee['amount'], message: 'a form without a fee keeps the case type\'s');
+		$this->assertSame(expected: '38.50', actual: $this->fee(caseType: $caseType)->forBinding(binding: $binding)['amount']);
+		$negative = $this->fee(caseType: $caseType)->forBinding(binding: $binding, form: ['fee' => ['amount' => -1]]);
+		$this->assertNull(actual: $negative, message: 'a form fee that is no amount is no fee');
+
+		$read   = false;
+		$reader = static function () use (&$read): array {
+			$read = true;
+			return [];
+		};
+		$this->assertNull(actual: $this->fee(caseType: ['name' => 'free'])->forBinding(binding: $binding, form: $reader));
+		$this->assertFalse(condition: $read, message: 'a case type without a fee does not read the form');
+	}//end testTheFormsFeeReplacesTheAmountAndKeepsThePayAction()
+
+	/**
+	 * T09: the pay action comes from the case type, so a form fee on a case
+	 * type that names none cannot be paid and is no fee.
+	 *
+	 * @spec openspec/changes/intake-pay-on-submit/tasks.md#t09
+	 *
+	 * @return void
+	 */
+	public function testAFormFeeWithoutAPayActionIsNoFee(): void {
+		$binding = ['typeRegister' => 'dossiq', 'typeSchema' => 'zaaktype', 'typeId' => 't1'];
+		$form    = ['fee' => ['amount' => 25, 'currency' => 'EUR', 'description' => 'Leges']];
+
+		$this->assertNull(actual: $this->fee(caseType: ['portalFee' => ['amount' => '10.00']])->forBinding(binding: $binding, form: $form));
+		$onlyAction = $this->fee(caseType: ['portalFee' => ['payAction' => 'create-payment']])->forBinding(binding: $binding, form: $form);
+		$this->assertSame(expected: '25.00', actual: $onlyAction['amount'], message: 'a case type that only names the pay action takes the form\'s amount');
+	}//end testAFormFeeWithoutAPayActionIsNoFee()
+
 	public function testAFeeMakesTheFormNeedASessionAtSubstantial(): void {
 		$level = new PortalFormTrustLevel();
 
-		$this->assertSame('substantial', $level->required([], [], ['fee' => ['amount' => '45.00']]));
+		$this->assertSame(expected: 'substantial', actual: $level->required([], [], ['fee' => ['amount' => '38.50']]));
 		$this->assertNull($level->required([], [], ['fee' => null]));
-		$this->assertSame('high', $level->required([], ['minTrust' => 'high'], ['fee' => ['amount' => '45.00']]));
+		$this->assertSame(expected: 'high', actual: $level->required([], ['minTrust' => 'high'], ['fee' => ['amount' => '38.50']]));
 	}//end testAFeeMakesTheFormNeedASessionAtSubstantial()
 
 	public function testACheckoutIsFollowedOnlyOnADeclaredHttpsHost(): void {

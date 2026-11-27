@@ -59,7 +59,7 @@
 					data-testid="collection-table-row"
 					@click="selectable ? select(row) : undefined">
 					<td
-						v-for="(column, columnIndex) in columns"
+						v-for="(column, columnIndex) in rowColumns(row)"
 						:key="column.field"
 						class="utrecht-table__cell">
 						<button
@@ -135,6 +135,7 @@ import {
 	badgeModifier,
 	deriveColumns,
 	formatCell,
+	rowColumn,
 	rowIdOf,
 	safeHref,
 } from './cells.js'
@@ -152,7 +153,7 @@ import {
  * buttons show on the rows `offers` names, and are disabled on the row whose
  * action is running.
  *
- * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-collection-table-must-follow-the-declared-columns-req-srp-015
+ * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-collection-table-must-follow-the-declared-columns-req-srp-015
  */
 export default {
 	name: 'CollectionTable',
@@ -209,6 +210,17 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * The columns as this row reads them, with its case type's settings.
+		 *
+		 * @param {object} row The row.
+		 * @return {Array<object>}
+		 * @spec openspec/specs/portal-case-type-visibility/spec.md#requirement-a-case-row-reads-with-its-case-types-columns
+		 */
+		rowColumns(row) {
+			return this.columns.map((column) => rowColumn(column, row))
+		},
+
 		keyOf(row, index) {
 			return rowIdOf(row) || `row-${index}`
 		},
@@ -229,7 +241,7 @@ export default {
 		 * @param {object} row A row.
 		 * @param {object} column A `qr` column.
 		 * @return {string} The key of that cell, to open one code at a time.
-		 * @spec openspec/changes/link-field-qr-code/tasks.md#t6
+		 * @spec openspec/specs/portal-contribution-contract/spec.md
 		 */
 		qrKey(row, column) {
 			return `${rowIdOf(row)}:${column.field}`
@@ -241,7 +253,7 @@ export default {
 		 * @param {object} row A row.
 		 * @param {object} column A `qr` column.
 		 * @return {void}
-		 * @spec openspec/changes/link-field-qr-code/tasks.md#t6
+		 * @spec openspec/specs/portal-contribution-contract/spec.md
 		 */
 		toggleQr(row, column) {
 			const key = this.qrKey(row, column)
@@ -283,7 +295,7 @@ export default {
 		/**
 		 * @param {object} row A row.
 		 * @return {Array<{id: string, text: string}>} The reasons its actions are not offered.
-		 * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-can-be-offered-on-some-rows-only-req-rai-004
+		 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md#requirement-a-row-action-can-be-offered-on-some-rows-only-req-rai-004
 		 */
 		reasonsFor(row) {
 			const out = []

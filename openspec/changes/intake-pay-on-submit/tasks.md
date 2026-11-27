@@ -14,6 +14,8 @@
 - [x] **T04**: `PortalIntakeController::pay()` and route `POST /portal/api/intake/pay`: 401, 404, 409, 403, server-built body, forward, host check, store `paymentIntentId` (REQ-IPS-001, REQ-IPS-003, REQ-IPS-004). Verification: `PortalIntakeControllerTest::testPayForwardsTheDeclaredAmount`, `::testForeignReferenceIs404`, `::testPaidSubmissionIs409`, `::testUndeclaredCheckoutHostIsRefused`.
 - [x] **T05**: `status()` adds `payment.state` from the `payment_intent` object (REQ-IPS-005). Verification: `PortalIntakeControllerTest::testStatusReadsPaymentFromTheIntent`, `::testQueryStringDoesNotSetPaymentState`.
 
+- [x] **T09**: A form's served `fee` (buildiq `forms-fee-on-submit` T05) sets the amount, currency and description; the case type keeps `payAction` (decision 25 Nov 2026 13:50 CET). `PortalFee::forBinding()` takes the form, the resolver passes the form it renders, and the catalogue and the pay route look the form up only when the case type declares a fee (REQ-IPS-001). Verification: `PortalFeeTest::testTheFormsFeeReplacesTheAmountAndKeepsThePayAction`, `::testAFormFeeWithoutAPayActionIsNoFee`, `PortalIntakePaymentsTest::testThePayRouteChargesTheFormsFee`, `PortalFormBindingResolverTest::testTheRenderCarriesTheFormsFee`.
+
 ## The screen
 
 - [x] **T06**: The fee line, "Pay {amount} now", top-window navigation from the embed (its Vue `EmbeddedForm.vue`, not the React one), the return page states and the sign-in message on the confirmation surfaces (REQ-IPS-002, REQ-IPS-005). Verification: `tests/intake-pay.spec.mjs`. The embed frame is not changed (it renders its own confirmation) and the Playwright run with a stub case app is not run: needs a live instance.
@@ -21,7 +23,7 @@
 ## Docs, strings and validation
 
 - [x] **T07**: English and Dutch strings ("This request costs {amount}.", "Pay {amount} now", "Paid", "Not paid yet", "The payment failed", "We cannot show the payment yet", "You cannot pay right now. Try again later.", "Log in to submit this request. It has a fee of {amount}."); a docs page for administrators on `paymentHosts` and for case app authors on `portalFee`. Verification: `npm run lint`, `test:l10n`.
-- [ ] **T08**: `openspec validate intake-pay-on-submit --strict`. — not run: the openspec CLI is not installed here
+- [x] **T08**: `openspec validate intake-pay-on-submit --strict`. Valid once the spec's `status` frontmatter, which strict validation reports as text above the first section, was removed.
 
 ## Build notes
 

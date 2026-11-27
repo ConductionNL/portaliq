@@ -13,7 +13,7 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ namespace OCA\Portaliq\Service\Traffic;
  *
  * Pure: definitions and sessions in, rows out.
  *
- * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+ * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
  */
 class TrafficExperiments {
 
@@ -77,7 +77,7 @@ class TrafficExperiments {
 	 *
 	 * @return bool True when the tag may be stored.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
 	 */
 	public function acceptsTag(array $config, string $experiment, string $variant): bool {
 		foreach ((array)($config['experiments'] ?? []) as $definition) {
@@ -104,7 +104,7 @@ class TrafficExperiments {
 	 *
 	 * @return array<int, array<string, mixed>> Rows of `{id, name, status, variants: [{id, name, sessions, conversions, rate}], winner, confidence}`.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-page-experiment-must-be-evaluated-per-session-against-its-goal
 	 */
 	public function rows(array $experiments, array $sessions, array $goals): array {
 		$byId = [];
@@ -170,21 +170,14 @@ class TrafficExperiments {
 	 *
 	 * @return array{winner: string, confidence: float} The verdict.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-winner-must-only-be-named-with-enough-sessions-and-a-significant-difference
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-winner-must-only-be-named-with-enough-sessions-and-a-significant-difference
 	 */
 	public function verdict(array $variants): array {
 		if (count($variants) < 2) {
 			return ['winner' => '', 'confidence' => 0.0];
 		}
 
-		$ranked = array_values($variants);
-		usort($ranked, static fn (array $a, array $b): int => [
-			(float)($b['conversions'] ?? 0) / max(1, (int)($b['sessions'] ?? 0)),
-			(int)($b['sessions'] ?? 0),
-		] <=> [
-			(float)($a['conversions'] ?? 0) / max(1, (int)($a['sessions'] ?? 0)),
-			(int)($a['sessions'] ?? 0),
-		]);
+		$ranked = $this->ranked(variants: $variants);
 
 		$confidence = $this->zTest(
 			conversionsA: (int)($ranked[0]['conversions'] ?? 0),
@@ -193,10 +186,7 @@ class TrafficExperiments {
 			sessionsB: (int)($ranked[1]['sessions'] ?? 0)
 		);
 
-		$enough = true;
-		foreach ($variants as $variant) {
-			$enough = $enough && (int)($variant['sessions'] ?? 0) >= self::MIN_SESSIONS;
-		}
+		$enough = $this->enoughSessions(variants: $variants);
 
 		$winner = '';
 		if ($enough === true && $confidence >= self::WINNING_CONFIDENCE) {
@@ -204,6 +194,46 @@ class TrafficExperiments {
 		}
 
 		return ['winner' => $winner, 'confidence' => $confidence];
+	}
+
+	/**
+	 * The variants best first: by conversion rate, then by sessions.
+	 *
+	 * @param array<int, array<string, mixed>> $variants Rows with `id`, `sessions`, `conversions`.
+	 *
+	 * @return array<int, array<string, mixed>>
+	 *
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-winner-must-only-be-named-with-enough-sessions-and-a-significant-difference
+	 */
+	private function ranked(array $variants): array {
+		$ranked = array_values($variants);
+		usort($ranked, static fn (array $a, array $b): int => [
+			(float)($b['conversions'] ?? 0) / (float)max(1, (int)($b['sessions'] ?? 0)),
+			(int)($b['sessions'] ?? 0),
+		] <=> [
+			(float)($a['conversions'] ?? 0) / (float)max(1, (int)($a['sessions'] ?? 0)),
+			(int)($a['sessions'] ?? 0),
+		]);
+
+		return $ranked;
+	}
+
+	/**
+	 * Whether every variant has the minimum number of sessions.
+	 *
+	 * @param array<int, array<string, mixed>> $variants Rows with `id`, `sessions`, `conversions`.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-winner-must-only-be-named-with-enough-sessions-and-a-significant-difference
+	 */
+	private function enoughSessions(array $variants): bool {
+		$enough = true;
+		foreach ($variants as $variant) {
+			$enough = $enough && (int)($variant['sessions'] ?? 0) >= self::MIN_SESSIONS;
+		}
+
+		return $enough;
 	}
 
 	/**
@@ -221,23 +251,23 @@ class TrafficExperiments {
 	 *
 	 * @return float The confidence.
 	 *
-	 * @spec openspec/changes/portal-traffic-experiments/specs/portal-traffic-experiments/spec.md#requirement-a-winner-must-only-be-named-with-enough-sessions-and-a-significant-difference
+	 * @spec openspec/specs/portal-traffic-experiments/spec.md#requirement-a-winner-must-only-be-named-with-enough-sessions-and-a-significant-difference
 	 */
 	public function zTest(int $conversionsA, int $sessionsA, int $conversionsB, int $sessionsB): float {
 		if ($sessionsA <= 0 || $sessionsB <= 0) {
 			return 0.0;
 		}
 
-		$pooled = ($conversionsA + $conversionsB) / ($sessionsA + $sessionsB);
-		$error = sqrt($pooled * (1 - $pooled) * ((1 / $sessionsA) + (1 / $sessionsB)));
+		$pooled = (float)($conversionsA + $conversionsB) / (float)($sessionsA + $sessionsB);
+		$error = sqrt($pooled * (1.0 - $pooled) * ((1.0 / (float)$sessionsA) + (1.0 / (float)$sessionsB)));
 		if ($error <= 0.0) {
 			return 0.0;
 		}
 
-		$score = abs(($conversionsA / $sessionsA) - ($conversionsB / $sessionsB)) / $error;
-		$pValue = 2 * (1 - $this->normalCdf(score: $score));
+		$score = abs(((float)$conversionsA / (float)$sessionsA) - ((float)$conversionsB / (float)$sessionsB)) / $error;
+		$pValue = 2.0 * (1.0 - $this->normalCdf(score: $score));
 
-		return round(max(0.0, min(1.0, 1 - $pValue)), 3);
+		return round(max(0.0, min(1.0, 1.0 - $pValue)), 3);
 	}
 
 	/**

@@ -69,13 +69,15 @@
 				role="status"
 				data-testid="plan-alert">
 				<strong>{{
-					fill(words.alert, { days: plan.daysLeft, date: plan.endDate })
+					fill(words.alert, { days: plan.daysLeft, date: endText })
 				}}</strong>
 				<span>{{
 					fill(words.alertDetail, { count: plan.openActions })
 				}}</span>
 			</div>
 
+			<div class="pq-plan__body">
+			<div class="pq-plan__main">
 			<section aria-labelledby="pq-plan-goal">
 				<h2 id="pq-plan-goal" class="utrecht-heading-3">
 					{{ words.goal }}
@@ -116,35 +118,50 @@
 			</section>
 
 			<section aria-labelledby="pq-plan-actions">
-				<h2 id="pq-plan-actions" class="utrecht-heading-3">
-					{{ words.actions }}
-				</h2>
+				<div class="pq-plan__section-head">
+					<h2 id="pq-plan-actions" class="utrecht-heading-3">
+						{{ words.actions }}
+					</h2>
+					<button
+						v-if="plan.canEdit"
+						type="button"
+						class="utrecht-button utrecht-button--secondary-action"
+						data-testid="plan-add-action"
+						@click="openAction(null)">
+						{{ words.addAction }}
+					</button>
+				</div>
 				<p class="utrecht-paragraph">
 					{{
-						fill(words.progress, {
+						fill(words.actionsProgress, {
 							done: plan.doneActions,
 							total: plan.totalActions,
 						})
 					}}
+					<template v-if="plan.canEdit">
+						{{ words.pencilHint }}
+					</template>
 				</p>
 				<table
 					v-if="plan.actions.length > 0"
-					class="utrecht-table"
+					class="utrecht-table pq-plan__actions"
 					data-testid="plan-actions">
-					<caption class="utrecht-table__caption">
+					<caption class="pq-plan__sr">
 						{{
-							words.actions
-						}}:
-						{{
-							plan.title
+							fill(words.actionsCaption, { plan: plan.title })
 						}}
 					</caption>
 					<thead>
 						<tr>
-							<th scope="col">{{ words.actions }}</th>
+							<th scope="col">{{ words.actionColumn }}</th>
 							<th scope="col">{{ words.status }}</th>
 							<th scope="col">{{ words.actionDate }}</th>
 							<th scope="col">{{ words.actionWho }}</th>
+							<th scope="col">
+								<span class="pq-plan__sr">{{
+									words.editAction
+								}}</span>
+							</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -152,70 +169,62 @@
 							v-for="action in plan.actions"
 							:key="action.id"
 							data-testid="plan-action">
-							<td>{{ action.title }}</td>
 							<td>
-								<select
-									:value="action.status"
-									:disabled="!plan.canEdit"
-									:aria-label="`${words.status}: ${action.title}`"
-									data-testid="plan-action-status"
-									@change="setStatus(action, $event.target.value)">
-									<option value="todo">{{ words.todo }}</option>
-									<option value="doing">{{ words.doing }}</option>
-									<option value="done">
-										{{ words.doneStatus }}
-									</option>
-								</select>
+								<span
+									class="pq-plan__action-title"
+									:data-done="
+										action.status === 'done' ? 'true' : undefined
+									">
+									{{ action.title }}
+								</span>
+								<span class="pq-plan__action-sub">{{
+									actionLine(action)
+								}}</span>
 							</td>
-							<td>{{ action.endDate }}</td>
-							<td>{{ action.assigneeName }}</td>
+							<td>
+								<span
+									class="pq-plan__status"
+									:data-status="action.status"
+									data-testid="plan-action-status">
+									{{ statusWord(action.status) }}
+								</span>
+							</td>
+							<td>
+								{{
+									dayText(
+										action.endDate,
+										locale || pageLocale,
+										false,
+									)
+								}}
+							</td>
+							<td>{{ whoName(action) }}</td>
+							<td>
+								<button
+									v-if="plan.canEdit"
+									type="button"
+									class="utrecht-button utrecht-button--subtle"
+									:aria-label="`${words.editAction}: ${action.title}`"
+									data-testid="plan-action-edit"
+									@click="openAction(action)">
+									<span aria-hidden="true">✎</span>
+								</button>
+							</td>
 						</tr>
 					</tbody>
 				</table>
-				<form
-					v-if="plan.canEdit"
-					class="pq-plan__add"
-					novalidate
-					@submit.prevent="addAction">
-					<label for="pq-plan-new-action" class="utrecht-form-label">{{
-						words.actionTitle
-					}}</label>
-					<input
-						id="pq-plan-new-action"
-						v-model="newAction.title"
-						class="utrecht-textbox"
-						type="text"
-						data-testid="plan-new-title" />
-					<label for="pq-plan-new-date" class="utrecht-form-label">{{
-						words.actionDate
-					}}</label>
-					<input
-						id="pq-plan-new-date"
-						v-model="newAction.endDate"
-						class="utrecht-textbox"
-						type="date"
-						data-testid="plan-new-date" />
-					<label for="pq-plan-new-who" class="utrecht-form-label">{{
-						words.actionWho
-					}}</label>
-					<select
-						id="pq-plan-new-who"
-						v-model="newAction.assignee"
-						data-testid="plan-new-who">
-						<option
-							v-for="person in plan.participants"
-							:key="person.ref"
-							:value="person.ref">
-							{{ personName(person) }}
-						</option>
-					</select>
-					<button
-						type="submit"
-						class="utrecht-button utrecht-button--secondary-action"
-						data-testid="plan-add-action">
-						{{ words.addAction }}
-					</button>
-				</form>
+				<ActionEditModal
+					v-if="actionOpen !== null"
+					:api="api"
+					:action="actionOpen.action"
+					:assignees="assignees"
+					:planId="planId"
+					:planTitle="plan.title"
+					:viewer="viewer"
+					:locale="locale"
+					@saved="actionClosed"
+					@deleted="actionClosed"
+					@cancel="actionOpen = null" />
 			</section>
 
 			<section aria-labelledby="pq-plan-notes">
@@ -261,7 +270,89 @@
 				</template>
 			</section>
 
-			<section aria-labelledby="pq-plan-people">
+			<section aria-labelledby="pq-plan-files" data-testid="plan-files">
+				<h2 id="pq-plan-files" class="utrecht-heading-3">
+					{{ words.files }}
+				</h2>
+				<input
+					ref="fileInput"
+					type="file"
+					class="pq-plan__file-input"
+					tabindex="-1"
+					aria-hidden="true"
+					data-testid="plan-file-input"
+					@change="upload" />
+				<p
+					v-if="!plan.files || plan.files.length === 0"
+					class="utrecht-paragraph"
+					data-testid="plan-no-files">
+					{{ words.noFiles }}
+				</p>
+				<ul v-else class="pq-plan__files">
+					<li
+						v-for="file in plan.files"
+						:key="file.series"
+						class="pq-plan__file"
+						data-testid="plan-file">
+						<button
+							type="button"
+							class="utrecht-link utrecht-link--button pq-plan__file-name"
+							data-testid="plan-file-open"
+							@click="openFile(file.current)">
+							{{ file.current.name }}
+						</button>
+						<span class="pq-plan__file-meta">
+							{{ versionLine(file.current, true, words) }} ·
+							{{ addedLine(file.current) }}
+						</span>
+						<button
+							v-if="plan.canEdit"
+							type="button"
+							class="utrecht-button utrecht-button--subtle"
+							data-testid="plan-file-new-version"
+							@click="chooseFile(file.current.id)">
+							{{ words.newVersion }}
+						</button>
+						<details v-if="file.earlier.length > 0">
+							<summary data-testid="plan-file-earlier">
+								{{
+									fill(words.earlier, {
+										count: file.earlier.length,
+									})
+								}}
+							</summary>
+							<ul class="utrecht-unordered-list">
+								<li v-for="older in file.earlier" :key="older.id">
+									<button
+										type="button"
+										class="utrecht-link utrecht-link--button pq-plan__file-name"
+										@click="openFile(older)">
+										{{ older.name }}
+									</button>
+									{{ versionLine(older, false, words) }} ·
+									{{ addedLine(older) }}
+								</li>
+							</ul>
+						</details>
+					</li>
+				</ul>
+				<template v-if="plan.canEdit">
+					<button
+						type="button"
+						class="utrecht-button utrecht-button--secondary-action"
+						data-testid="plan-file-add"
+						@click="chooseFile('')">
+						{{ words.addFile }}
+					</button>
+					<p class="utrecht-paragraph">
+						{{ words.versionNote }}
+					</p>
+				</template>
+			</section>
+
+			</div>
+			<aside class="pq-plan__side">
+			<section aria-labelledby="pq-plan-people" class="pq-plan__panel">
 				<h2 id="pq-plan-people" class="utrecht-heading-3">
 					{{ words.participants }}
 				</h2>
@@ -309,12 +400,13 @@
 				</div>
 			</section>
 
-			<section aria-labelledby="pq-plan-end">
+			<section aria-labelledby="pq-plan-end" class="pq-plan__panel">
 				<h2 id="pq-plan-end" class="utrecht-heading-3">
 					{{ words.endDate }}
 				</h2>
 				<p class="utrecht-paragraph" data-testid="plan-end">
-					{{ plan.endDate }} {{ daysText }}
+					<strong class="pq-plan__end-date">{{ endText }}</strong>
+					<span v-if="daysText" class="pq-plan__ending">{{ daysText }}</span>
 				</p>
 				<div v-if="plan.isOwner && plan.canEdit" class="pq-plan__add">
 					<input
@@ -333,7 +425,7 @@
 				</div>
 			</section>
 
-			<section v-if="plan.isOwner && plan.canEdit" class="pq-plan__owner">
+			<section v-if="plan.isOwner && plan.canEdit" class="pq-plan__owner pq-plan__panel">
 				<button
 					type="button"
 					class="utrecht-button utrecht-button--secondary-action"
@@ -366,19 +458,33 @@
 					</button>
 				</template>
 			</section>
+			</aside>
+			</div>
 		</template>
 	</article>
 </template>
 
 <script>
+import ActionEditModal from '../../modals/e/ActionEditModal.vue'
 import { plansApi } from '../../../shared/areaApi.js'
-import { daysLine, fill, personLine, planWords } from '../../lib/plans.js'
+import { actionWords, daysLeftLine, dayText } from '../../lib/actions.js'
+import {
+	daysLine,
+	endingSoon,
+	fill,
+	personLine,
+	planWords,
+	versionLine,
+} from '../../lib/plans.js'
+import { longDate, readerLocale } from './format.js'
 
 /**
  * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
  */
 export default {
 	name: 'PlanPage',
+
+	components: { ActionEditModal },
 
 	props: {
 		/** The plan to show. */
@@ -402,13 +508,49 @@ export default {
 			editing: '',
 			draft: '',
 			endDraft: '',
-			newAction: { title: '', endDate: '', assignee: '' },
+			actionOpen: null,
 			newPerson: '',
 			confirming: false,
+			versionOf: '',
 		}
 	},
 
 	computed: {
+		/**
+		 * @return {string} The page's language.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		pageLocale() {
+			return globalThis.document?.documentElement?.lang || ''
+		},
+
+		/**
+		 * @return {Record<string, string>} The action words in the reader's language.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		actionWords() {
+			return actionWords(this.locale || this.pageLocale)
+		},
+
+		/**
+		 * @return {string} The viewer's subject reference.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		viewer() {
+			return String(this.session?.subjectRef || '')
+		},
+
+		/**
+		 * @return {Array<{ref: string, displayName: string}>} The participants, who may be assigned an action.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		assignees() {
+			return (this.plan?.participants || []).map((person) => ({
+				ref: person.ref,
+				displayName: person.displayName,
+			}))
+		},
+
 		/**
 		 * @return {Record<string, string>} The words in the reader's language.
 		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
@@ -424,9 +566,17 @@ export default {
 		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
 		 */
 		daysText() {
-			return this.plan.state === 'done'
+			return this.plan.state === 'done' || !endingSoon(this.plan.daysLeft)
 				? ''
 				: daysLine(this.plan.daysLeft, this.words)
+		},
+
+		/**
+		 * @return {string} The end date as "20 oktober 2026" in the reader's language.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t10
+		 */
+		endText() {
+			return longDate(this.plan.endDate, readerLocale(this.locale || this.pageLocale)) || this.plan.endDate || ''
 		},
 
 		/**
@@ -454,6 +604,83 @@ export default {
 
 	methods: {
 		fill,
+		dayText,
+		versionLine,
+
+		/**
+		 * @param {{addedBy: string, addedAt: string}} file A file version.
+		 * @return {string} "Mark Jansen, 2026-10-06".
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		addedLine(file) {
+			return fill(this.words.addedBy, {
+				name: file.addedBy,
+				date: String(file.addedAt || '').slice(0, 10),
+			})
+		},
+
+		/**
+		 * Open the file picker for a new file, or for a new version of one.
+		 *
+		 * @param {string} previousVersion The file the new one follows, or ''.
+		 * @return {void}
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		chooseFile(previousVersion) {
+			this.versionOf = previousVersion
+			this.$refs.fileInput?.click()
+		},
+
+		/**
+		 * Send the picked file, as a new file or a new version.
+		 *
+		 * @param {Event} event The picker's change.
+		 * @return {Promise<void>} Resolves when answered.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		async upload(event) {
+			const input = event?.target
+			const file = input?.files?.[0]
+			if (!file) {
+				return
+			}
+			this.problem = ''
+			this.notice = ''
+			const answer = await plansApi(this.api).addPlanFile(
+				this.planId,
+				file,
+				this.versionOf,
+			)
+			if (input) {
+				input.value = ''
+			}
+			this.versionOf = ''
+			if (!answer.ok) {
+				this.problem = this.words.failed
+				return
+			}
+			this.notice = this.words.saved
+			this.$emit('changed')
+			await this.load()
+		},
+
+		/**
+		 * Save one version of a file.
+		 *
+		 * @param {{id: string, name: string}} file The version.
+		 * @return {Promise<void>} Resolves when answered.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		async openFile(file) {
+			this.problem = ''
+			const answer = await plansApi(this.api).downloadPlanFile(
+				this.planId,
+				file,
+			)
+			if (!answer.ok) {
+				this.problem = this.words.failed
+			}
+		},
 
 		/**
 		 * @param {{displayName: string, isOwner: boolean, ref: string}} person A participant.
@@ -482,11 +709,6 @@ export default {
 			}
 			this.plan = plan
 			this.endDraft = plan.endDate
-			this.newAction.assignee =
-				this.newAction.assignee
-				|| String(
-					this.session?.subjectRef || plan.participants[0]?.ref || '',
-				)
 		},
 
 		/**
@@ -578,39 +800,79 @@ export default {
 		},
 
 		/**
-		 * Change an action's status.
+		 * Open the action dialog for an action of the plan, or empty to add one.
 		 *
-		 * @param {{id: string}} action The action.
-		 * @param {string} status `todo`, `doing` or `done`.
-		 * @return {Promise<void>} Resolves when answered.
+		 * @param {object|null} action The action as the plan lists it.
+		 * @return {void}
 		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
 		 */
-		async setStatus(action, status) {
-			await this.run('updateAction', { actionId: action.id, data: { status } })
+		openAction(action) {
+			this.notice = ''
+			this.actionOpen = {
+				action: action
+					? {
+							...action,
+							plan: this.planId,
+							planTitle: this.plan.title,
+							role: 'member',
+							mayDelete:
+								this.plan.isOwner || action.owner === this.viewer,
+
+							readOnly: !this.plan.canEdit,
+							assignees: this.assignees,
+						}
+					: null,
+			}
 		},
 
 		/**
-		 * Add the action in the form.
+		 * The dialog saved or deleted: say so and read the plan again.
 		 *
-		 * @return {Promise<void>} Resolves when answered.
+		 * @return {Promise<void>} Resolves when read.
 		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
 		 */
-		async addAction() {
-			const data = {
-				title: this.newAction.title.trim(),
-				assignee: this.newAction.assignee,
-			}
-			if (this.newAction.endDate !== '') {
-				data.endDate = this.newAction.endDate
-			}
-			if (data.title === '') {
-				this.problem = this.words.failed
-				return
-			}
-			if (await this.run('addAction', { data })) {
-				this.newAction.title = ''
-				this.newAction.endDate = ''
-			}
+		async actionClosed() {
+			this.actionOpen = null
+			this.notice = this.words.saved
+			this.$emit('changed')
+			await this.load()
+		},
+
+		/**
+		 * "Eenmalig, nog 6 dagen": the kind and how long an open action has left.
+		 *
+		 * @param {{kind: string, endDate: string, status: string}} action The action.
+		 * @return {string} The line.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		actionLine(action) {
+			const kind = this.actionWords[action.kind] || action.kind
+			const left = daysLeftLine(
+				action,
+				new Date().toISOString().slice(0, 10),
+				this.actionWords,
+			)
+			return left ? `${kind}, ${left}` : kind
+		},
+
+		/**
+		 * @param {string} status `todo`, `doing` or `done`.
+		 * @return {string} The status in words.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		statusWord(status) {
+			return this.actionWords[status] || status
+		},
+
+		/**
+		 * @param {{assignee: string, assigneeName: string}} action The action.
+		 * @return {string} "Sanne (u)" for the viewer, else the name.
+		 * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+		 */
+		whoName(action) {
+			return action.assignee === this.viewer
+				? `${action.assigneeName} (${this.actionWords.you})`
+				: action.assigneeName
 		},
 
 		/**
@@ -696,6 +958,137 @@ export default {
 
 .pq-plan textarea {
 	inline-size: 100%;
+}
+
+.pq-plan__section-head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--utrecht-space-inline-sm, 0.5rem);
+}
+
+.pq-plan__actions {
+	inline-size: 100%;
+}
+
+.pq-plan__action-title {
+	display: block;
+	font-weight: var(--utrecht-typography-weight-scale-bold-font-weight, bold);
+}
+
+.pq-plan__action-title[data-done] {
+	text-decoration: line-through;
+}
+
+.pq-plan__action-sub {
+	display: block;
+	font-size: var(--utrecht-typography-scale-sm-font-size, 0.875rem);
+}
+
+.pq-plan__status {
+	display: inline-block;
+	padding: 0.125rem 0.5rem;
+	border-radius: 999px;
+	background: var(--nldesign-color-primary-light, var(--utrecht-color-grey-95, transparent));
+	font-size: 0.875em;	white-space: nowrap;
+}
+
+.pq-plan__status[data-status='done'] {
+	background: var(--utrecht-feedback-success-background-color, var(--nldesign-color-success-light, transparent));
+}
+
+/*
+ * Board Plan (shared-plans-with-a-caseworker T10): the plan in a main column
+ * (goal, actions, notes, files) and a side column of panels (participants,
+ * end date, the owner's actions); one column on a narrow screen.
+ */
+.pq-plan__body {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
+	align-items: start;
+	gap: var(--utrecht-space-block-lg, 1.5rem);
+}
+
+@media (max-width: 52rem) {
+	.pq-plan__body {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.pq-plan__main > * + *,
+.pq-plan__side > * + * {
+	margin-block-start: var(--utrecht-space-block-lg, 1.5rem);
+}
+
+.pq-plan__panel {
+	padding: var(--utrecht-space-block-md, 1rem);
+	border: 1px solid var(--nldesign-color-border-light, var(--utrecht-color-grey-80, color-mix(in srgb, currentcolor 18%, transparent)));
+	border-radius: var(--utrecht-border-radius-md, 0.375rem);
+}
+
+.pq-plan__panel h2 {
+	margin-block-start: 0;
+	font-size: 1.125em;
+}
+
+.pq-plan__end-date {
+	display: block;
+	font-size: 1.25em;
+}
+
+.pq-plan__ending {
+	display: inline-block;
+	margin-block-start: 0.25rem;
+	padding: 0.125rem 0.5rem;
+	border-radius: 999px;
+	background: var(--utrecht-feedback-danger-background-color, var(--nldesign-color-error-light, transparent));
+	color: var(--utrecht-feedback-danger-color, currentcolor);
+	font-size: 0.875em;
+}
+
+.pq-plan__panel .pq-plan__add input {
+	inline-size: 100%;
+}
+
+.pq-plan__sr {
+	position: absolute;
+	inline-size: 1px;
+	block-size: 1px;
+	overflow: hidden;
+	clip-path: inset(50%);
+}
+
+.pq-plan__file-input {
+	display: none;
+}
+
+.pq-plan__files {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.pq-plan__file {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: var(--utrecht-space-inline-sm, 0.5rem);
+	padding-block: var(--utrecht-space-block-sm, 0.5rem);
+	border-block-end: var(--utrecht-border-width-sm, 1px) solid
+		var(--utrecht-color-grey-80, currentcolor);
+}
+
+.pq-plan__file details {
+	flex-basis: 100%;
+}
+
+.pq-plan__file-name {
+	background: none;
+	border: 0;
+	padding: 0;
+	cursor: pointer;
+	text-decoration: underline;
 }
 
 .pq-plan__error {

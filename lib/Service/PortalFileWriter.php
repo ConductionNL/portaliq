@@ -37,6 +37,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use OCA\Portaliq\Kernel\Contracts\PortalFileWriterInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -46,7 +47,9 @@ use Throwable;
  *
  * @spec openspec/specs/portal-contribution-contract/spec.md#scoped-file-attachment-on-a-subject-owned-object
  */
-class PortalFileWriter {
+class PortalFileWriter implements PortalFileWriterInterface {
+	use ObjectFileLookup;
+
 	/**
 	 * OpenRegister's file service.
 	 */
@@ -59,13 +62,9 @@ class PortalFileWriter {
 	private const OBJECT_SERVICE = 'OCA\\OpenRegister\\Service\\ObjectService';
 
 	/**
-	 * The tag on a file a resident sent through the portal, so the case screen
-	 * can list it apart from what staff put in the same folder
-	 * (cases-documents-on-the-case, REQ-CDC-004).
-	 *
-	 * @var string
+	 * Logged when the owned object cannot be resolved.
 	 */
-	public const TAG_FROM_APPLICANT = 'portal:from-applicant';
+	private const ENTITY_LOOKUP_WARNING = 'Portaliq: object resolve for file attach failed';
 
 	/**
 	 * Constructor.
@@ -109,11 +108,24 @@ class PortalFileWriter {
 		string $content,
 		array $tags = [],
 	): ?array {
+		$attachment = new FileAttachment(register: $register, schema: $schema, id: $id, fileName: $fileName, content: $content, tags: $tags);
 		$fileService = $this->fileService();
 		if ($fileService === null) {
 			return null;
 		}
 
+		return $this->addFile(fileService: $fileService, attachment: $attachment);
+	}//end attachFile()
+
+	/**
+	 * Add the file to the owned object's folder through OpenRegister's FileService.
+	 *
+	 * @param object         $fileService OpenRegister's FileService.
+	 * @param FileAttachment $attachment  The file and where it goes.
+	 *
+	 * @return array<string, mixed>|null The attached file's metadata, or null on failure.
+	 */
+	private function addFile(object $fileService, FileAttachment $attachment): ?array {
 		// Resolve the object UUID to a full ObjectEntity FIRST. OpenRegister's
 		// addFile() takes `getObjectFolder()`'s entity-input branch (which
 		// resolves the register from the entity itself) only when handed an
@@ -121,7 +133,7 @@ class PortalFileWriter {
 		// `createObjectFolderById(string, registerId: null)` and throws "Failed
 		// to create file because no objectEntity or registerId given" — so every
 		// portal upload 502'd. Mirrors OpenRegister's own SharesProvider.
-		$entity = $this->resolveObjectEntity(register: $register, schema: $schema, id: $id);
+		$entity = $this->resolveObjectEntity(register: $attachment->register, schema: $attachment->schema, id: $attachment->id);
 		if ($entity === null) {
 			return null;
 		}
@@ -129,104 +141,19 @@ class PortalFileWriter {
 		try {
 			$file = $this->insideWriteContext(write: static fn () => $fileService->addFile(
 				objectEntity: $entity,
-				fileName: $fileName,
-				content: $content,
-				tags: $tags,
-				_schema: $schema,
-				_register: $register
+				fileName: $attachment->fileName,
+				content: $attachment->content,
+				tags: $attachment->tags,
+				_schema: $attachment->schema,
+				_register: $attachment->register
 			));
 		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: OR file attach failed', ['schema' => $schema, 'reason' => $e->getMessage()]);
+			$this->logger->warning('Portaliq: OR file attach failed', ['schema' => $attachment->schema, 'reason' => $e->getMessage()]);
 			return null;
 		}
 
-		return $this->normalise(file: $file, fileName: $fileName);
-	}//end attachFile()
-
-	/**
-	 * Shape the OpenRegister File result down to safe metadata for the client.
-	 *
-	 * @param mixed $file The OpenRegister File (or array).
-	 * @param string $fileName The upload filename (fallback).
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function normalise(mixed $file, string $fileName): array {
-		$name = $fileName;
-		$size = null;
-		$id = null;
-		if (is_object($file) === true) {
-			if (method_exists($file, 'getName') === true) {
-				$name = (string)$file->getName();
-			}
-
-			if (method_exists($file, 'getSize') === true) {
-				$size = $file->getSize();
-			}
-
-			if (method_exists($file, 'getId') === true) {
-				$id = $file->getId();
-			}
-		}
-
-		return ['id' => $id, 'name' => $name, 'size' => $size];
-	}//end normalise()
-
-	/**
-	 * Resolve OpenRegister's FileService, or null when unavailable.
-	 *
-	 * @return object|null
-	 */
-	private function fileService(): ?object {
-		try {
-			$service = $this->container->get(self::FILE_SERVICE);
-		} catch (Throwable $e) {
-			return null;
-		}
-
-		if (is_object($service) === true) {
-			return $service;
-		}
-
-		return null;
-	}//end fileService()
-
-	/**
-	 * Resolve an object UUID to a full OpenRegister ObjectEntity via the object
-	 * service, or null when it cannot be resolved. Ownership has already been
-	 * re-verified by the caller's scoped reader before this point; RBAC/tenant
-	 * are off (Portaliq is the trusted scoper).
-	 *
-	 * @param string $register The register slug/id.
-	 * @param string $schema The schema slug/id.
-	 * @param string $id The owned object's UUID.
-	 *
-	 * @return object|null The ObjectEntity, or null on any resolution failure.
-	 */
-	private function resolveObjectEntity(string $register, string $schema, string $id): ?object {
-		try {
-			$objectService = $this->container->get(self::OBJECT_SERVICE);
-			if (is_object($objectService) === false) {
-				return null;
-			}
-
-			$entity = $objectService->find(
-				id: $id,
-				register: $register,
-				schema: $schema,
-				_rbac: false,
-				_multitenancy: false
-			);
-			if (is_object($entity) === true) {
-				return $entity;
-			}
-
-			return null;
-		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: object resolve for file attach failed', ['reason' => $e->getMessage()]);
-			return null;
-		}//end try
-	}//end resolveObjectEntity()
+		return $this->normalise(file: $file, fileName: $attachment->fileName);
+	}//end addFile()
 
 	/**
 	 * Run an OpenRegister write inside the write context, so the change

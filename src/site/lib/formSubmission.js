@@ -37,10 +37,47 @@ function resolvePortalApiRoot() {
  * @param {string} formId The bound form's id.
  * @return {string} `submit-{formId}`, or '' without a form id.
  *
- * @spec openspec/changes/create-names-its-action/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T3
  */
 export function landingPageActionId(formId) {
 	return typeof formId === 'string' && formId !== '' ? `submit-${formId}` : ''
+}
+
+/**
+ * The anonymous create address of a landing-page form.
+ *
+ * @param {string} formId The bound form's id, which names its create action.
+ * @return {string} The address, with the action id when there is one.
+ */
+function submissionUrl(formId) {
+	const url = new URL(
+		`${resolvePortalApiRoot()}/portal/api/collections/${REGISTER}/${SUBMISSION_SCHEMA}`,
+		window.location.origin,
+	)
+	const actionId = landingPageActionId(formId)
+	if (actionId !== '') {
+		url.searchParams.set('actionId', actionId)
+	}
+	return url.toString()
+}
+
+/**
+ * The submitted body: the values with only the captured campaign parameters.
+ *
+ * A touch of nulls fails the store's validation of the nested strings, and
+ * the form could not be sent by anyone who arrived without a campaign link.
+ *
+ * @param {object} values The visitor's field values.
+ * @param {object} tracking `{utmFirstTouch, utmLastTouch, referrer}`.
+ * @return {object} The body.
+ */
+function submissionBody(values, tracking) {
+	return {
+		...values,
+		utmFirstTouch: compactTouch(tracking.utmFirstTouch),
+		utmLastTouch: compactTouch(tracking.utmLastTouch),
+		referrer: tracking.referrer || '',
+	}
 }
 
 /**
@@ -61,32 +98,13 @@ export function landingPageActionId(formId) {
  * @return {Promise<object>} The destination's answer: `reference`, `id`, `receivedAt`.
  *
  * @spec openspec/specs/landing-page-provisioning/spec.md#requirement-a-landing-pages-form-is-submittable-with-no-portal-session
- * @spec openspec/changes/create-names-its-action/tasks.md#T3
+ * @spec openspec/changes/archive/2026-10-07-create-names-its-action/tasks.md#T3
  */
 export async function submitLandingPageForm(values, tracking = {}, formId = '') {
-	const url = new URL(
-		`${resolvePortalApiRoot()}/portal/api/collections/${REGISTER}/${SUBMISSION_SCHEMA}`,
-		window.location.origin,
-	)
-	const actionId = landingPageActionId(formId)
-	if (actionId !== '') {
-		url.searchParams.set('actionId', actionId)
-	}
-
-	// Only captured parameters travel: a touch of nulls fails the store's
-	// validation of the nested strings, and the form could not be sent by
-	// anyone who arrived without a campaign link.
-	const body = {
-		...values,
-		utmFirstTouch: compactTouch(tracking.utmFirstTouch),
-		utmLastTouch: compactTouch(tracking.utmLastTouch),
-		referrer: tracking.referrer || '',
-	}
-
-	const response = await fetch(url.toString(), {
+	const response = await fetch(submissionUrl(formId), {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-		body: JSON.stringify(body),
+		body: JSON.stringify(submissionBody(values, tracking)),
 	})
 
 	if (!response.ok) {
@@ -96,5 +114,39 @@ export async function submitLandingPageForm(values, tracking = {}, formId = '') 
 	}
 
 	const parsed = await response.json()
-	return parsed.object || parsed
+	const created = parsed.object || parsed
+	if (typeof parsed.uploadToken === 'string' && parsed.uploadToken !== '') {
+		// The one-time token the form's files are sent with afterwards
+		// (anonymous-form-file-upload); only a form with file fields gets one.
+		return { ...created, uploadToken: parsed.uploadToken }
+	}
+	return created
+}
+
+/** The header the one-time upload token travels in. */
+export const UPLOAD_TOKEN_HEADER = 'X-Portaliq-Upload-Token'
+
+/**
+ * Send a submitted form's files, one request per file, with the one-time
+ * token its create answer carried. A file the server refuses does not stop
+ * the others.
+ *
+ * @param {string} token The upload token.
+ * @param {Array<{field: string, file: File}>} uploads The files, per field.
+ * @param {(url: string, init: object) => Promise<{ok: boolean}>} [send] The fetch to use.
+ * @return {Promise<{sent: Array<string>, failed: Array<string>}>} The names sent and not sent.
+ * @spec openspec/changes/anonymous-form-file-upload/specs/landing-page-provisioning/spec.md
+ */
+export async function uploadFormFiles(token, uploads, send = fetch) {
+	const outcome = { sent: [], failed: [] }
+	for (const upload of uploads) {
+		const body = new FormData()
+		body.append('file', upload.file, upload.file.name)
+		const ok = await send(
+			new URL(`${resolvePortalApiRoot()}/portal/api/form-upload/${encodeURIComponent(upload.field)}`, window.location.origin).toString(),
+			{ method: 'POST', headers: { [UPLOAD_TOKEN_HEADER]: token, Accept: 'application/json' }, body },
+		).then((response) => response.ok, () => false)
+		outcome[ok ? 'sent' : 'failed'].push(upload.file.name)
+	}
+	return outcome
 }

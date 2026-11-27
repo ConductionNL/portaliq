@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
  */
 
 declare(strict_types=1);
@@ -25,21 +25,21 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * The contact rows of one resident and the questions asked of them.
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
  */
 class ContactRows {
 	/**
 	 * Constructor.
 	 *
-	 * @param PortalObjectReader $reader The scoped reader.
+	 * @param ScopedCollectionReaderInterface $reader The scoped reader.
 	 */
 	public function __construct(
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 	) {
 	}//end __construct()
 
@@ -52,7 +52,7 @@ class ContactRows {
 	 *
 	 * @return array<string, mixed>|null The row.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function ownRow(array $subject, string $id, array $states): ?array {
 		if ($id === '') {
@@ -76,7 +76,7 @@ class ContactRows {
 	 *
 	 * @return array<int, array<string, mixed>> The rows.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function rowsOf(string $owner, string $organisation): array {
 		if ($owner === '') {
@@ -101,7 +101,7 @@ class ContactRows {
 	 *
 	 * @return array<string, mixed>|null The account.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function accountByEmail(string $email, string $organisation): ?array {
 		$rows = $this->reader->readCollection(
@@ -130,7 +130,7 @@ class ContactRows {
 	 *
 	 * @return array<string, mixed>|null The row.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function byToken(string $token, string $organisation): ?array {
 		$rows = $this->reader->readCollection(
@@ -153,7 +153,7 @@ class ContactRows {
 	 *
 	 * @return int The count; a withdrawn invitation still counts, it was sent.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function sentToday(array $rows, DateTimeImmutable $now): int {
 		$day   = $now->format('Y-m-d');
@@ -176,7 +176,7 @@ class ContactRows {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function alreadyOpenOrLinked(array $rows, string $email, ?array $account): bool {
 		foreach ($rows as $row) {
@@ -204,7 +204,7 @@ class ContactRows {
 	 *
 	 * @return bool True when it has expired or carries no expiry.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function expired(array $row, DateTimeImmutable $now): bool {
 		$expires = (string)($row['expiresAt'] ?? '');
@@ -223,7 +223,7 @@ class ContactRows {
 	 *
 	 * @return array<string, mixed> The row to show.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function shown(array $row): array {
 		return [
@@ -246,7 +246,7 @@ class ContactRows {
 	 *
 	 * @return string The id, or ''.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
 	 */
 	public function idOf(array $row): string {
 		return (string)($row['id'] ?? $row['uuid'] ?? ($row['@self']['id'] ?? ''));

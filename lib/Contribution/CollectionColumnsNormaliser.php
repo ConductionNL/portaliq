@@ -86,7 +86,7 @@ class CollectionColumnsNormaliser {
 	 *
 	 * @return array<string, mixed>|null
 	 *
-	 * @spec openspec/changes/contribution-value-labels/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-column-and-a-form-field-may-declare-how-their-values-read
 	 */
 	private function normaliseColumn(mixed $column): ?array {
 		if (is_array($column) === false) {
@@ -122,7 +122,7 @@ class CollectionColumnsNormaliser {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/link-field-qr-code/tasks.md#t1
+	 * @spec openspec/specs/portal-contribution-contract/spec.md
 	 */
 	private function withLinkLabel(array $entry, array $source): array {
 		$label = ($source['linkLabel'] ?? null);

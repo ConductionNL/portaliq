@@ -218,8 +218,9 @@ function handlers(overrides = {}) {
 		confirmWithdrawInvitation: async () => true,
 		notify: (text) => calls.notices.push(text),
 		notifyError: (text) => calls.errors.push(text),
-		reload: () => {
+		reload: (list) => {
 			calls.reloads++
+			calls.lists = [...(calls.lists || []), list]
 		},
 		...overrides,
 	})
@@ -232,6 +233,7 @@ test('the header actions open their dialog and reload after a success only', asy
 	assert.equal(await h.inviteSomeone(), true)
 	assert.deepEqual(calls.notices, ['issued', 'sent'])
 	assert.equal(calls.reloads, 2)
+	assert.deepEqual(calls.lists, ['portaliq-portalAccount', 'portaliq-portalInvitation'])
 
 	const cancelled = handlers({ openIssue: async () => null })
 	assert.equal(await cancelled.handlers.issueAccount(), false)
@@ -254,6 +256,7 @@ test('withdraw invitation asks first, and a refusal is shown without a reload', 
 	assert.equal(await done.handlers.withdrawInvitation({ item: { id: 'inv-1' } }), true)
 	assert.deepEqual(done.calls.withdrawn, [{ id: 'inv-1' }])
 	assert.equal(done.calls.reloads, 1)
+	assert.deepEqual(done.calls.lists, ['portaliq-portalInvitation'])
 })
 
 const PORTAL = {
@@ -308,15 +311,18 @@ test('saving reads the portal fresh, writes it back and says so', async () => {
 })
 
 test('the waiting list reads the organisation\'s pending self-registrations only', async () => {
-	const rows = [{ subjectRef: 's-9', email: 'new@x.nl', status: 'pending', provisionedBy: 'self-registration' }]
-	const http = transport(() => ({ status: 200, data: { results: rows } }))
+	const ours = { subjectRef: 's-9', email: 'new@x.nl', status: 'pending', provisionedBy: 'self-registration', organisation: 'gemeente-x' }
+	const theirs = { subjectRef: 's-8', email: 'other@y.nl', status: 'pending', provisionedBy: 'self-registration', organisation: 'gemeente-y' }
+	const http = transport(() => ({ status: 200, data: { results: [ours, theirs] } }))
 	const settings = createRegistrationSettings({ get: http.get, put: http.put, post: http.post, url: generateUrl, translate: (t) => t })
-	assert.deepEqual(await settings.waiting('gemeente-x'), rows)
+	assert.deepEqual(await settings.waiting('gemeente-x'), [ours])
 	const url = new URL(http.calls[0].url, 'http://x')
 	assert.equal(url.pathname, '/apps/openregister/api/objects/portaliq/portalAccount')
 	assert.equal(url.searchParams.get('status'), 'pending')
 	assert.equal(url.searchParams.get('provisionedBy'), 'self-registration')
-	assert.equal(url.searchParams.get('organisation'), 'gemeente-x')
+	// OpenRegister reads `organisation` on this route as its own tenant uuid,
+	// so the organisation is matched on the rows, not sent as a filter.
+	assert.equal(url.searchParams.has('organisation'), false)
 	assert.deepEqual(await settings.waiting(''), [])
 })
 

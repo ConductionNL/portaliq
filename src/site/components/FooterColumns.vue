@@ -45,7 +45,7 @@
 						<a
 							v-if="content.cta"
 							class="utrecht-button-link utrecht-button-link--html-a utrecht-button-link--secondary-action pq-footer__cta"
-							:href="content.cta.href"
+							:href="addressFor(content.cta.href)"
 							data-testid="site-footer-cta"
 							@click="onLink($event, content.cta.href)">
 							{{ content.cta.label }}
@@ -87,7 +87,7 @@
 							{{ lineParts(line).before
 							}}<a
 								v-if="lineParts(line).linked"
-								:href="line.href"
+								:href="addressFor(line.href)"
 								@click="onLink($event, line.href)"
 								>{{ lineParts(line).linked }}</a
 							>
@@ -106,7 +106,7 @@
 								<!-- The glyph is decorative: the link has its own text. -->
 								<a
 									class="ac-footer__link"
-									:href="item.link"
+									:href="addressFor(item.link)"
 									:target="
 										isExternal(item.link) ? '_blank' : undefined
 									"
@@ -135,6 +135,11 @@
 				<p data-testid="site-footer-colophon">
 					{{ content.colophon || title }}
 				</p>
+				<!-- Whose website this is, by the portal's organisation type
+				     (portal-identity-from-the-admin, REQ-PIA-003). -->
+				<p v-if="kindLine" data-testid="site-footer-kind">
+					{{ kindLine }}
+				</p>
 
 				<nav
 					v-if="legalLinks.length"
@@ -144,7 +149,7 @@
 					<ul class="ac-footer__sub-footer-horizontal">
 						<li v-for="item in legalLinks" :key="item.href">
 							<a
-								:href="item.href"
+								:href="addressFor(item.href)"
 								@click="onLink($event, item.href)"
 								>{{ item.label }}</a
 							>
@@ -175,7 +180,7 @@
 <script>
 import { CnSiteIcon } from '@conduction/nextcloud-vue/public'
 import { contactLineParts } from '../lib/footerLine.js'
-import { footerContentOf } from '../lib/shellData.js'
+import { footerContentOf, linkAddress } from '../lib/shellData.js'
 
 // The button links' classes need their stylesheet, or the browser draws its own blue link.
 import '@utrecht/button-link-css/dist/index.css'
@@ -208,6 +213,10 @@ export default {
 		landmarkLabel: { type: String, default: 'Footer' },
 		/** The legal links' accessible name. */
 		legalLabel: { type: String, default: 'Juridische informatie' },
+		/** A site route to the address that opens it; a route as it is without one. */
+		addressOf: { type: Function, default: null },
+		/** Whose website this is, by the organisation type: the content API's `organisationKindLine`. */
+		kindLine: { type: String, default: '' },
 	},
 
 	emits: ['navigate'],
@@ -219,7 +228,7 @@ export default {
 		 *
 		 * @return {boolean}
 		 *
-		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 		 */
 		designed() {
 			return Boolean(this.content.cta || this.content.contact)
@@ -243,7 +252,7 @@ export default {
 		 *
 		 * @return {Array<object>} `{key, brand?, contact?, menu?}` entries.
 		 *
-		 * @spec openspec/changes/site-chrome-follows-the-design/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
+		 * @spec openspec/specs/site-chrome/spec.md#requirement-the-footer-must-carry-the-motif-the-light-logo-and-the-brand-column-first
 		 */
 		columns() {
 			const menus = this.menus.map((menu) => ({
@@ -263,6 +272,20 @@ export default {
 	},
 
 	methods: {
+		/**
+		 * The href of a link: a site route in the site's own addressing, so it
+		 * opens where the site is served under the app path as well as on a
+		 * portal domain; anything else as it is.
+		 *
+		 * @param {string} link The authored link.
+		 * @return {string} The href.
+		 *
+		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-menu-link-to-a-site-page-carries-the-sites-own-address
+		 */
+		addressFor(link) {
+			return linkAddress(link, this.addressOf)
+		},
+
 		/**
 		 * @param {{text: string, href?: string}} line A contact line.
 		 * @return {{before: string, linked: string}} Its plain words and its linked words.

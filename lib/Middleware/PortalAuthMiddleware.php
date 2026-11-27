@@ -43,9 +43,10 @@ namespace OCA\Portaliq\Middleware;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Auth\PortalReadOnlySessionException;
 use OCA\Portaliq\Auth\PortalUnauthorizedException;
-use OCA\Portaliq\Contribution\PortalContributionRegistry;
-use OCA\Portaliq\Service\PortalRateLimit;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Controller\PortalIntakeController;
+use OCA\Portaliq\Kernel\Contracts\PortalContributionRegistryInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRateLimitInterface;
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
@@ -61,7 +62,7 @@ use Throwable;
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T02
  * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
- * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
  *
  * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the gate is where a read
  * without a session ends, so it is also where that read is counted per IP
@@ -78,23 +79,38 @@ class PortalAuthMiddleware extends Middleware {
 	private const ANONYMOUS_ELIGIBLE_METHODS = ['index', 'create'];
 
 	/**
+	 * Read-only methods of a guarded controller that answer without a session.
+	 *
+	 * The intake catalogue and the address lookup serve public data (the
+	 * published catalogue, street and town from the BAG), are rate limited per
+	 * client by their own `#[AnonRateLimit]`, and are what a signed-out
+	 * visitor needs to start a form (decision 25 Nov 2026 21:50 CET). The
+	 * other intake methods keep the bearer gate.
+	 *
+	 * @var array<class-string, array<int, string>>
+	 */
+	private const PUBLIC_READS = [
+		PortalIntakeController::class => ['catalogue', 'address'],
+	];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request object.
-	 * @param PortalSessionService $session The session resolver.
-	 * @param PortalContributionRegistry $registry Resolves the anonymous-reachable
+	 * @param BearerSessionResolverInterface $session The session resolver.
+	 * @param PortalContributionRegistryInterface $registry Resolves the anonymous-reachable
 	 *                                             surface
 	 *                                             (portal-page-provisioning).
 	 * @param IL10N $l10n Localises the message of a refused staff action.
-	 * @param PortalRateLimit|null $rateLimit Counts a collection read without a session
+	 * @param PortalRateLimitInterface|null $rateLimit Counts a collection read without a session
 	 *                                        per IP (portal-subject-rate-limit).
 	 */
 	public function __construct(
 		private readonly IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly PortalContributionRegistry $registry,
+		private readonly BearerSessionResolverInterface $session,
+		private readonly PortalContributionRegistryInterface $registry,
 		private readonly IL10N $l10n,
-		private readonly ?PortalRateLimit $rateLimit = null,
+		private readonly ?PortalRateLimitInterface $rateLimit = null,
 	) {
 	}//end __construct()
 
@@ -116,6 +132,7 @@ class PortalAuthMiddleware extends Middleware {
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
+	 * @spec openspec/changes/intake-catalogue-and-address-without-sign-in/specs/portal-intake-form/spec.md
 	 */
 	public function beforeController($controller, $methodName): void {
 		if (($controller instanceof PortalProtected) === false) {
@@ -124,7 +141,7 @@ class PortalAuthMiddleware extends Middleware {
 
 		$authorization = $this->request->getHeader('Authorization');
 		$subject = $this->session->resolveFromBearer($authorization);
-		if ($subject !== null) {
+		if ($subject !== null || $this->isPublicRead(controller: $controller, methodName: $methodName) === true) {
 			return;
 		}
 
@@ -142,6 +159,26 @@ class PortalAuthMiddleware extends Middleware {
 
 		throw new PortalUnauthorizedException(message: 'No valid portal session');
 	}//end beforeController()
+
+	/**
+	 * Whether the method is one of a guarded controller's public reads.
+	 *
+	 * @param object $controller The controller being dispatched.
+	 * @param string $methodName The method being invoked.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/intake-catalogue-and-address-without-sign-in/specs/portal-intake-form/spec.md
+	 */
+	private function isPublicRead(object $controller, string $methodName): bool {
+		foreach (self::PUBLIC_READS as $class => $methods) {
+			if ($controller instanceof $class && in_array($methodName, $methods, true) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end isPublicRead()
 
 	/**
 	 * Whether the current request matches an anonymous-flagged entry for the
@@ -189,26 +226,57 @@ class PortalAuthMiddleware extends Middleware {
 	 * @spec openspec/specs/portal-page-provisioning/spec.md#requirement-anonymous-submission-must-be-available-without-an-identity-provider
 	 */
 	private function anonymousCreateActionMatches(array $contributions): bool {
-		$register = (string)$this->request->getParam('register', '');
-		$schema = (string)$this->request->getParam('schema', '');
-		if ($register === '' || $schema === '') {
+		$target = [
+			'register' => (string)$this->request->getParam('register', ''),
+			'schema' => (string)$this->request->getParam('schema', ''),
+		];
+		if ($target['register'] === '' || $target['schema'] === '') {
 			return false;
 		}
 
 		foreach ($contributions as $contribution) {
-			foreach ((array)($contribution['actions'] ?? []) as $action) {
-				if (($action['type'] ?? '') === 'create'
-					&& ($action['anonymous'] ?? false) === true
-					&& ($action['register'] ?? '') === $register
-					&& ($action['schema'] ?? '') === $schema
-				) {
-					return true;
-				}
+			if ($this->hasAnonymousCreateFor(contribution: $contribution, target: $target) === true) {
+				return true;
 			}
 		}
 
 		return false;
 	}//end anonymousCreateActionMatches()
+
+	/**
+	 * Whether one contribution declares an anonymous create action for the
+	 * request's register and schema.
+	 *
+	 * @param mixed                 $contribution One anonymous-only contribution.
+	 * @param array<string, string> $target       The request's `register` and `schema`.
+	 *
+	 * @return bool
+	 */
+	private function hasAnonymousCreateFor(mixed $contribution, array $target): bool {
+		foreach ((array)($contribution['actions'] ?? []) as $action) {
+			if ($this->isAnonymousCreateFor(action: $action, target: $target) === true) {
+				return true;
+			}
+		}
+
+		return false;
+	}//end hasAnonymousCreateFor()
+
+	/**
+	 * Whether an action is a `type: create` with `anonymous` exactly true for
+	 * the request's exact register and schema.
+	 *
+	 * @param mixed                 $action The declared action.
+	 * @param array<string, string> $target The request's `register` and `schema`.
+	 *
+	 * @return bool
+	 */
+	private function isAnonymousCreateFor(mixed $action, array $target): bool {
+		return ($action['type'] ?? '') === 'create'
+			&& ($action['anonymous'] ?? false) === true
+			&& ($action['register'] ?? '') === $target['register']
+			&& ($action['schema'] ?? '') === $target['schema'];
+	}//end isAnonymousCreateFor()
 
 	/**
 	 * Convert a portal auth failure to a 401 JSON response, and a refused
@@ -233,9 +301,11 @@ class PortalAuthMiddleware extends Middleware {
 	 * @throws Throwable Re-thrown when it is not a portal auth failure or a refused action.
 	 *
 	 * @spec openspec/changes/supplier-portal/tasks.md#T02
-	 * @spec openspec/changes/portal-subject-rate-limit/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-signed-in-portal-session-must-be-rate-limited-per-subject
 	 *
-	 * @SuppressWarnings(PHPMD.UnusedFormalParameter)
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- Middleware dictates
+	 * the signature; the response depends only on the exception type, never on
+	 * which `$controller` / `$methodName` threw it.
 	 */
 	public function afterException($controller, $methodName, \Throwable $exception): Response {
 		if ($exception instanceof PortalUnauthorizedException) {

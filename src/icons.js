@@ -20,7 +20,9 @@ import AccountLock from 'vue-material-design-icons/AccountLock.vue'
 import AccountMultiple from 'vue-material-design-icons/AccountMultiple.vue'
 import AccountMultipleOutline from 'vue-material-design-icons/AccountMultipleOutline.vue'
 import AccountPlus from 'vue-material-design-icons/AccountPlus.vue'
+import AccountPlusOutline from 'vue-material-design-icons/AccountPlusOutline.vue'
 import AlertCircleOutline from 'vue-material-design-icons/AlertCircleOutline.vue'
+import AlertOutline from 'vue-material-design-icons/AlertOutline.vue'
 import BellOutline from 'vue-material-design-icons/BellOutline.vue'
 import BookAlphabet from 'vue-material-design-icons/BookAlphabet.vue'
 import BookOpenVariant from 'vue-material-design-icons/BookOpenVariant.vue'
@@ -34,6 +36,9 @@ import BullhornOutline from 'vue-material-design-icons/BullhornOutline.vue'
 import Calendar from 'vue-material-design-icons/Calendar.vue'
 import ChartBoxOutline from 'vue-material-design-icons/ChartBoxOutline.vue'
 import ChartLine from 'vue-material-design-icons/ChartLine.vue'
+// The Submissions row actions (submission-row-actions): Conversation in Talk,
+// Link a form and Register again.
+import Chat from 'vue-material-design-icons/Chat.vue'
 import ChatOutline from 'vue-material-design-icons/ChatOutline.vue'
 import Check from 'vue-material-design-icons/Check.vue'
 import CheckboxMarkedOutline from 'vue-material-design-icons/CheckboxMarkedOutline.vue'
@@ -49,16 +54,19 @@ import CursorDefaultClickOutline from 'vue-material-design-icons/CursorDefaultCl
 import Download from 'vue-material-design-icons/Download.vue'
 import Email from 'vue-material-design-icons/Email.vue'
 import EmailEditOutline from 'vue-material-design-icons/EmailEditOutline.vue'
+import EmailFastOutline from 'vue-material-design-icons/EmailFastOutline.vue'
 import EmailOutline from 'vue-material-design-icons/EmailOutline.vue'
 import EmailPlusOutline from 'vue-material-design-icons/EmailPlusOutline.vue'
 import EmailSearchOutline from 'vue-material-design-icons/EmailSearchOutline.vue'
 import EyeLock from 'vue-material-design-icons/EyeLock.vue'
+import EyeOutline from 'vue-material-design-icons/EyeOutline.vue'
 import FileCheckOutline from 'vue-material-design-icons/FileCheckOutline.vue'
 import FileDocument from 'vue-material-design-icons/FileDocument.vue'
 import FileDocumentEdit from 'vue-material-design-icons/FileDocumentEdit.vue'
 import FileDocumentMultipleOutline from 'vue-material-design-icons/FileDocumentMultipleOutline.vue'
 import FileDocumentOutline from 'vue-material-design-icons/FileDocumentOutline.vue'
 import FileFindOutline from 'vue-material-design-icons/FileFindOutline.vue'
+import FileLinkOutline from 'vue-material-design-icons/FileLinkOutline.vue'
 import FileTreeOutline from 'vue-material-design-icons/FileTreeOutline.vue'
 import FolderOutline from 'vue-material-design-icons/FolderOutline.vue'
 import FormSelect from 'vue-material-design-icons/FormSelect.vue'
@@ -68,6 +76,8 @@ import History from 'vue-material-design-icons/History.vue'
 import Home from 'vue-material-design-icons/Home.vue'
 import HomeOutline from 'vue-material-design-icons/HomeOutline.vue'
 import InformationOutline from 'vue-material-design-icons/InformationOutline.vue'
+// The manifest's Reply row action and its LinkVariant item, unregistered until now (gate-60).
+import LinkVariant from 'vue-material-design-icons/LinkVariant.vue'
 import Login from 'vue-material-design-icons/Login.vue'
 import MapMarkerPath from 'vue-material-design-icons/MapMarkerPath.vue'
 import Menu from 'vue-material-design-icons/Menu.vue'
@@ -83,6 +93,9 @@ import Pencil from 'vue-material-design-icons/Pencil.vue'
 import Plus from 'vue-material-design-icons/Plus.vue'
 import PowerPlugOutline from 'vue-material-design-icons/PowerPlugOutline.vue'
 import Pulse from 'vue-material-design-icons/Pulse.vue'
+import Refresh from 'vue-material-design-icons/Refresh.vue'
+import Reply from 'vue-material-design-icons/Reply.vue'
+import Restore from 'vue-material-design-icons/Restore.vue'
 import ShieldAccount from 'vue-material-design-icons/ShieldAccount.vue'
 import ShieldCheckOutline from 'vue-material-design-icons/ShieldCheckOutline.vue'
 import ShieldKeyOutline from 'vue-material-design-icons/ShieldKeyOutline.vue'
@@ -103,7 +116,9 @@ export default {
 	AccountLock,
 	AccountMultiple,
 	AccountPlus,
+	AccountPlusOutline,
 	AlertCircleOutline,
+	AlertOutline,
 	BellOutline,
 	BookAlphabet,
 	BookOpenVariant,
@@ -122,9 +137,11 @@ export default {
 	Close,
 	CursorDefaultClickOutline,
 	Email,
+	EmailFastOutline,
 	EmailOutline,
 	EmailPlusOutline,
 	EyeLock,
+	EyeOutline,
 	FileCheckOutline,
 	FileDocument,
 	FileDocumentEdit,
@@ -163,6 +180,8 @@ export default {
 	// ADR-077 Tier A: the concept "activity" (the `activityOffer` schema,
 	// extracurricular-activity-offer) is drawn with Pulse.
 	Pulse,
+	// Back to the default text on the Mail templates page.
+	Restore,
 	ShieldAccount,
 	ShieldCheckOutline,
 	ShieldKeyOutline,
@@ -184,4 +203,10 @@ export default {
 	ViewDashboardOutline,
 	Web,
 	WebBox,
+	// The Submissions row actions (submission-row-actions).
+	Chat,
+	FileLinkOutline,
+	Refresh,
+	LinkVariant,
+	Reply,
 }

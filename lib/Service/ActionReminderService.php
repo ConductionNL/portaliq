@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
  */
 
 declare(strict_types=1);
@@ -30,6 +30,9 @@ namespace OCA\Portaliq\Service;
 
 use DateTimeImmutable;
 use DateTimeZone;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
+use OCA\Portaliq\Kernel\Contracts\ActionReminderServiceInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -37,9 +40,10 @@ use Throwable;
 /**
  * Sends the reminder before an action's end date.
  *
- * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
  */
-class ActionReminderService {
+class ActionReminderService implements ActionReminderServiceInterface {
+	use RowAsArray;
 	use PagedObjectReads;
 
 	public const RULE_KEY = 'action-due';
@@ -58,10 +62,14 @@ class ActionReminderService {
 	 *
 	 * @param ContainerInterface $container For resolving OpenRegister's ObjectService.
 	 * @param LoggerInterface    $logger    The logger.
+	 * @param PortalAccountService|null $accounts Tells a withdrawn assignee apart.
+	 * @param ActionDueMailer|null      $mail     Mails the assignee beside the portal message.
 	 */
 	public function __construct(
 		private readonly ContainerInterface $container,
 		private readonly LoggerInterface $logger,
+		private readonly ?PortalAccountService $accounts = null,
+		private readonly ?ActionDueMailer $mail = null,
 	) {
 	}//end __construct()
 
@@ -74,7 +82,7 @@ class ActionReminderService {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
 	 */
 	public static function isDue(array $action, string $today): bool {
 		$end = substr((string)($action['endDate'] ?? ''), 0, 10);
@@ -105,7 +113,7 @@ class ActionReminderService {
 	 *
 	 * @return int How many reminders were sent.
 	 *
-	 * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
 	 */
 	public function remindDue(?string $today = null): int {
 		$today ??= (new DateTimeImmutable('now', new DateTimeZone('Europe/Amsterdam')))->format('Y-m-d');
@@ -117,6 +125,21 @@ class ActionReminderService {
 			return 0;
 		}
 
+		return $this->remindRows(objectService: $objectService, rows: $rows, today: $today);
+	}//end remindDue()
+
+	/**
+	 * Remind every due action among the rows.
+	 *
+	 * @param object $objectService OpenRegister's ObjectService.
+	 * @param mixed  $rows          The action rows as read.
+	 * @param string $today         Today, `Y-m-d`.
+	 *
+	 * @return int How many reminders were sent.
+	 *
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 */
+	private function remindRows(object $objectService, mixed $rows, string $today): int {
 		$sent = 0;
 		if (is_array($rows) === false) {
 			return 0;
@@ -134,26 +157,25 @@ class ActionReminderService {
 		}
 
 		return $sent;
-	}//end remindDue()
+	}//end remindRows()
 
 	/**
-	 * A stored row as an array.
+	 * Whether the assignee's account was withdrawn (void); logged with the account id only.
 	 *
-	 * @param mixed $row The row, an array or an entity.
+	 * @param string $assignee The assignee's subject reference.
 	 *
-	 * @return array<string, mixed>
+	 * @return bool
 	 */
-	private function asArray(mixed $row): array {
-		if (is_array($row) === true) {
-			return $row;
+	private function withdrawn(string $assignee): bool {
+		$account = $this->accounts?->findBySubjectRef(subjectRef: $assignee);
+		if (($account['status'] ?? '') !== PortalAccountService::STATUS_VOID) {
+			return false;
 		}
 
-		if (is_object($row) === true && method_exists($row, 'jsonSerialize') === true) {
-			return (array)$row->jsonSerialize();
-		}
+		$this->logger->info('Portaliq: no action reminder to a withdrawn account', ['account' => (string)($account['id'] ?? '')]);
 
-		return [];
-	}//end asArray()
+		return true;
+	}//end withdrawn()
 
 	/**
 	 * Write the reminder, then record it on the action. The record comes last
@@ -173,29 +195,12 @@ class ActionReminderService {
 		}
 
 		try {
-			$objectService->saveObject(
-				object: [
-					'subjectRef' => (string)$action['assignee'],
-					'organisation' => (string)($action['organisation'] ?? ''),
-					'subject' => 'Uw actie ' . $title . ' loopt bijna af',
-					'body' => 'Uw actie "' . $title . '" moet uiterlijk ' . substr((string)$action['endDate'], 0, 10) . ' klaar zijn.',
-					'read' => false,
-					'receivedAt' => gmdate('c'),
-					'ruleKey' => self::RULE_KEY,
-				],
-				register: self::REGISTER,
-				schema: 'portalMessage',
-				_rbac: false,
-				_multitenancy: false
-			);
-			$objectService->saveObject(
-				object: ['reminderSentAt' => gmdate('c'), 'reminderForEndDate' => substr((string)$action['endDate'], 0, 10)],
-				register: self::REGISTER,
-				schema: 'portalAction',
-				uuid: $id,
-				_rbac: false,
-				_multitenancy: false
-			);
+			if ($this->withdrawn(assignee: (string)$action['assignee']) === true) {
+				return false;
+			}
+
+			$this->tellAssignee(objectService: $objectService, action: $action, title: $title);
+			$this->markReminded(objectService: $objectService, action: $action, id: $id);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: action reminder failed', ['reason' => $e->getMessage()]);
 			return false;
@@ -203,4 +208,75 @@ class ActionReminderService {
 
 		return true;
 	}//end remind()
+
+	/**
+	 * Write the reminder message to the assignee and mail them beside it.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $action        The action row.
+	 * @param string               $title         The action's title.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 */
+	private function tellAssignee(object $objectService, array $action, string $title): void {
+		$objectService->saveObject(
+			object: $this->reminderMessage(action: $action, title: $title),
+			options: new ObjectSaveOptions(target: new ObjectFindTarget(register: self::REGISTER, schema: 'portalMessage')),
+			_rbac: false,
+			_multitenancy: false
+		);
+		$this->mail?->send(
+			subjectRef: (string)$action['assignee'],
+			organisation: (string)($action['organisation'] ?? ''),
+			action: $title,
+			endDate: substr((string)$action['endDate'], 0, 10)
+		);
+	}//end tellAssignee()
+
+	/**
+	 * The reminder message for the assignee.
+	 *
+	 * @param array<string, mixed> $action The action row.
+	 * @param string               $title  The action's title.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 */
+	private function reminderMessage(array $action, string $title): array {
+		return [
+			'subjectRef' => (string)$action['assignee'],
+			'organisation' => (string)($action['organisation'] ?? ''),
+			'subject' => 'Uw actie ' . $title . ' loopt bijna af',
+			'body' => 'Uw actie "' . $title . '" moet uiterlijk ' . substr((string)$action['endDate'], 0, 10) . ' klaar zijn.',
+			'read' => false,
+			'receivedAt' => gmdate('c'),
+			'ruleKey' => self::RULE_KEY,
+		];
+	}//end reminderMessage()
+
+	/**
+	 * Record on the action that its reminder went, for this end date.
+	 *
+	 * @param object               $objectService OpenRegister's ObjectService.
+	 * @param array<string, mixed> $action        The action row.
+	 * @param string               $id            The action's id.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+	 */
+	private function markReminded(object $objectService, array $action, string $id): void {
+		$objectService->saveObject(
+			object: ['reminderSentAt' => gmdate('c'), 'reminderForEndDate' => substr((string)$action['endDate'], 0, 10)],
+			options: new ObjectSaveOptions(
+				target: new ObjectFindTarget(register: self::REGISTER, schema: 'portalAction'),
+				uuid: $id
+			),
+			_rbac: false,
+			_multitenancy: false
+		);
+	}//end markReminded()
 }//end class

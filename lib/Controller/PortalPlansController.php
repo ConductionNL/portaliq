@@ -26,13 +26,14 @@ namespace OCA\Portaliq\Controller;
 
 use DateTimeImmutable;
 use DateTimeZone;
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Http\PdfDownloadResponse;
-use OCA\Portaliq\Service\Plans\PortalPlanService;
-use OCA\Portaliq\Service\PortalPdfExport;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PlanFilesInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalPdfExportInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalPlanServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -41,12 +42,14 @@ use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\Http\Response;
 use OCP\IRequest;
+use OCA\Portaliq\Kernel\Contracts\RequestedPortalInterface;
 
 /**
  * Every route answers only for a plan the bearer owns or takes part in, and an
  * unknown plan and someone else's plan answer the same 404.
  *
  * @SuppressWarnings(PHPMD.TooManyPublicMethods) -- one route per thing a resident does with a plan.
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the session, the plans, their files, the portal and the PDF renderer.
  *
  * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md
  */
@@ -70,19 +73,23 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
-	 * @param PortalPlanService $plans The plan rules.
-	 * @param PortalResolver $portals Finds the serving portal, for its templates.
-	 * @param PortalPdfExport|null $pdf Renders the plan as a PDF through OpenRegister.
+	 * @param BearerSessionResolverInterface $session Resolves the subject from the bearer.
+	 * @param PortalPlanServiceInterface $plans The plan rules.
+	 * @param PortalResolverInterface $portals Finds the serving portal, for its templates.
+	 * @param RequestedPortalInterface $requestedPortal The RequestedPortal helper.
+	 * @param PortalPdfExportInterface|null $pdf Renders the plan as a PDF through OpenRegister.
+	 * @param PlanFilesInterface|null $files Adds and opens the plan's files.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly PortalPlanService $plans,
-		private readonly PortalResolver $portals,
-		private readonly ?PortalPdfExport $pdf = null,
+		private readonly BearerSessionResolverInterface $session,
+		private readonly PortalPlanServiceInterface $plans,
+		private readonly PortalResolverInterface $portals,
+		private readonly RequestedPortalInterface $requestedPortal,
+		private readonly ?PortalPdfExportInterface $pdf = null,
+		private readonly ?PlanFilesInterface $files = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -151,7 +158,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 			contactIds: array_values($contactIds),
 			today: $this->today()
 		);
-		if ($result['status'] !== PortalPlanService::OK) {
+		if ($result['status'] !== PortalPlanServiceInterface::OK) {
 			return $this->answer(result: $result['status']);
 		}
 
@@ -178,7 +185,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 
 		$plan = $this->plans->detail(subject: $subject, id: $id, today: $this->today());
 		if ($plan === null) {
-			return $this->answer(result: PortalPlanService::NOT_FOUND);
+			return $this->answer(result: PortalPlanServiceInterface::NOT_FOUND);
 		}
 
 		return new JSONResponse($plan);
@@ -337,7 +344,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 
 		$document = $this->plans->pdfRows(subject: $subject, id: $id, today: $this->today());
 		if ($document === null) {
-			return $this->answer(result: PortalPlanService::NOT_FOUND);
+			return $this->answer(result: PortalPlanServiceInterface::NOT_FOUND);
 		}
 
 		if ($this->pdf === null || $this->pdf->available() === false) {
@@ -345,12 +352,73 @@ class PortalPlansController extends Controller implements PortalProtected {
 		}
 
 		$bytes = $this->pdf->render(title: $document['title'], columns: $document['columns'], rows: $document['rows']);
-		if ($bytes === null || $bytes === PortalPdfExport::TOO_LARGE) {
+		if ($bytes === null || $bytes === PortalPdfExportInterface::TOO_LARGE) {
 			return new JSONResponse(['error' => 'pdf_failed'], Http::STATUS_BAD_GATEWAY);
 		}
 
 		return new PdfDownloadResponse(bytes: $bytes, name: $document['title']);
 	}//end pdf()
+
+	/**
+	 * Add a file to the plan, or a new version of one: multipart field `file`,
+	 * and `previousVersion` naming the file it follows.
+	 *
+	 * @param string $id The plan.
+	 * @param string $previousVersion The file this one is a new version of, or ''.
+	 *
+	 * @return JSONResponse `{ok: true}`, or 400 (no file, or not the newest version), 403 (a done plan), 404, 401, 500.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-participants-share-the-goal-actions-note-and-file-versions-req-spl-003
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 20, period: 60)]
+	public function addFile(string $id, string $previousVersion=''): JSONResponse {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return $this->unauthenticated();
+		}
+
+		if ($this->files === null) {
+			return $this->answer(result: PortalPlanServiceInterface::FAILED);
+		}
+
+		return $this->answer(
+			result: $this->files->add(
+				subject: $subject,
+				id: $id,
+				uploaded: $this->request->getUploadedFile('file'),
+				previousVersion: $previousVersion
+			)
+		);
+	}//end addFile()
+
+	/**
+	 * Open one file of the plan, for a participant.
+	 *
+	 * @param string $id The plan.
+	 * @param string $fileId The file.
+	 *
+	 * @return Response The file, or 404 for a stranger or a file the plan does not list, or 401.
+	 *
+	 * @spec openspec/changes/shared-plans-with-a-caseworker/specs/resident-plans/spec.md#requirement-participants-share-the-goal-actions-note-and-file-versions-req-spl-003
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[AnonRateLimit(limit: 60, period: 60)]
+	public function file(string $id, string $fileId): Response {
+		$subject = $this->subject();
+		if ($subject === null) {
+			return $this->unauthenticated();
+		}
+
+		$stream = $this->files?->open(subject: $subject, id: $id, fileId: $fileId);
+		if ($stream === null) {
+			return $this->answer(result: PortalPlanServiceInterface::NOT_FOUND);
+		}
+
+		return $stream;
+	}//end file()
 
 	/**
 	 * The answer for a service outcome.
@@ -360,18 +428,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 * @return JSONResponse
 	 */
 	private function answer(string $result): JSONResponse {
-		$status = match ($result) {
-			PortalPlanService::OK => Http::STATUS_OK,
-			PortalPlanService::NOT_FOUND => Http::STATUS_NOT_FOUND,
-			PortalPlanService::FORBIDDEN => Http::STATUS_FORBIDDEN,
-			PortalPlanService::INVALID => Http::STATUS_BAD_REQUEST,
-			default => Http::STATUS_INTERNAL_SERVER_ERROR,
-		};
-		if ($status === Http::STATUS_OK) {
-			return new JSONResponse(['ok' => true]);
-		}
-
-		return new JSONResponse(['error' => $result], $status);
+		return (new PlanOutcomeAnswer())->for(result: $result);
 	}//end answer()
 
 	/**
@@ -400,10 +457,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 * @return string
 	 */
 	private function portalSlug(): string {
-		$slug = $this->request->getParam('portal');
-		if (is_string($slug) === false) {
-			$slug = null;
-		}
+		$slug = $this->requestedPortal->slug(request: $this->request);
 
 		return (string)($this->portals->resolve(request: $this->request, portalSlug: $slug)['slug'] ?? '');
 	}//end portalSlug()
@@ -414,7 +468,7 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 * @return JSONResponse
 	 */
 	private function unauthenticated(): JSONResponse {
-		return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
+		return (new SignedInSubject())->unauthenticated();
 	}//end unauthenticated()
 
 	/**
@@ -423,11 +477,6 @@ class PortalPlansController extends Controller implements PortalProtected {
 	 * @return array<string, mixed>|null
 	 */
 	private function subject(): ?array {
-		$subject = $this->session->resolveFromBearer($this->request->getHeader('Authorization'));
-		if ($subject === null || (string)($subject['subjectRef'] ?? '') === '') {
-			return null;
-		}
-
-		return $subject;
+		return (new SignedInSubject())->resolve(session: $this->session, request: $this->request);
 	}//end subject()
 }//end class

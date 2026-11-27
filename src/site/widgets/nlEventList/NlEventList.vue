@@ -94,6 +94,28 @@ import '@utrecht/paragraph-css/dist/index.css'
 /**
  * @spec openspec/changes/site-school-blocks/specs/portaliq-cms/spec.md#requirement-a-dated-list-shows-each-date-as-a-tile-or-a-label
  */
+/**
+ * What the list asks the catalogue for its source: an app's own index (its
+ * kind, categories and a limit or range, upcoming unless it is the school
+ * year), else the old list of types, upcoming by date; null for neither.
+ *
+ * @param {object|null} source The placement's source.
+ * @return {object|null} The catalogue query, or null.
+ */
+function eventQuery(source) {
+	const own = sourceQuery(source)
+	if (own !== null) {
+		return { ...own, upcoming: source?.range !== 'schoolYear' }
+	}
+	const types = Array.isArray(source?.types)
+		? source.types.filter((type) => typeof type === 'string')
+		: []
+	if (types.length === 0) {
+		return null
+	}
+	return { types, upcoming: true, sort: 'date', limit: 20 }
+}
+
 export default {
 	name: 'NlEventList',
 
@@ -187,33 +209,12 @@ export default {
 		 * @spec openspec/changes/portal-public-catalogue/specs/portaliq-cms/spec.md#requirement-a-dated-list-may-fill-itself-from-the-catalogue
 		 */
 		async loadSource() {
-			// An app's own index: its kind, categories and a limit or range.
-			const own = sourceQuery(this.source)
-			if (own !== null) {
-				try {
-					const page = await fetchCatalogue(this.portal, {
-						...own,
-						upcoming: this.source?.range !== 'schoolYear',
-					})
-					this.fetched = eventItemsOf(page.items)
-				} catch {
-					this.fetched = null
-				}
-				return
-			}
-			const types = Array.isArray(this.source?.types)
-				? this.source.types.filter((type) => typeof type === 'string')
-				: []
-			if (types.length === 0) {
+			const query = eventQuery(this.source)
+			if (query === null) {
 				return
 			}
 			try {
-				const page = await fetchCatalogue(this.portal, {
-					types,
-					upcoming: true,
-					sort: 'date',
-					limit: 20,
-				})
+				const page = await fetchCatalogue(this.portal, query)
 				this.fetched = eventItemsOf(page.items)
 			} catch {
 				this.fetched = null

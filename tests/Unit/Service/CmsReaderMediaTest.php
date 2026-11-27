@@ -7,6 +7,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service;
 
+use OCA\Portaliq\Service\Articles\PageArticle;
 use OCA\Portaliq\Service\Cms\MediaLibraryReader;
 use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\CmsReader;
@@ -41,6 +42,24 @@ class CmsReaderMediaTest extends TestCase {
 			$page['hero']
 		);
 	}//end testTheHeroImageFromTheLibraryCarriesItsAddressAndAlternativeText()
+
+	/**
+	 * page-answer-carries-help: the single page answer carries the page's
+	 * help text, so the site can draw "Hulp bij deze pagina".
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/page-answer-carries-help/specs/portaliq-cms/spec.md#requirement-the-page-answer-carries-the-pages-help-text
+	 */
+	public function testThePageAnswerCarriesItsHelpText(): void {
+		$page = $this->reader(pages: [$this->page(['helpText' => '  Hier ziet u hoe een raadslid stemde.  '])])
+			->page(portal: 'gemeente', route: '/contact', locale: 'nl', audience: 'anonymous');
+		$bare = $this->reader(pages: [$this->page([])])
+			->page(portal: 'gemeente', route: '/contact', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame('Hier ziet u hoe een raadslid stemde.', $page['helpText']);
+		$this->assertSame('', $bare['helpText']);
+	}//end testThePageAnswerCarriesItsHelpText()
 
 	public function testAnAddressHeroImageIsServedAsIs(): void {
 		$page = $this->reader(pages: [$this->page(['heroImage' => 'https://example.nl/a.jpg'])])
@@ -103,6 +122,33 @@ class CmsReaderMediaTest extends TestCase {
 	public array $queried = [];
 
 	/**
+	 * A markdown page that names an article carries it; one that names none
+	 * carries no article key (marketing-articles-from-pipelinq).
+	 *
+	 * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-page-can-show-an-article
+	 *
+	 * @return void
+	 */
+	public function testAMarkdownPageThatNamesAnArticleCarriesIt(): void {
+		$shown = ['id' => 'a1', 'slug' => 'najaar', 'title' => 'Najaar', 'summary' => '', 'hero' => null, 'markdown' => '## Nieuw'];
+		$articles = $this->createMock(PageArticle::class);
+		$articles->expects($this->once())->method('shown')->with('gemeente', 'najaar', '')->willReturn($shown);
+
+		$named = $this->reader(
+			pages: [$this->page(['body' => ['type' => 'markdown', 'markdown' => 'Lees verder.', 'articleRef' => 'najaar']])],
+			articles: $articles
+		)->page(portal: 'gemeente', route: '/contact', locale: 'nl', audience: 'anonymous');
+
+		$this->assertSame($shown, $named['body']['article']);
+		$this->assertSame('najaar', $named['body']['articleRef']);
+		$this->assertSame('Lees verder.', $named['body']['markdown']);
+
+		$plain = $this->reader(pages: [$this->page([])], articles: $this->createMock(PageArticle::class))
+			->page(portal: 'gemeente', route: '/contact', locale: 'nl', audience: 'anonymous');
+		$this->assertArrayNotHasKey('article', $plain['body']);
+	}//end testAMarkdownPageThatNamesAnArticleCarriesIt()
+
+	/**
 	 * A stored page on /contact.
 	 *
 	 * @param array<string, mixed> $fields Extra fields.
@@ -116,11 +162,12 @@ class CmsReaderMediaTest extends TestCase {
 	/**
 	 * A reader over an object service answering per schema.
 	 *
-	 * @param array<array> $pages The stored pages.
+	 * @param array<array>     $pages    The stored pages.
+	 * @param PageArticle|null $articles The article resolver, when the test needs one.
 	 *
 	 * @return CmsReader
 	 */
-	private function reader(array $pages): CmsReader {
+	private function reader(array $pages, ?PageArticle $articles=null): CmsReader {
 		$media = [
 			['id' => self::IMAGE, 'portal' => 'gemeente', 'title' => 'Stadhuis', 'kind' => 'image', 'status' => 'published', 'alt' => 'Het stadhuis aan de Markt'],
 		];
@@ -173,6 +220,6 @@ class CmsReaderMediaTest extends TestCase {
 
 		$this->library = new MediaLibraryReader($container, $factory, new NullLogger(), $context);
 
-		return new CmsReader($container, $factory, new NullLogger(), $context, new MediaReferences($urls, $this->library));
+		return new CmsReader($container, $factory, new NullLogger(), $context, new MediaReferences($urls, $this->library), articles: $articles);
 	}//end reader()
 }//end class

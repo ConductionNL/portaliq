@@ -73,3 +73,25 @@ The renderer SHALL read the page from `?route=` first, then from the path (the w
 - GIVEN a visitor on `https://www.gemeente.example/afval` follows a link to `/contact`
 - WHEN the visitor goes back
 - THEN the address is `https://www.gemeente.example/afval` and the page `/afval` is shown
+
+### Requirement: A sign-in started on a short address must return to it (REQ-SRH-005)
+
+A sign-in's `returnTo` MUST be accepted as a short address when the request host matches a verified domain that declares `servedAtRoot: true`. A short address is a plain path of the site on that host. A Nextcloud path, a dot segment and every way out of the origin MUST be refused, as for the long address. Anywhere else only the long site address is accepted.
+
+#### Scenario: Back on the short address, signed in
+@e2e exclude Needs the proxy rule in front of Nextcloud; covered by PHPUnit tests/Unit/Service/Signin/SiteReturnAddressTest.php, live check is task T7
+- GIVEN the domain `www.gemeente.example` declares `servedAtRoot: true`
+- WHEN a resident on `https://www.gemeente.example/mijn/inbox` signs in
+- THEN the sign-in returns to `https://www.gemeente.example/mijn/inbox`, signed in
+
+#### Scenario: No short address on another host
+@e2e exclude PHPUnit tests/Unit/Service/Signin/SiteReturnAddressTest.php
+- GIVEN a host whose domain does not declare `servedAtRoot`
+- WHEN a sign-in arrives with `returnTo=/mijn/inbox`
+- THEN that address is refused and the sign-in returns to the portal
+
+#### Scenario: A Nextcloud path is not a short address
+@e2e exclude PHPUnit tests/Unit/Service/Signin/SiteReturnAddressTest.php
+- GIVEN the domain `www.gemeente.example` declares `servedAtRoot: true`
+- WHEN a sign-in arrives with `returnTo=/index.php/apps/files`
+- THEN that address is refused

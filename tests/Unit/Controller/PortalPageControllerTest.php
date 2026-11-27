@@ -24,10 +24,10 @@ use PHPUnit\Framework\TestCase;
  * now answers with a redirect to the site keeping its query string
  * (site-reaches-portal-parity REQ-SRP-048).
  *
- * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#3.1
- * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#3.2
- * @spec openspec/changes/portal-controller-http-test-coverage/tasks.md#3.3
- * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.2
+ * @spec openspec/changes/archive/2026-11-25-portal-controller-http-test-coverage/tasks.md#3.1
+ * @spec openspec/changes/archive/2026-11-25-portal-controller-http-test-coverage/tasks.md#3.2
+ * @spec openspec/changes/archive/2026-11-25-portal-controller-http-test-coverage/tasks.md#3.3
+ * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#3.2
  */
 class PortalPageControllerTest extends TestCase {
 
@@ -173,7 +173,7 @@ class PortalPageControllerTest extends TestCase {
 	 * accessibility measurement may make (site-accessibility-statement
 	 * REQ-SAS-001).
 	 *
-	 * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
 	 */
 	public function testOnlyTheMeasurementMayFrameTheSiteAndOnlyFromItsOwnOrigin(): void {
 		$policy = $this->controller(orgSlug: '')->site()->getContentSecurityPolicy()->buildPolicy();
@@ -186,6 +186,31 @@ class PortalPageControllerTest extends TestCase {
 		$this->assertStringNotContainsString('frame-ancestors *', $policy);
 
 	}//end testOnlyTheMeasurementMayFrameTheSiteAndOnlyFromItsOwnOrigin()
+
+	/**
+	 * The notice a browser without JavaScript shows links to the plain version
+	 * of the same page: the route, the named portal, the search and the page
+	 * carried over, a slash left readable, and nothing it was not given
+	 * (site-honest-without-javascript REQ-SHJ-001).
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-every-site-page-says-so-when-javascript-is-off-req-shj-001
+	 */
+	public function testThePlainUrlCarriesTheRouteAndTheSearch(): void {
+		$search = $this->controller(orgSlug: '', route: '/zoeken', params: ['_search' => 'afval'])->site()->getParams();
+		$this->assertSame('/index.php/apps/portaliq/site/plain?route=/zoeken&_search=afval', $search['plainUrl']);
+
+		$all = $this->controller(orgSlug: '', route: '/zoeken', portalParam: 'demo', params: ['_search' => 'a&b c', '_page' => '2'])
+			->site()->getParams();
+		$this->assertSame('/index.php/apps/portaliq/site/plain?route=/zoeken&portal=demo&_search=a%26b%20c&_page=2', $all['plainUrl']);
+
+		$path = $this->controller(orgSlug: '', route: '/elders')->sitePath(path: 'afval/container')->getParams();
+		$this->assertSame('/index.php/apps/portaliq/site/plain?route=/afval/container', $path['plainUrl']);
+
+		$bare = $this->controller(orgSlug: '', params: ['_search' => ['x']])->site()->getParams();
+		$this->assertSame('/index.php/apps/portaliq/site/plain', $bare['plainUrl']);
+
+	}//end testThePlainUrlCarriesTheRouteAndTheSearch()
+
 
 	/**
 	 * The real framing rule with nobody allowed to measure.
@@ -548,7 +573,8 @@ class PortalPageControllerTest extends TestCase {
 		?array $byOrganisation = null,
 		bool $byOrganisationThrows = false,
 		?PortalNoticeReader $notices = null,
-		string $acceptLanguage = ''
+		string $acceptLanguage = '',
+		array $params = []
 	): PortalPageController {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getParam')->willReturnCallback(
@@ -556,7 +582,7 @@ class PortalPageControllerTest extends TestCase {
 				'org' => $orgSlug,
 				'portal' => ($portalParam !== '' ? $portalParam : $default),
 				'route' => ($route !== '' ? $route : $default),
-				default => $default,
+				default => ($params[$key] ?? $default),
 			}
 		);
 		$request->method('getHeader')->willReturnCallback(

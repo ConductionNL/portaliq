@@ -29,6 +29,14 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use InvalidArgumentException;
+use OCA\OpenRegister\Service\Form\FormSubmission;
+use OCA\OpenRegister\Service\Form\FormSubmitService;
+use OCA\OpenRegister\Service\Form\FormSubmitter;
+use OCA\OpenRegister\Service\Object\DiscardDraftRequest;
+use OCA\OpenRegister\Service\Object\DraftDiscard;
+use OCA\OpenRegister\Service\Object\DraftOwner;
+use OCA\Portaliq\Kernel\Contracts\DestinationDraftInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -38,22 +46,21 @@ use Throwable;
  *
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
  */
-class DestinationDraft {
+class DestinationDraft implements DestinationDraftInterface {
 	/**
 	 * OpenRegister's submit service.
 	 */
-	private const SUBMIT_SERVICE = 'OCA\\OpenRegister\\Service\\Form\\FormSubmitService';
+	private const SUBMIT_SERVICE = FormSubmitService::class;
 
 	/**
 	 * OpenRegister's draft discard (decision 195).
 	 */
-	private const DRAFT_DISCARD = 'OCA\\OpenRegister\\Service\\Object\\DraftDiscard';
+	private const DRAFT_DISCARD = DraftDiscard::class;
 
 	/**
 	 * OpenRegister's draft owner, built as `portal:<subjectRef>` (decision 195).
 	 */
-	private const DRAFT_OWNER = 'OCA\\OpenRegister\\Service\\Object\\DraftOwner';
-
+	private const DRAFT_OWNER = DraftOwner::class;
 
 	/**
 	 * Constructor.
@@ -95,25 +102,35 @@ class DestinationDraft {
 		}
 
 		try {
+			// One unmapped write: the payload lands on the destination as filled in.
 			$answer = $service->saveDraft(
-				destination: $destination,
-				mapping: null,
-				payload: $payload,
-				subject: null,
-				draftId: self::orNull(value: $draftId),
-				scope: $scope,
-				owner: $owner
+				submission: new FormSubmission(
+					writes: [$destination],
+					payload: $payload,
+					submitter: new FormSubmitter(subject: null, scope: $scope, draftId: self::orNull(value: $draftId), owner: $owner)
+				)
 			);
 		} catch (Throwable $exception) {
 			return $this->submit->refusalOf(exception: $exception, destination: $destination);
 		}
 
+		return $this->savedAnswer(answer: $answer);
+	}//end saveDraft()
+
+	/**
+	 * The outcome of a saved draft: its id, or a refusal when the destination gave none.
+	 *
+	 * @param mixed $answer What the destination answered.
+	 *
+	 * @return array{ok: bool, status: int, answer: array<string, mixed>, message: string, findings: array<int, array<string, mixed>>}
+	 */
+	private function savedAnswer(mixed $answer): array {
 		if (is_array($answer) === false || (string)($answer['id'] ?? '') === '') {
 			return $this->submit->refusal(status: 503, message: 'The destination gave no answer.', findings: []);
 		}
 
 		return ['ok' => true, 'status' => 200, 'answer' => $answer, 'message' => '', 'findings' => []];
-	}//end saveDraft()
+	}//end savedAnswer()
 
 	/**
 	 * The subject's newest draft in a destination whose data holds each `$match` value, or null.
@@ -133,19 +150,50 @@ class DestinationDraft {
 			return null;
 		}
 
-		try {
-			$draft = $service->findDraft(destination: $destination, subject: null, owner: $owner, match: $match);
-		} catch (Throwable $exception) {
-			$this->logger->warning('Portaliq: a draft could not be looked up', ['reason' => $exception->getMessage()]);
-			return null;
-		}
+		$draft = $this->lookedUp(service: $service, destination: $destination, owner: $owner, values: $match);
 
+		return $this->draftOf(draft: $draft);
+	}//end findDraft()
+
+	/**
+	 * The draft when the destination answered one with an id.
+	 *
+	 * @param mixed $draft What the destination answered.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function draftOf(mixed $draft): array|null {
 		if (is_array($draft) === false || (string)($draft['id'] ?? '') === '') {
 			return null;
 		}
 
 		return $draft;
-	}//end findDraft()
+	}//end draftOf()
+
+	/**
+	 * Ask the destination for the owner's newest matching draft; null, logged, when the lookup fails.
+	 *
+	 * @param object                                  $service     The form submit service.
+	 * @param array{register: string, schema: string} $destination The destination pair.
+	 * @param DraftOwner                              $owner       The draft's owner.
+	 * @param array<string, mixed>                    $values      Values the draft must hold.
+	 *
+	 * @return mixed
+	 */
+	private function lookedUp(object $service, array $destination, DraftOwner $owner, array $values): mixed {
+		try {
+			$draft = $service->findDraft(
+				destination: $destination,
+				submitter: new FormSubmitter(subject: null, owner: $owner),
+				match: $values
+			);
+		} catch (Throwable $exception) {
+			$this->logger->warning('Portaliq: a draft could not be looked up', ['reason' => $exception->getMessage()]);
+			return null;
+		}
+
+		return $draft;
+	}//end lookedUp()
 
 	/**
 	 * Send the subject's draft: it leaves `draft` with full validation and gets its reference.
@@ -169,24 +217,34 @@ class DestinationDraft {
 
 		try {
 			$answer = $service->submit(
-				destination: $destination,
-				mapping: null,
-				payload: $payload,
-				subject: null,
-				idempotencyKey: self::orNull(value: $idempotencyKey),
-				draftId: $draftId,
-				owner: $owner
+				submission: new FormSubmission(
+					writes: [$destination],
+					payload: $payload,
+					submitter: new FormSubmitter(subject: null, draftId: $draftId, owner: $owner)
+				),
+				idempotencyKey: self::orNull(value: $idempotencyKey)
 			);
 		} catch (Throwable $exception) {
 			return $this->submit->refusalOf(exception: $exception, destination: $destination);
 		}
 
+		return $this->sentAnswer(answer: $answer);
+	}//end sendDraft()
+
+	/**
+	 * The outcome of a sent draft, or a refusal when the destination gave no answer.
+	 *
+	 * @param mixed $answer What the destination answered.
+	 *
+	 * @return array{ok: bool, status: int, answer: array<string, mixed>, message: string, findings: array<int, array<string, mixed>>}
+	 */
+	private function sentAnswer(mixed $answer): array {
 		if (is_array($answer) === false) {
 			return $this->submit->refusal(status: 503, message: 'The destination gave no answer.', findings: []);
 		}
 
 		return ['ok' => true, 'status' => 201, 'answer' => $answer, 'message' => '', 'findings' => []];
-	}//end sendDraft()
+	}//end sentAnswer()
 
 	/**
 	 * Discard the subject's draft. Someone else's draft, or a sent object, is left alone.
@@ -207,7 +265,9 @@ class DestinationDraft {
 		}
 
 		try {
-			return $discard->discard(destination: $destination, draftId: $draftId, owner: $owner) === true;
+			return $discard->discard(
+				request: new DiscardDraftRequest(destination: $destination, draftId: $draftId, owner: $owner)
+			) === true;
 		} catch (Throwable $exception) {
 			$this->logger->warning('Portaliq: a draft could not be discarded', ['reason' => $exception->getMessage()]);
 			return false;
@@ -222,27 +282,24 @@ class DestinationDraft {
 	 *
 	 * @param string $subjectRef The signed-in subject.
 	 *
-	 * @return object|null The owner.
+	 * @return DraftOwner|null The owner.
+	 *
+	 * @SuppressWarnings(PHPMD.StaticAccess) DraftOwner has a private constructor;
+	 *   portalSubject() is OpenRegister's one way to a portal owner.
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
 	 */
-	protected function ownerOf(string $subjectRef): ?object {
-		$factory = [self::DRAFT_OWNER, 'portalSubject'];
-		if ($subjectRef === '' || is_callable($factory) === false) {
+	protected function ownerOf(string $subjectRef): ?DraftOwner {
+		if ($subjectRef === '' || class_exists(self::DRAFT_OWNER) === false) {
 			return null;
 		}
 
 		try {
-			$owner = $factory($subjectRef);
-		} catch (Throwable) {
+			return DraftOwner::portalSubject(subjectRef: $subjectRef);
+		} catch (InvalidArgumentException) {
+			// Too long or a control character: not a reference an owner can carry.
 			return null;
 		}
-
-		if (is_object($owner) === false) {
-			return null;
-		}
-
-		return $owner;
 	}//end ownerOf()
 
 	/**

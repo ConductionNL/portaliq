@@ -92,8 +92,16 @@ class DestinationSubmitTest extends TestCase {
 		$validator = new class {
 			public array $asked = [];
 
-			public function validate(array $mapping, object $schema, array $options = []): array {
-				$this->asked = compact('mapping', 'schema', 'options');
+			/**
+			 * Record what was asked and answer two findings, one malformed.
+			 *
+			 * @param array<string, mixed> $mapping     The mapping.
+			 * @param object               $destination The schema and audience.
+			 *
+			 * @return array<int, mixed>
+			 */
+			public function validate(array $mapping, object $destination): array {
+				$this->asked = ['mapping' => $mapping, 'schema' => $destination->schema, 'audience' => $destination->audience];
 				return [['property' => 'caseType', 'code' => 'required-unmapped', 'message' => 'No case type.'], 'not-a-finding'];
 			}
 		};
@@ -115,7 +123,7 @@ class DestinationSubmitTest extends TestCase {
 
 		$this->assertSame([['property' => 'caseType', 'code' => 'required-unmapped', 'message' => 'No case type.']], $findings);
 		$this->assertTrue($validator->asked['schema'] === $schema);
-		$this->assertSame(['audience' => 'public'], $validator->asked['options']);
+		$this->assertSame(expected: 'public', actual: $validator->asked['audience']);
 		$this->assertNull($submit->findings(destination: ['register' => 'dossiq', 'schema' => 'unknown'], mapping: [], audience: 'public'));
 	}//end testTheCheckAsksTheValidatorWithTheSchemaEntityAndTheAudience()
 

@@ -19,6 +19,8 @@ export default {
 		'Allowed file types: {types}.': 'Toegestane bestandstypen: {types}.',
 		'Also send letters to {label}': 'Brieven ook naar {label} sturen',
 		'Also sent to {label}.': 'Ook verstuurd naar {label}.',
+		'Also sent to {label}, on {date} at {time}.':
+			'Ook verstuurd naar {label}, op {date} om {time}.',
 		'As written': 'Zoals geschreven',
 		Attachments: 'Bijlagen',
 		'Back to tests': 'Terug naar toetsen',
@@ -30,6 +32,7 @@ export default {
 		'Conversation with school': 'Gesprek met school',
 		Conversations: 'Gesprekken',
 		Deadline: 'Termijn',
+		'Download as PDF': 'Downloaden als pdf',
 		'E-mail': 'E-mail',
 		'Finish before {date}': 'Afronden voor {date}',
 		'Group conversation': 'Groepsgesprek',
@@ -44,8 +47,7 @@ export default {
 		'Legal effect': 'Rechtsgevolg',
 		'Loading…': 'Laden…',
 		'Mark as read': 'Markeren als gelezen',
-		'The sender sees when you opened this message.':
-			'De afzender ziet wanneer u dit bericht hebt geopend.',
+		'Read receipt requested': 'Leesbevestiging gevraagd',
 		'Maximum file size: {size} MB.': 'Maximale bestandsgrootte: {size} MB.',
 		Messages: 'Berichten',
 		'Messages from school are translated by AI into this language. You can always see the original text.':
@@ -54,6 +56,7 @@ export default {
 		'Move up': 'Omhoog',
 		'My tasks': 'Mijn taken',
 		Nature: 'Aard',
+		New: 'Nieuw',
 		'New messages': 'Nieuwe berichten',
 		News: 'Nieuws',
 		'News from school is translated by AI into your language. You can always see the original text.':
@@ -158,6 +161,21 @@ export default {
 		'Unread ({count})': 'Ongelezen ({count})',
 		'Mark all as read': 'Alles als gelezen markeren',
 		'Filter messages': 'Berichten filteren',
+		'Back to messages': 'Terug naar berichten',
+		'Received on {date} at {time}': 'Ontvangen op {date} om {time}',
+		'From {sender}, about case {number}': 'Van {sender}, over zaak {number}',
+		'From {sender}': 'Van {sender}',
+		'About this message': 'Over dit bericht',
+		From: 'Van',
+		'About case': 'Over zaak',
+		Received: 'Ontvangen',
+		Message: 'Bericht',
+		'Go to your case': 'Naar uw zaak',
+		'Case {number}': 'Zaak {number}',
+		'This message does not exist or is not for you.':
+			'Dit bericht bestaat niet of is niet voor u.',
+		'The message could not be loaded.': 'Het bericht kon niet worden geladen.',
+		'Try again': 'Opnieuw proberen',
 	},
 	en: {
 		'A file is required for this task.': 'A file is required for this task.',
@@ -168,6 +186,8 @@ export default {
 		'Allowed file types: {types}.': 'Allowed file types: {types}.',
 		'Also send letters to {label}': 'Also send letters to {label}',
 		'Also sent to {label}.': 'Also sent to {label}.',
+		'Also sent to {label}, on {date} at {time}.':
+			'Also sent to {label}, on {date} at {time}.',
 		'As written': 'As written',
 		Attachments: 'Attachments',
 		'Back to tests': 'Back to tests',
@@ -179,6 +199,7 @@ export default {
 		'Conversation with school': 'Conversation with school',
 		Conversations: 'Conversations',
 		Deadline: 'Deadline',
+		'Download as PDF': 'Download as PDF',
 		'E-mail': 'E-mail',
 		'Finish before {date}': 'Finish before {date}',
 		'Group conversation': 'Group conversation',
@@ -193,8 +214,7 @@ export default {
 		'Legal effect': 'Legal effect',
 		'Loading…': 'Loading…',
 		'Mark as read': 'Mark as read',
-		'The sender sees when you opened this message.':
-			'The sender sees when you opened this message.',
+		'Read receipt requested': 'Read receipt requested',
 		'Maximum file size: {size} MB.': 'Maximum file size: {size} MB.',
 		Messages: 'Messages',
 		'Messages from school are translated by AI into this language. You can always see the original text.':
@@ -203,6 +223,7 @@ export default {
 		'Move up': 'Move up',
 		'My tasks': 'My tasks',
 		Nature: 'Nature',
+		New: 'New',
 		'New messages': 'New messages',
 		News: 'News',
 		'News from school is translated by AI into your language. You can always see the original text.':
@@ -307,5 +328,20 @@ export default {
 		'Unread ({count})': 'Unread ({count})',
 		'Mark all as read': 'Mark all as read',
 		'Filter messages': 'Filter messages',
+		'Back to messages': 'Back to messages',
+		'Received on {date} at {time}': 'Received on {date} at {time}',
+		'From {sender}, about case {number}': 'From {sender}, about case {number}',
+		'From {sender}': 'From {sender}',
+		'About this message': 'About this message',
+		From: 'From',
+		'About case': 'About case',
+		Received: 'Received',
+		Message: 'Message',
+		'Go to your case': 'Go to your case',
+		'Case {number}': 'Case {number}',
+		'This message does not exist or is not for you.':
+			'This message does not exist or is not for you.',
+		'The message could not be loaded.': 'The message could not be loaded.',
+		'Try again': 'Try again',
 	},
 }

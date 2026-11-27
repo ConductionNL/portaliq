@@ -7,7 +7,7 @@
  * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
  * SPDX-License-Identifier: EUPL-1.2
  *
- * @spec openspec/changes/personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
+ * @spec openspec/changes/archive/2026-11-25-personal-action-list/specs/resident-actions/spec.md#requirement-the-assignee-gets-a-reminder-before-the-end-date-req-ral-003
  */
 
 declare(strict_types=1);
@@ -15,11 +15,14 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service;
 
 use OCA\Portaliq\BackgroundJob\ActionReminderJob;
+use OCA\Portaliq\Service\ActionDueMailer;
 use OCA\Portaliq\Service\ActionReminderService;
+use OCA\Portaliq\Service\PortalAccountService;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 class ActionReminderServiceTest extends TestCase {
 
@@ -32,7 +35,7 @@ class ActionReminderServiceTest extends TestCase {
 	 *
 	 * @return array{0: ActionReminderService, 1: object}
 	 */
-	private function service(array $actions): array {
+	private function service(array $actions, ?PortalAccountService $accounts = null, ?ActionDueMailer $mail = null): array {
 		$store = new class ($actions) {
 			/**
 			 * @var array<int, array{schema: string, uuid: ?string, object: array<string, mixed>}>
@@ -57,7 +60,10 @@ class ActionReminderServiceTest extends TestCase {
 				return $this->actions;
 			}
 
-			public function saveObject(array $object, mixed $register = null, mixed $schema = null, ?string $uuid = null, bool $_rbac = true, bool $_multitenancy = true): array {
+			public function saveObject(array $object, ObjectSaveOptions $options = new ObjectSaveOptions(), bool $_rbac = true, bool $_multitenancy = true): array {
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved[] = ['schema' => (string)$schema, 'uuid' => $uuid, 'object' => $object];
 				if ($schema === 'portalAction') {
 					foreach ($this->actions as $i => $action) {
@@ -73,7 +79,14 @@ class ActionReminderServiceTest extends TestCase {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willReturnCallback(static fn (string $id) => ($id === self::OS) ? $store : throw new RuntimeException('no service'));
 
-		return [new ActionReminderService($container, $this->createMock(LoggerInterface::class)), $store];
+		$service = new ActionReminderService(
+			container: $container,
+			logger: $this->createMock(originalClassName: LoggerInterface::class),
+			accounts: $accounts,
+			mail: $mail
+		);
+
+		return [$service, $store];
 	}
 
 	private static function action(array $extra = []): array {
@@ -107,6 +120,51 @@ class ActionReminderServiceTest extends TestCase {
 		$this->assertSame('2026-10-14', $store->actions[0]['reminderForEndDate']);
 	}
 
+	/**
+	 * Beside the portal message, the assignee gets one mail with the action
+	 * and its end date, and no second one for the same end date.
+	 *
+	 * @return void
+	 */
+	public function testTheAssigneeIsMailedOnceBesideTheMessage(): void {
+		$mail = $this->createMock(originalClassName: ActionDueMailer::class);
+		$mail->expects($this->once())->method('send')->with('mark', 'gemeente-x', 'Bankafschriften uploaden', '2026-10-14')->willReturn(true);
+		[$service] = $this->service(actions: [self::action(extra: ['assignee' => 'mark', 'endDate' => '2026-10-14T00:00:00+02:00'])], mail: $mail);
+
+		$this->assertSame(expected: 1, actual: $service->remindDue(today: '2026-10-11'));
+		$this->assertSame(expected: 0, actual: $service->remindDue(today: '2026-10-11'));
+	}//end testTheAssigneeIsMailedOnceBesideTheMessage()
+
+	/**
+	 * A mail that does not leave still records the reminder: the portal
+	 * message is the reminder, the mail is its copy.
+	 *
+	 * @return void
+	 */
+	public function testAFailedMailStillRecordsTheReminder(): void {
+		$mail = $this->createMock(originalClassName: ActionDueMailer::class);
+		$mail->method('send')->willReturn(false);
+		[$service, $store] = $this->service(actions: [self::action()], mail: $mail);
+
+		$this->assertSame(expected: 1, actual: $service->remindDue(today: '2026-10-11'));
+		$this->assertSame(expected: '2026-10-14', actual: $store->actions[0]['reminderForEndDate']);
+	}//end testAFailedMailStillRecordsTheReminder()
+
+	/**
+	 * A withdrawn assignee is not mailed either.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnAssigneeIsNotMailed(): void {
+		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
+		$accounts->method('findBySubjectRef')->willReturn(['id' => 'account-sanne', 'status' => 'void']);
+		$mail = $this->createMock(originalClassName: ActionDueMailer::class);
+		$mail->expects($this->never())->method('send');
+		[$service] = $this->service(actions: [self::action()], accounts: $accounts, mail: $mail);
+
+		$this->assertSame(expected: 0, actual: $service->remindDue(today: '2026-10-11'));
+	}//end testAWithdrawnAssigneeIsNotMailed()
+
 	public function testAChangedEndDateEarnsANewReminder(): void {
 		[$service, $store] = $this->service([self::action(['reminderForEndDate' => '2026-10-14', 'reminderSentAt' => '2026-10-11T07:00:00+00:00'])]);
 
@@ -123,6 +181,29 @@ class ActionReminderServiceTest extends TestCase {
 
 		$this->assertSame('mark', $store->saved[0]['object']['subjectRef']);
 	}
+
+	/**
+	 * A withdrawn (void) assignee gets no inbox reminder, and the action is
+	 * not marked reminded.
+	 *
+	 * @return void
+	 */
+	public function testAWithdrawnAssigneeGetsNoReminder(): void {
+		$accounts = $this->createMock(originalClassName: PortalAccountService::class);
+		$accounts->method('findBySubjectRef')->willReturnCallback(
+			static fn (string $subjectRef): array => match ($subjectRef) {
+				'mark' => ['id' => 'account-mark', 'subjectRef' => 'mark', 'status' => 'void'],
+				default => ['id' => 'account-'.$subjectRef, 'subjectRef' => $subjectRef, 'status' => 'active'],
+			}
+		);
+		$actions = [self::action(extra: ['assignee' => 'mark']), self::action(extra: ['id' => 'a2'])];
+		[$service, $store] = $this->service(actions: $actions, accounts: $accounts);
+
+		$this->assertSame(expected: 1, actual: $service->remindDue(today: '2026-10-11'));
+		$messages = array_values(array_filter($store->saved, static fn (array $s): bool => $s['schema'] === 'portalMessage'));
+		$this->assertSame(expected: ['sanne'], actual: array_column(array_column($messages, 'object'), 'subjectRef'));
+		$this->assertArrayNotHasKey(key: 'reminderForEndDate', array: $store->actions[0]);
+	}//end testAWithdrawnAssigneeGetsNoReminder()
 
 	public function testTheJobRunsTheService(): void {
 		$this->assertTrue(is_subclass_of(ActionReminderJob::class, \OCP\BackgroundJob\TimedJob::class));

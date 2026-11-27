@@ -9,6 +9,7 @@ use OCA\Portaliq\Service\PortalCaseDocumentReader;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Contribution\TimelineProviderMethod;
 
 /**
  * The documents a case app publishes on one case, as its declared method
@@ -52,7 +53,7 @@ class PortalCaseDocumentReaderTest extends TestCase {
 		$locator = $this->createMock(PortalProviderLocator::class);
 		$locator->method('locate')->willReturnCallback(static fn (string $app): ?object => ($app === 'dossiq' ? $provider : null));
 
-		return new PortalCaseDocumentReader(locator: $locator, logger: $this->createMock(LoggerInterface::class));
+		return new PortalCaseDocumentReader(locator: $locator, logger: $this->createMock(LoggerInterface::class), timelineProviderMethod: new TimelineProviderMethod());
 	}//end reader()
 
 	/**
@@ -75,6 +76,28 @@ class PortalCaseDocumentReaderTest extends TestCase {
 	}//end testKeepsWellFormedEntries()
 
 	/**
+	 * Any kind but a decision is a document, and a file type or size of the
+	 * wrong type stays behind; the keys keep their order.
+	 *
+	 * @return void
+	 */
+	public function testTheKindAndTheFileFactsAreAsRecorded(): void {
+		$file    = ['register' => 'zaken', 'schema' => 'document', 'id' => 'd-1', 'fileId' => '71'];
+		$entries = $this->reader([
+			['size' => 10, 'mimeType' => 'text/plain', 'file' => $file, 'kind' => 'letter', 'title' => 'Brief', 'id' => 'a', 'date' => '2026-01-02'],
+			['id' => 'b', 'title' => 'Besluit', 'kind' => 'Decision', 'file' => $file, 'mimeType' => 7, 'size' => '10'],
+		])->entries(appId: 'dossiq', method: 'caseDocuments', caseId: 'case-1');
+
+		$this->assertSame(
+			[
+				['id' => 'a', 'title' => 'Brief', 'kind' => 'document', 'date' => '2026-01-02', 'file' => $file, 'mimeType' => 'text/plain', 'size' => 10],
+				['id' => 'b', 'title' => 'Besluit', 'kind' => 'document', 'date' => '', 'file' => $file],
+			],
+			$entries
+		);
+	}//end testTheKindAndTheFileFactsAreAsRecorded()
+
+	/**
 	 * An entry without an id, a title or a complete file reference is dropped.
 	 *
 	 * @return void
@@ -92,6 +115,25 @@ class PortalCaseDocumentReaderTest extends TestCase {
 
 		$this->assertSame(['d'], array_column($entries, 'id'));
 	}//end testDropsAnEntryWithoutFile()
+
+	/**
+	 * The site's extras travel on: the provider's own line, the new mark and a
+	 * status pill; a value of the wrong type stays behind.
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-documents-entry-may-carry-its-own-line-a-new-mark-and-a-status
+	 *
+	 * @return void
+	 */
+	public function testKeepsTheLineTheNewMarkAndTheStatus(): void {
+		$file = ['register' => 'learniq', 'schema' => 'report-card', 'id' => 'rc-1', 'fileId' => '9'];
+		$entries = $this->reader([
+			['id' => 'a', 'title' => 'Rapport 1', 'file' => $file, 'meta' => ' Groep 6 ', 'isNew' => true, 'status' => 'Ondertekend', 'statusTone' => 'success', 'secret' => 'x'],
+			['id' => 'b', 'title' => 'Rapport 2', 'file' => $file, 'meta' => ['x'], 'isNew' => 'yes', 'status' => str_repeat('x', 201)],
+		])->entries(appId: 'dossiq', method: 'caseDocuments', caseId: 'case-1');
+
+		$this->assertSame(['meta' => 'Groep 6', 'status' => 'Ondertekend', 'statusTone' => 'success', 'isNew' => true], array_diff_key($entries[0], array_flip(['id', 'title', 'kind', 'date', 'file'])));
+		$this->assertSame(['id', 'title', 'kind', 'date', 'file'], array_keys($entries[1]));
+	}//end testKeepsTheLineTheNewMarkAndTheStatus()
 
 	/**
 	 * A provider that throws or answers something else gives no entries.

@@ -10,6 +10,8 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindOptions;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 
 /**
  * Tests the OR writer: it degrades to null without OpenRegister, and — the
@@ -30,6 +32,115 @@ class PortalObjectWriterTest extends TestCase {
 		$this->assertNull($writer->createObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', ['title' => 'X']));
 
 	}//end testReturnsNullWhenOpenRegisterUnavailable()
+
+	public function testAnUpdateWithoutOpenRegisterWritesNothing(): void {
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willThrowException(new RuntimeException('OR not installed'));
+
+		$writer = new PortalObjectWriter($container, $this->createMock(LoggerInterface::class));
+
+		$this->assertNull($writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', 'obj-1', ['title' => 'X']));
+		$this->assertNull($writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', '', ['title' => 'X']));
+
+	}//end testAnUpdateWithoutOpenRegisterWritesNothing()
+
+	/**
+	 * A write the owning app's hook stopped is told apart from a store failure.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
+	 */
+	public function testAWriteTheOwningAppRefusedIsMarkedAsSuch(): void {
+		$writer = $this->writerThrowing(failure: new \OCA\OpenRegister\Exception\HookStoppedException(message: 'Could not verify the parent is open'));
+
+		$created = $writer->createObject(
+			register: 'decidiq',
+			schema: 'consultation-reaction',
+			scopeField: 'submitterId',
+			subjectRef: 's1',
+			organisation: 'org-1',
+			data: ['body' => 'Te laat']
+		);
+
+		$this->assertNull(actual: $created);
+		$this->assertTrue(condition: $writer->lastRefusedByOwner());
+		$this->assertSame(expected: 'Could not verify the parent is open', actual: $writer->lastFailure());
+	}//end testAWriteTheOwningAppRefusedIsMarkedAsSuch()
+
+	/**
+	 * Any other failure of the store is not an owner's refusal.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/site-forms/spec.md#requirement-a-refusal-by-the-records-own-app-must-read-as-no-longer-possible-req-orr-001
+	 */
+	public function testAStoreFailureIsNotAnOwnersRefusal(): void {
+		$writer = $this->writerThrowing(failure: new RuntimeException(message: 'database is down'));
+
+		$created = $writer->createObject(
+			register: 'decidiq',
+			schema: 'consultation-reaction',
+			scopeField: 'submitterId',
+			subjectRef: 's1',
+			organisation: 'org-1',
+			data: ['body' => 'Nu']
+		);
+
+		$this->assertNull(actual: $created);
+		$this->assertFalse(condition: $writer->lastRefusedByOwner());
+	}//end testAStoreFailureIsNotAnOwnersRefusal()
+
+	/**
+	 * A writer whose object service throws on save.
+	 *
+	 * @param \Throwable $failure What the save throws.
+	 *
+	 * @return PortalObjectWriter
+	 */
+	private function writerThrowing(\Throwable $failure): PortalObjectWriter {
+		$objectService = new class($failure) {
+			/**
+			 * Constructor.
+			 *
+			 * @param \Throwable $failure What the save throws.
+			 */
+			public function __construct(private \Throwable $failure) {
+			}
+
+			/**
+			 * Throws what it was given.
+			 *
+			 * @param array<string, mixed> $object        The object.
+			 * @param ObjectSaveOptions    $options       The options.
+			 * @param bool                 $_rbac         RBAC.
+			 * @param bool                 $_multitenancy Multitenancy.
+			 *
+			 * @return array<string, mixed>
+			 */
+			public function saveObject(
+				array $object,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
+				bool $_rbac = true,
+				bool $_multitenancy = true
+			): array {
+				throw $this->failure;
+			}
+		};
+
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			function (string $id) use ($objectService) {
+				if ($id === self::OS) {
+					return $objectService;
+				}
+
+				throw new RuntimeException('no service: ' . $id);
+			}
+		);
+
+		return new PortalObjectWriter(container: $container, logger: $this->createMock(originalClassName: LoggerInterface::class));
+	}//end writerThrowing()
 
 	public function testStampsOwnershipOverClientInputAndBypassesRbac(): void {
 		$objectService = new class {
@@ -54,13 +165,14 @@ class PortalObjectWriterTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				?array $extend = null,
-				mixed $register = null,
-				mixed $schema = null,
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): array {
+				$extend = $options->extend;
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				$this->saved = $object;
 				$this->register = $register;
 				$this->schema = $schema;
@@ -119,7 +231,10 @@ class PortalObjectWriterTest extends TestCase {
 			]
 		);
 
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		$result = $writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', 'd-1', ['title' => 'New']);
 
 		$this->assertTrue($objectService->saveCalled);
@@ -148,7 +263,10 @@ class PortalObjectWriterTest extends TestCase {
 		$objectService = $this->updatableObjectService(
 			['portalMessage' => [['id' => 'm-1', 'subjectRef' => 's1', 'organisation' => 'org-1', 'readAt' => '2026-10-08T09:14:00Z']]]
 		);
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		$seen = null;
 
 		$writer->updateObject('portaliq', 'portalMessage', 'subjectRef', 's1', 'org-1', 'm-1', static function (array $row) use (&$seen): array {
@@ -183,7 +301,10 @@ class PortalObjectWriterTest extends TestCase {
 			]
 		);
 
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		$result = $writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', 'd-2', ['title' => 'HACKED']);
 
 		$this->assertNull($result);
@@ -205,7 +326,10 @@ class PortalObjectWriterTest extends TestCase {
 			]
 		);
 
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		$this->assertNull($writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', 'd-3', ['title' => 'X']));
 		$this->assertFalse($objectService->saveCalled);
 
@@ -220,7 +344,10 @@ class PortalObjectWriterTest extends TestCase {
 			]
 		);
 
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		$this->assertNull($writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', '', 'nope', ['title' => 'X']));
 		$this->assertFalse($objectService->saveCalled);
 
@@ -240,7 +367,10 @@ class PortalObjectWriterTest extends TestCase {
 			]
 		);
 
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		// Client tries to smuggle a foreign subjectRef into the patch body.
 		$writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', 'd-1', ['title' => 'New', 'subjectRef' => 'HACKER']);
 
@@ -259,7 +389,10 @@ class PortalObjectWriterTest extends TestCase {
 			throwOnSave: true
 		);
 
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		$this->assertNull($writer->updateObject('portaliq', 'exampleDocument', 'subjectRef', 's1', 'org-1', 'd-1', ['title' => 'X']));
 
 	}//end testUpdateFailsClosedOnOpenRegisterWriteError()
@@ -279,7 +412,10 @@ class PortalObjectWriterTest extends TestCase {
 			]
 		);
 
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		$result = $writer->updateObject('learniq', 'submission', 'learnerRefs', 'learner-1', '', 'sub-1', ['feedbackText' => 'new', 'learnerRefs' => ['intruder']]);
 
 		$this->assertTrue($objectService->saveCalled);
@@ -307,7 +443,10 @@ class PortalObjectWriterTest extends TestCase {
 			]
 		);
 
-		$writer = new PortalObjectWriter($this->container($objectService), $this->createMock(LoggerInterface::class));
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
 		$this->assertNull($writer->updateObject('learniq', 'submission', 'learnerRefs', 'learner-1', 'org-1', 'sub-5', ['feedbackText' => 'X']));
 
 		$this->assertNull($writer->updateObject('learniq', 'submission', 'learnerRefs', 'learner-1', '', 'sub-2', ['feedbackText' => 'X']));
@@ -356,6 +495,79 @@ class PortalObjectWriterTest extends TestCase {
 		}
 
 	}//end testCreateStampsTheSingleValueWhenTheSchemaIsNotAnArray()
+
+	/**
+	 * The saved object is the stored row patched by the fields, in the stored
+	 * key order: the envelope dropped, the organisation never added or changed,
+	 * and the scope field re-stamped in place.
+	 *
+	 * @return void
+	 */
+	public function testUpdateSavesTheExactMergedRowAndNeverAddsAnOrganisation(): void {
+		$objectService = $this->updatableObjectService(
+			rowsPerSchema: [
+				'exampleDocument' => [
+					['@self' => ['id' => 'd-1'], 'id' => 'd-1', 'subjectRef' => 's1', 'title' => 'Old', 'status' => 'open'],
+				],
+			]
+		);
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
+
+		$writer->updateObject(
+			register: 'portaliq',
+			schema: 'exampleDocument',
+			scopeField: 'subjectRef',
+			subjectRef: 's1',
+			organisation: '',
+			id: 'd-1',
+			data: ['organisation' => 'org-x', 'subjectRef' => 'other', 'note' => 'n']
+		);
+
+		$this->assertSame(
+			expected: ['id' => 'd-1', 'subjectRef' => 's1', 'title' => 'Old', 'status' => 'open', 'note' => 'n'],
+			actual: $objectService->saved
+		);
+
+	}//end testUpdateSavesTheExactMergedRowAndNeverAddsAnOrganisation()
+
+	/**
+	 * A stored organisation is put back after the patch, so it moves to the end
+	 * of the saved row and keeps its stored value.
+	 *
+	 * @return void
+	 */
+	public function testUpdateKeepsTheStoredOrganisationAtTheEndOfTheRow(): void {
+		$objectService = $this->updatableObjectService(
+			rowsPerSchema: [
+				'exampleDocument' => [
+					['id' => 'd-1', 'organisation' => 'org-1', 'subjectRef' => 's1', 'title' => 'Old'],
+				],
+			]
+		);
+		$writer = new PortalObjectWriter(
+			container: $this->container(objectService: $objectService),
+			logger: $this->createMock(originalClassName: LoggerInterface::class)
+		);
+
+		$writer->updateObject(
+			register: 'portaliq',
+			schema: 'exampleDocument',
+			scopeField: 'subjectRef',
+			subjectRef: 's1',
+			organisation: 'org-1',
+			id: 'd-1',
+			data: ['organisation' => 'org-2', 'title' => 'New']
+		);
+
+		$this->assertSame(
+			expected: ['id' => 'd-1', 'subjectRef' => 's1', 'title' => 'New', 'organisation' => 'org-1'],
+			actual: $objectService->saved
+		);
+
+	}//end testUpdateKeepsTheStoredOrganisationAtTheEndOfTheRow()
 
 	/**
 	 * A container resolving OpenRegister's ObjectService to the given stub.
@@ -423,7 +635,9 @@ class PortalObjectWriterTest extends TestCase {
 			 *
 			 * @return array<string,mixed>|null
 			 */
-			public function find(string $id, string $register = '', string $schema = '', bool $_rbac = true, bool $_multitenancy = true): ?array {
+			public function find(string $id, ?ObjectFindOptions $options = null, bool $_rbac = true, bool $_multitenancy = true): ?array {
+				$register = $options?->register ?? '';
+				$schema = $options?->schema ?? '';
 				foreach (($this->rows[$schema] ?? []) as $row) {
 					if (in_array($id, [($row['id'] ?? null), ($row['uuid'] ?? null)], true) === true) {
 						return $row;
@@ -440,13 +654,14 @@ class PortalObjectWriterTest extends TestCase {
 			 */
 			public function saveObject(
 				array $object,
-				?array $extend = null,
-				mixed $register = null,
-				mixed $schema = null,
-				?string $uuid = null,
+				ObjectSaveOptions $options = new ObjectSaveOptions(),
 				bool $_rbac = true,
-				bool $_multitenancy = true,
+				bool $_multitenancy = true
 			): array {
+				$extend = $options->extend;
+				$register = $options->target->register;
+				$schema = $options->target->schema;
+				$uuid = $options->uuid;
 				if ($this->throwOnSave === true) {
 					throw new RuntimeException('OR write failed');
 				}

@@ -23,7 +23,7 @@ without hash (`#`) fragments.
 
 ## Requirements
 
-### REQ-DASH-001: Render the main dashboard SPA entry point
+### Requirement: Render the main dashboard SPA entry point (REQ-DASH-001)
 
 The system MUST expose a public (no-admin-required, no-CSRF-token-required) HTTP endpoint that returns the Twig `index` template for the app. The template is responsible for loading the Vue bundle; the controller MUST NOT perform any business logic beyond template selection.
 
@@ -35,7 +35,7 @@ The system MUST expose a public (no-admin-required, no-CSRF-token-required) HTTP
 - AND the response MUST be accessible without an admin role (`#[NoAdminRequired]`)
 - AND the request MUST be accepted without a CSRF token (`#[NoCSRFRequired]`) so that first-request GETs work
 
-### REQ-DASH-002: Catch-all route for Vue history-mode deep links
+### Requirement: Catch-all route for Vue history-mode deep links (REQ-DASH-002)
 
 The system MUST expose a catch-all route that also returns the dashboard SPA so that any path under the app's URL root resolves to the same Vue bundle. This lets the Vue router's history mode (not hash mode — per ADR-004) own in-app routing, while the Nextcloud server still serves the SPA for every sub-path.
 
@@ -47,7 +47,7 @@ The system MUST expose a catch-all route that also returns the dashboard SPA so 
 - AND the Vue router MUST resolve the `/items/abc-123` path client-side after hydration
 - AND the catch-all MUST be public in the same sense as `page()` (`#[NoAdminRequired]`, `#[NoCSRFRequired]`)
 
-### REQ-DASH-003: The SPA shell mounts `CnAppRoot` from the bundled manifest
+### Requirement: The SPA shell mounts `CnAppRoot` from the bundled manifest (REQ-DASH-003)
 
 REQ-DASH-001/002 cover the server half of the SPA entry point. This requirement
 covers its client half: `src/App.vue` is the Tier-4 app shell (ADR-024) and MUST
@@ -84,3 +84,20 @@ restate the precondition of every other e2e in this repo.
 - WHEN it sets `active` to `true` and populates the object identifiers
 - THEN the shell's single `<CnObjectSidebar>` MUST render with those values
 - AND no second sidebar instance may be created for the same app shell
+
+### Requirement: The dashboard shows traffic and availability of all portals together (REQ-DFP-001)
+
+The dashboard SHALL show the visitors of the last 7 days and last month's availability of all published portals together as KPIs, a card with last month's availability per portal, and a card with page views, sessions, visitors and the share of engaged sessions of the last 7 days with the most viewed pages. The figures SHALL come from admin-only routes whose permission check runs before any record is read. Without traffic the engaged share SHALL be empty, never a division by zero. The existing KPIs SHALL stay.
+
+#### Scenario: Two portals
+- **GIVEN** the website had 15 visitors and Mijn Zuiddrecht 9 in the last 7 days
+- **THEN** "Bezoekers, laatste 7 dagen" reads 24
+- **AND** the most viewed pages of both portals are listed, most viewed first
+
+#### Scenario: Not an administrator
+- **WHEN** a user who is not an administrator asks an overview route
+- **THEN** Nextcloud refuses it before any record is read
+
+#### Scenario: A roll-up portal is not counted twice
+- **GIVEN** a published roll-up portal whose traffic is the sum of two member portals
+- **THEN** the overview's figures and most viewed pages count the members once and leave the roll-up out

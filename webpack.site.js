@@ -39,6 +39,14 @@ const site = {
 		alias: {
 			'@site': path.resolve(__dirname, 'src', 'site'),
 		},
+		// The editor mounts @nextcloud/vue, whose upload picker reaches
+		// @nextcloud/files -> is-svg -> @file-type/xml -> sax. sax requires
+		// Node's `stream` inside a try/catch for its SAXStream only, and
+		// @file-type/xml uses the plain `sax.parser`, so an empty module is
+		// correct and costs no bytes.
+		fallback: {
+			stream: false,
+		},
 	},
 	module: {
 		rules: [
@@ -151,9 +159,17 @@ const site = {
 		// address bar before anything renders and writes every link in the
 		// addressing of this host, and the registration link sits on the
 		// sign-in screen a visitor sees first.
+		//
+		// 433 KiB, up from 431, on 2026-11-17 with dataset-views-on-the-public-page.
+		// Development measured 440,961 B, 383 B under 431 KiB; the views add
+		// 1,044 B (442,005 B). The views, their charts and the map load on
+		// demand, only for a publication whose tables carry views; what stays
+		// in the entry is the check that decides to load them and the views'
+		// strings in the en and nl bundles the translator reads. The budget is
+		// the next whole KiB above the measurement plus 1 KiB.
 		hints: isDev ? false : 'error',
-		maxAssetSize: 431 * 1024,
-		maxEntrypointSize: 431 * 1024,
+		maxAssetSize: 433 * 1024,
+		maxEntrypointSize: 433 * 1024,
 	},
 }
 
@@ -232,8 +248,13 @@ const embed = {
 		// sentinelTokens, userGroupsPeek) is ~2 KiB larger in the same import chain,
 		// and the embed entry measured 161.5 KiB with the axios stub (so with or
 		// without it). Raise again only with a reason.
-		maxAssetSize: 164 * 1024,
-		maxEntrypointSize: 164 * 1024,
+		//
+		// 166 KiB, was 164, since nextcloud-vue 2.165 (#1850): resolveFilterTokens
+		// grew 2.1 KB of source and visibleWhen gained the `@context.` condition
+		// read. The entry measured 168,024 B, 88 B over 164 KiB, with no portaliq
+		// module in it changed.
+		maxAssetSize: 166 * 1024,
+		maxEntrypointSize: 166 * 1024,
 	},
 }
 

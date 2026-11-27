@@ -12,6 +12,7 @@
 
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
+import { channelIcon } from '../src/site/components/collections/timeline.js'
 import {
 	fileLine,
 	fileType,
@@ -68,13 +69,13 @@ test('the receipt reads who sent it, when, its type and its size', () => {
 	// REQ-SMO-005 scenario "The receipt on the case page".
 	assert.equal(
 		fileLine(RECEIPT, nl, 'nl'),
-		'Van de gemeente, 2 oktober 2026. PDF, 84 kB',
+		'Van de organisatie, 2 oktober 2026. PDF, 84 kB',
 	)
 	assert.equal(
 		fileLine({ title: 'foto.jpg', kind: 'yours', size: 1536 * 1024 }, nl, 'nl'),
 		'Van u. JPG, 1,5 MB',
 	)
-	assert.equal(fileLine({ title: 'zonder' }, nl, 'nl'), 'Van de gemeente.')
+	assert.equal(fileLine({ title: 'zonder' }, nl, 'nl'), 'Van de organisatie.')
 	assert.equal(fileType({ title: 'brief.docx' }), 'DOCX')
 	assert.equal(fileType({ mimeType: 'application/msword', title: 'x' }), 'Word')
 	assert.equal(sizeInWords(0), '')
@@ -105,7 +106,7 @@ test('a file item is one button named after the document, with its line', async 
 	assert.match(html, /<span class="denhaag-file__left" aria-hidden="true">/)
 	assert.match(
 		html,
-		/<span class="pq-file-item__name">Ontvangstbevestiging<\/span><span class="pq-file-item__line">Van de gemeente, 2 oktober 2026\. PDF, 84 kB<\/span>/,
+		/<span class="pq-file-item__name">Ontvangstbevestiging<\/span><span class="pq-file-item__line">Van de organisatie, 2 oktober 2026\. PDF, 84 kB<\/span>/,
 	)
 })
 
@@ -142,6 +143,19 @@ test('the contact timeline lists events newest first, each a moment and a senten
 		2,
 		'an event without a moment has no <time>',
 	)
+	assert.doesNotMatch(html, /timeline-channel/, 'no channel, no pill')
+})
+
+test('a contact with a channel carries it as a pill with its icon (board Zaak)', async () => {
+	const html = await renderComponent(ContactTimeline, {
+		entries: [{ id: 'c1', message: 'Vraag over de planning', channel: 'Telefoon', occurredAt: '2026-10-05T14:20:00' }],
+		tr: nl,
+		locale: 'nl',
+	})
+	assert.match(html, /data-testid="timeline-channel"><svg class="pq-contact-timeline__channel-icon"[^>]*><path d="M6\.62,10\.79/)
+	assert.match(html, /<\/svg> Telefoon<\/span>/)
+	assert.equal(channelIcon('Balie').startsWith('M20,6H16'), true)
+	assert.equal(channelIcon('Bericht via het portaal').startsWith('M20,2H4'), true)
 })
 
 test('a description list is a dl of keys and values', async () => {
@@ -187,7 +201,7 @@ test('the documents block lists the case documents as file items, and a failed r
 		},
 	)
 	assert.match(html, /data-testid="mijn-file-item"/)
-	assert.match(html, /Van de gemeente, 2 oktober 2026\. PDF, 84 kB/)
+	assert.match(html, /Van de organisatie, 2 oktober 2026\. PDF, 84 kB/)
 
 	const failing = instance(DocumentsBlock, {
 		block: { type: 'documents', collection: 'mijnZaken' },
@@ -352,4 +366,66 @@ test('any collection that declares documents reads them through its own route (T
 	calls.length = 0
 	await caseCtx.load()
 	assert.deepEqual(calls, ['case'], 'a case keeps the case screen route')
+})
+
+test('a document with download conditions shows them first and downloads after Accept (document-download-terms)', async () => {
+	const RELEASES = {
+		id: 'subjectDocuments',
+		register: 'filinq',
+		schema: 'documentRelease',
+		documents: { label: 'Documenten', provider: 'releasedDocuments', opened: 'releasedDocumentOpened', terms: 'releasedDocumentTerms', accept: 'releasedDocumentAccept' },
+	}
+	const calls = []
+	let acceptAnswer = { ok: false, status: 409, json: { accepted: false, message: 'Changed meanwhile' } }
+	let termsAnswer = { mayDownload: false, message: '', agreement: { version: 'v2', text: 'Niet verder verspreiden.' } }
+	const PATH = '/collections/filinq/documentRelease/rel-1/documents/d1/terms'
+	const api = {
+		request: async (method, path, body) => {
+			if (method === 'GET') {
+				calls.push(`terms:${path}`)
+				return { ok: true, status: 200, json: { terms: termsAnswer } }
+			}
+			calls.push(`accept:${path}:${body.version}`)
+			return acceptAnswer
+		},
+		downloadCollectionDocument: async (collection, id, entry) => {
+			calls.push(`download:${id}:${entry.id}`)
+			return { ok: true }
+		},
+	}
+	const ctx = instance(DocumentsBlock, {
+		block: { type: 'documents', collection: 'subjectDocuments' },
+		collection: RELEASES,
+		record: { id: 'rel-1' },
+		api,
+		locale: 'nl',
+	})
+	await ctx.openDocument(RECEIPT)
+	assert.deepEqual(calls, [`terms:${PATH}`], 'nothing downloads before the conditions are accepted')
+	assert.equal(ctx.pendingTerms.version, 'v2')
+	assert.equal(ctx.pendingTerms.text, 'Niet verder verspreiden.')
+
+	await ctx.acceptAndOpen()
+	assert.equal(ctx.termsNotice, 'Changed meanwhile', 'a refused acceptance says why and downloads nothing')
+	assert.notEqual(ctx.pendingTerms, null)
+
+	acceptAnswer = { ok: true, status: 200, json: { accepted: true } }
+	await ctx.acceptAndOpen()
+	assert.deepEqual(calls, [`terms:${PATH}`, `accept:${PATH}:v2`, `accept:${PATH}:v2`, 'download:rel-1:d1'])
+	assert.equal(ctx.pendingTerms, null)
+	assert.equal(ctx.openFailed, false)
+
+	const html = await renderComponent(
+		inState(DocumentsBlock, { answer: { documents: [RECEIPT] }, failed: false, pendingTerms: { entry: RECEIPT, version: 'v2', text: 'Niet verder verspreiden.', message: '' } }),
+		{ block: { type: 'documents', collection: 'subjectDocuments' }, collection: RELEASES, record: { id: 'rel-1' }, api, locale: 'nl' },
+	)
+	assert.match(html, /mijn-documents-terms-accept/)
+	assert.match(html, /Akkoord en downloaden/)
+	assert.match(html, /Niet verder verspreiden\./)
+
+	// Accepted already, or no conditions: straight to the download.
+	calls.length = 0
+	termsAnswer = { mayDownload: true }
+	await ctx.openDocument(RECEIPT)
+	assert.deepEqual(calls, [`terms:${PATH}`, 'download:rel-1:d1'])
 })

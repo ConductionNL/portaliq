@@ -24,13 +24,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Proposals;
 
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectPatch;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectFindTarget;
+use OCA\OpenRegister\Kernel\Contracts\Value\ObjectSaveOptions;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -38,7 +41,7 @@ use Throwable;
 /**
  * Writes a record as the reviewer, with their rights.
  *
- * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+ * @spec openspec/specs/change-proposal-queue/spec.md
  */
 class ReviewerObjectWriter {
 	/**
@@ -68,24 +71,79 @@ class ReviewerObjectWriter {
 	 *
 	 * @return bool True when the write landed.
 	 *
-	 * @spec openspec/changes/change-proposal-queue/specs/change-proposal-queue/spec.md
+	 * @spec openspec/specs/change-proposal-queue/spec.md
 	 */
 	public function write(string $register, string $schema, string $id, array $values): bool {
+		if ($this->isComplete(register: $register, schema: $schema, id: $id, values: $values) === false) {
+			return false;
+		}
+
+		return $this->saveAsReviewer(register: $register, schema: $schema, id: $id, values: $values);
+	}//end write()
+
+	/**
+	 * Whether the record is named and there is something to write.
+	 *
+	 * @param string               $register The register the record lives in.
+	 * @param string               $schema   The schema the record lives in.
+	 * @param string               $id       The record.
+	 * @param array<string, mixed> $values   The properties to write.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/specs/change-proposal-queue/spec.md
+	 */
+	private function isComplete(string $register, string $schema, string $id, array $values): bool {
 		if ($register === '' || $schema === '' || $id === '' || $values === []) {
 			return false;
 		}
 
+		return true;
+	}//end isComplete()
+
+	/**
+	 * Save the values as the reviewer.
+	 *
+	 * @param string               $register The register the record lives in.
+	 * @param string               $schema   The schema the record lives in.
+	 * @param string               $id       The record.
+	 * @param array<string, mixed> $values   The properties to write.
+	 *
+	 * @return bool True when the write landed.
+	 *
+	 * @spec openspec/specs/change-proposal-queue/spec.md
+	 * @spec openspec/changes/change-proposals-reach-the-case-page/tasks.md#t07
+	 */
+	private function saveAsReviewer(string $register, string $schema, string $id, array $values): bool {
 		$objectService = $this->objectService();
 		if ($objectService === null) {
 			return false;
 		}
 
 		try {
+			if ($this->canPatch(objectService: $objectService) === true) {
+				// A merge into the stored record: a save of only the accepted
+				// properties replaced the object and OpenRegister refused it for
+				// the required properties it no longer carried (T07 live, a
+				// dossiq case: "caseType, title missing").
+				$saved = $objectService->patchObject(
+					patch: new ObjectPatch(
+						objectId: $id,
+						data: $values,
+						target: new ObjectFindTarget(register: $register, schema: $schema)
+					),
+					_rbac: true,
+					_multitenancy: true
+				);
+				return $saved !== null;
+			}
+
 			$saved = $objectService->saveObject(
 				object: $values,
-				register: $register,
-				schema: $schema,
-				uuid: $id,
+				options: new ObjectSaveOptions(
+					target: new ObjectFindTarget(register: $register, schema: $schema),
+					uuid: $id
+				),
 				// As the reviewer: their rights decide, and the audit trail
 				// names them.
 				_rbac: true,
@@ -97,7 +155,20 @@ class ReviewerObjectWriter {
 		}
 
 		return $saved !== null;
-	}//end write()
+	}//end saveAsReviewer()
+
+	/**
+	 * Whether this OpenRegister merges a partial write (patchObject with its ObjectPatch contract).
+	 *
+	 * @param object $objectService OpenRegister's object service.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/change-proposals-reach-the-case-page/tasks.md#t07
+	 */
+	private function canPatch(object $objectService): bool {
+		return class_exists(ObjectPatch::class) === true && method_exists($objectService, 'patchObject') === true;
+	}//end canPatch()
 
 	/**
 	 * OpenRegister's object service, or null when it is not installed.

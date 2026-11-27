@@ -2,7 +2,7 @@
 
 ### Requirement: A published form with steps MUST be filled in one step at a time with visible progress (REQ-SMF-010)
 
-When a published form declares `steps`, the form render MUST carry them, keeping only steps whose fields the form knows. A field in no step MUST be placed in a last step of its own. The site MUST show one step at a time, a progress indicator listing every step with its state, and "Vorige stap" and "Volgende stap". "Volgende stap" MUST validate only the step's visible fields. "Vorige stap" MUST NOT validate. A step whose fields are all hidden MUST be skipped in both directions. Moving to a step MUST move focus to the step heading. A form without `steps` MUST render as one page, as before.
+When a published form declares `steps`, the site MUST show one step at a time, a progress indicator listing every step with its state, and "Vorige stap" and "Volgende stap". "Volgende stap" MUST validate only the step's visible fields; "Vorige stap" MUST NOT validate. Moving to a step MUST move focus to the step heading. A form without `steps` MUST render as one page, as before.
 
 #### Scenario: Step 2 of 4
 - GIVEN the Woo request form declares four steps: "Uw vraag", "Periode en documenten", "Uw gegevens", "Controleren en versturen"
@@ -16,6 +16,22 @@ When a published form declares `steps`, the form render MUST carry them, keeping
 - WHEN the resident presses "Volgende stap"
 - THEN step 3 does not open
 - AND the error summary of REQ-SMF-002 names the start date
+
+#### Scenario: The render keeps the steps over known fields
+- GIVEN a published form whose `steps` hold one step over fields the form knows and one step over a field it does not know, and whose field `opmerking` is in no step
+- WHEN the form render is built
+- THEN it carries the step over known fields and not the other one
+- AND `opmerking` is placed in a last step of its own
+
+#### Scenario: Going back does not validate
+- GIVEN step 2 with the required start date empty
+- WHEN the resident presses "Vorige stap"
+- THEN step 1 opens and no error summary appears
+
+#### Scenario: A step whose fields are all hidden is skipped
+- GIVEN step 3 whose fields are all hidden by the answers given so far
+- WHEN the resident presses "Volgende stap" on step 2, or "Vorige stap" on step 4
+- THEN step 3 is skipped in both directions
 
 #### Scenario: A phone shows the short progress
 - GIVEN a phone-width screen

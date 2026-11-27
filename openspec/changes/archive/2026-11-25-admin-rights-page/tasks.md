@@ -1,0 +1,5 @@
+# Tasks: admin-rights-page
+
+- [x] **T01**: `ActionSettingsController::byGroup()` and route; PHPUnit (REQ-ARP-001)
+- [x] **T02**: Page AdminRights and its menu item; `tests/admin-rights-page.spec.mjs` (REQ-ARP-001)
+- [x] **T03**: Live check against PtBeheerdersrechten. Done 25 Nov 2026 (live-portaliq-1) on a sandbox Nextcloud 34.0.6 + MariaDB with OpenRegister main and this portaliq: the scenario as written (Servicedesk 5 members with portal.provision, Communicatie 3 members with portal.provision and portal.author-news). `/api/settings/action-groups` answers Communicatie 3 members 2 rights and Servicedesk 5 members 1 right, no admin group; a non-admin gets 403. /admin-rights shows "Beheergroepen" with both rows, rights by their Dutch labels and "3 leden"/"5 leden" (REQ-ARP-001). Against the board, which draws the later topic-scoped groups (operate-roles-for-content-and-actions): no table with Onderwerpen/Instellingen columns and avatars, no "Nieuwe beheergroep" or group editor panel, no two-step sign-in or audit-log sections; those belong to that change, not this read-only page.

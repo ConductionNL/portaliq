@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Intake;
 
+use OCA\OpenRegister\Service\Object\DiscardDraftRequest;
 use DateTimeImmutable;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Service\Intake\ActionDraft;
@@ -14,6 +15,7 @@ use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\FormSubmitFake;
 use OCA\Portaliq\Tests\Unit\Service\Intake\Fakes\PortalOwnerDraft;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Contribution\CreateBody;
 
 /**
  * submit-creates-the-case-directly 5.1/5.2: a create action's draft is the
@@ -23,11 +25,13 @@ use Psr\Log\LoggerInterface;
  * is discarded.
  *
  * @covers \OCA\Portaliq\Service\Intake\ActionDraft
+ * @uses \OCA\Portaliq\Service\Intake\ActionAnswerFields
  * @uses \OCA\Portaliq\Service\Intake\DestinationDraft
  * @uses \OCA\Portaliq\Service\Intake\DestinationSubmit
  * @uses \OCA\Portaliq\Contribution\ActionScopeResolver
  * @uses \OCA\Portaliq\Contribution\CreateBody
  * @uses \OCA\Portaliq\Service\PortalSessionService
+ * @uses \OCA\Portaliq\Kernel\Support\SessionTrust
  *
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-saved-form-is-a-draft-of-its-destination-object-req-pifo-008
  */
@@ -64,14 +68,15 @@ class ActionDraftTest extends TestCase {
 		$this->discard = new class {
 			public array $asked = [];
 
-			public function discard(array $destination, string $draftId, object $owner): bool {
+			public function discard(DiscardDraftRequest $request): bool {
+				[$destination, $draftId, $owner] = [$request->destination, $request->draftId, $request->owner];
 				$this->asked[] = $draftId;
 				return true;
 			}
 		};
 		$submit = new PortalOwnerDraft($this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $this->discard]), $this->createMock(LoggerInterface::class), new DestinationSubmit($this->fake->container(['OCA\\OpenRegister\\Service\\Object\\DraftDiscard' => $this->discard]), $this->createMock(LoggerInterface::class)));
 
-		return new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $submit);
+		return new ActionDraft(registry: $registry, reader: $reader, writer: $writer, drafts: $submit, createBody: new CreateBody());
 	}//end drafts()
 
 	public function testOnlyTheSubjectsOwnCreateActionInThatAppHoldsADraft(): void {
@@ -108,6 +113,41 @@ class ActionDraftTest extends TestCase {
 			$this->drafts()->bodyOf(match: ['action' => self::ACTION + ['scopeClaim' => 'missing'], 'app' => 'dossiq'], subject: ['subjectRef' => 'sub-1'], answers: [])
 		);
 	}//end testTheBodyHoldsDeclaredAnswersDefaultsAndTheCreatesStamps()
+
+	/**
+	 * endpoint-forward-draft-schema T2: an endpoint action that declares
+	 * `draftSchema` holds a draft there, stamped with its subject field.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/endpoint-forward-draft-schema/tasks.md#T2
+	 */
+	public function testAnEndpointActionHoldsItsDraftOnItsDraftSchema(): void {
+		$endpoint  = [
+			'id' => 'assess',
+			'type' => 'endpoint-forward',
+			'endpoint' => '/apps/learniq/api/portal/werkproces-assessments',
+			'subjectField' => 'practicalTrainerId',
+			'fields' => ['werkprocesCode', 'assessment'],
+			'draft' => ['retentionDays' => 30],
+			'draftSchema' => ['register' => 'learniq', 'schema' => 'werkproces-assessment-draft'],
+		];
+		$withoutIt = array_merge($endpoint, ['id' => 'plain', 'draftSchema' => null]);
+		$drafts    = $this->drafts(aggregate: ['contributions' => [['app' => 'learniq', 'actions' => [$endpoint, $withoutIt]]]]);
+		$subject   = ['subjectRef' => 'trainer-1', 'trust' => 'low', 'organisation' => 'org-1'];
+
+		$match     = ['action' => $endpoint, 'app' => 'learniq'];
+		$this->assertSame(expected: $match, actual: $drafts->actionFor(subject: $subject, appId: 'learniq', actionId: 'assess'));
+		$this->assertNull(actual: $drafts->actionFor(subject: $subject, appId: 'learniq', actionId: 'plain'));
+		$this->assertSame(
+			expected: ['register' => 'learniq', 'schema' => 'werkproces-assessment-draft'],
+			actual: $drafts->destinationOf(action: $endpoint)
+		);
+		$this->assertSame(
+			expected: ['werkprocesCode' => 'WP1', 'practicalTrainerId' => 'trainer-1', 'organisation' => 'org-1'],
+			actual: $drafts->bodyOf(match: $match, subject: $subject, answers: ['werkprocesCode' => 'WP1', 'other' => 'x'])
+		);
+	}//end testAnEndpointActionHoldsItsDraftOnItsDraftSchema()
 
 	public function testALiveDraftIsFoundByItsScalarDefaultsWithItsExpiry(): void {
 		$drafts            = $this->drafts();

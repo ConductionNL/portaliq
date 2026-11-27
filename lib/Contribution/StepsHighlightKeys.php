@@ -20,7 +20,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/steps-highlight/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
  */
 
 declare(strict_types=1);
@@ -30,7 +30,7 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Sanitises the highlight keys of a `steps` block.
  *
- * @spec openspec/changes/steps-highlight/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
+ * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
  */
 class StepsHighlightKeys {
 	/**
@@ -46,14 +46,30 @@ class StepsHighlightKeys {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/steps-highlight/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
+	 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-the-steps-may-draw-the-step-that-matters-now-as-a-highlight
 	 */
 	public function keys(array $block, array $pageIds): array {
 		if (($block['display'] ?? null) !== 'highlight') {
 			return [];
 		}
 
-		$out = ['display' => 'highlight'];
+		$out = ['display' => 'highlight'] + $this->texts(block: $block);
+		if (isset($out['buttonLabel']) === false) {
+			return $out;
+		}
+
+		return $out + $this->buttonTarget(block: $block, pageIds: $pageIds);
+	}//end keys()
+
+	/**
+	 * The eyebrow and button texts that are sound.
+	 *
+	 * @param array<string, mixed> $block The declared block.
+	 *
+	 * @return array<string, string>
+	 */
+	private function texts(array $block): array {
+		$out = [];
 		foreach (['eyebrow', 'buttonLabel'] as $key) {
 			$text = $this->text(value: ($block[$key] ?? null));
 			if ($text !== null) {
@@ -61,18 +77,30 @@ class StepsHighlightKeys {
 			}
 		}
 
-		// The button opens a page of this contribution, with the open record
-		// when the block says so; a page that is not there shows no button.
+		return $out;
+	}//end texts()
+
+	/**
+	 * The page the button opens, with the open record when the block says so;
+	 * a page that is not there shows no button.
+	 *
+	 * @param array<string, mixed> $block   The declared block.
+	 * @param array<int, string>   $pageIds The pages of this contribution.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function buttonTarget(array $block, array $pageIds): array {
 		$page = ($block['page'] ?? null);
-		if (isset($out['buttonLabel']) === true && is_string($page) === true && in_array($page, $pageIds, true) === true) {
-			$out['page'] = $page;
-			if (($block['withRecord'] ?? false) === true) {
-				$out['withRecord'] = true;
-			}
+		if (is_string($page) === false || in_array($page, $pageIds, true) === false) {
+			return [];
 		}
 
-		return $out;
-	}//end keys()
+		if (($block['withRecord'] ?? false) === true) {
+			return ['page' => $page, 'withRecord' => true];
+		}
+
+		return ['page' => $page];
+	}//end buttonTarget()
 
 	/**
 	 * A trimmed, short text, or null.

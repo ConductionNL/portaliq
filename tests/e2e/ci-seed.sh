@@ -124,10 +124,20 @@ if [ -n "$OCC" ]; then
 	# Enabled BEST-EFFORT and reported either way: a runner without the app
 	# checked out should say so here, once, rather than surface as a wall of
 	# style assertions in the suite.
-	if $OCC app:enable nldesign >/dev/null 2>&1; then
-		echo "[ci-seed] nldesign enabled (design tokens available)"
+	#
+	# The theme app's id is `thematiq` (formerly `nldesign`); the first id that
+	# enables wins, the same order `PortalThemeResolver::THEME_APP_IDS` reads.
+	THEME_APP=""
+	for candidate in thematiq nldesign; do
+		if $OCC app:enable "$candidate" >/dev/null 2>&1; then
+			THEME_APP="$candidate"
+			break
+		fi
+	done
+	if [ -n "$THEME_APP" ]; then
+		echo "[ci-seed] ${THEME_APP} enabled (design tokens available)"
 	else
-		echo "[ci-seed] WARNING: could not enable nldesign — the portal will render"
+		echo "[ci-seed] WARNING: could not enable thematiq or nldesign — the portal will render"
 		echo "[ci-seed]          UNSTYLED and the design-system specs will fail."
 		echo "[ci-seed]          portaliq ships no tokens of its own since css/themes/ was removed."
 	fi
@@ -405,6 +415,57 @@ if [ "$SECRET_LEN" -lt 32 ] 2>/dev/null; then
 	exit 1
 fi
 
+# ── 5b. The organisations the specs sign in as ───────────────────────────────
+# A portal session reads and writes as its organisation, and an organisation
+# OpenRegister does not know reads and writes nothing (REQ-PAO-002): dev-login
+# still mints a token, but the next `GET /portal/api/session` answers 401 and
+# every signed-in spec fails on a missing sign-out button. The site's dev-login
+# button signs in as `dev-org`, the specs mostly as `e2e-org`.
+for ORG_SLUG in dev-org e2e-org; do
+	ORG_CODE="$(curl -sS -o /dev/null -w '%{http_code}' -u "${USER_NAME}:${USER_PASS}" \
+		-X POST -H 'Content-Type: application/json' -H 'OCS-APIRequest: true' \
+		--data "{\"name\":\"${ORG_SLUG}\",\"slug\":\"${ORG_SLUG}\",\"description\":\"E2E fixture organisation\"}" \
+		"${BASE}/index.php/apps/openregister/api/organisations" || echo 000)"
+	echo "[ci-seed] organisation ${ORG_SLUG} -> HTTP ${ORG_CODE}"
+done
+# The rows the specs create as the admin are stamped with the admin's ACTIVE
+# OpenRegister organisation, and a portal session reads as its own one: rows
+# left in the default organisation are never listed to a resident of dev-org
+# (found live 25 Nov 2026: the inbox of site-message-page.spec.ts stayed empty).
+# So the admin works in dev-org, the organisation the site's dev-login uses.
+DEV_ORG_UUID="$(curl -sS -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
+	"${BASE}/index.php/apps/openregister/api/organisations?_limit=200" \
+	| python3 -c 'import json,sys
+d=json.load(sys.stdin)
+rows=d.get("results", d) if isinstance(d, dict) else d
+print(next((o.get("uuid") or o.get("id") for o in rows if isinstance(o, dict) and o.get("slug")=="dev-org"), ""))' 2>/dev/null || true)"
+if [ -n "$DEV_ORG_UUID" ]; then
+	ACTIVE_CODE="$(curl -sS -o /dev/null -w '%{http_code}' -u "${USER_NAME}:${USER_PASS}" \
+		-X POST -H 'OCS-APIRequest: true' \
+		"${BASE}/index.php/apps/openregister/api/organisations/${DEV_ORG_UUID}/set-active" || echo 000)"
+	echo "[ci-seed] admin works in dev-org -> HTTP ${ACTIVE_CODE}"
+else
+	echo "::warning::dev-org not found; rows the specs create stay in the admin's default organisation."
+fi
+ORGS_BODY="$(mktemp)"
+curl -sS -o "$ORGS_BODY" -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
+	"${BASE}/index.php/apps/openregister/api/organisations?_limit=200" || true
+python3 - "$ORGS_BODY" <<'PY'
+import json, sys
+try:
+    body = json.load(open(sys.argv[1]))
+except (OSError, json.JSONDecodeError):
+    body = {}
+items = body.get('results', []) if isinstance(body, dict) else body
+slugs = {str(o.get('slug')) for o in items if isinstance(o, dict)}
+missing = [s for s in ('dev-org', 'e2e-org') if s not in slugs]
+if missing:
+    print(f'::error::OpenRegister organisations missing after create: {missing}.')
+    print('::error::A session for them is minted but never read back, so every signed-in spec would fail.')
+    sys.exit(1)
+print('[ci-seed] organisations OK: dev-org, e2e-org')
+PY
+
 # Probe the endpoint the specs actually depend on, so its failure has a name
 # here rather than eleven names later.
 DEV_BODY="$(mktemp)"
@@ -426,6 +487,88 @@ if [ "$DEV_CODE" != "200" ] || ! grep -q '"token"' "$DEV_BODY"; then
 	echo "::error::assertion with no indication of which of those two causes it was."
 	exit 1
 fi
+
+# ── 5c. The ways-in fixtures (identity-ways-in-screens.spec.ts) ──────────────
+# "Create an account" opens only where the portal's organisation offers the
+# e-mail sign-in (an OIDC provider `generic`) and the portal's registration
+# policy is not off; "Follow your case" only where a published form binding
+# names a case type admitting `reference` (REQ-IWI-005). Nothing else seeds
+# that, so the spec read three portals that did not exist. Each fixture
+# organisation is its own, so the e-mail sign-in never shows on dev-org's
+# portals that other specs read. The provider settings are app config
+# (org_presentation_<uuid>, and the client secret in its own sensitive key),
+# which only occ can write. Tolerant: a failure here warns and leaves the
+# other specs alone.
+# How many rows a list answer holds (its query echo names the filter too, so a
+# grep for the value would always match).
+rows_in() {
+	python3 -c 'import json,sys
+try:
+    d=json.load(sys.stdin)
+except ValueError:
+    d={}
+print(len(d.get("results", [])) if isinstance(d, dict) else 0)'
+}
+seed_ways_in() {
+	local api="${BASE}/index.php/apps/openregister/api"
+	local auth=(-u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' -H 'Content-Type: application/json')
+	if [ -z "$OCC" ]; then
+		echo "::warning::occ not found; identity-ways-in-screens has no sign-in providers to read."
+		return 0
+	fi
+	local slug uuid provider
+	for pair in e2e-ways-org:generic e2e-digid-org:digid; do
+		slug="${pair%%:*}"
+		provider="${pair##*:}"
+		curl -sS -o /dev/null "${auth[@]}" -X POST \
+			--data "{\"name\":\"${slug}\",\"slug\":\"${slug}\",\"description\":\"E2E fixture organisation\"}" \
+			"${api}/organisations" || true
+		uuid="$(curl -sS "${auth[@]}" "${api}/organisations?_limit=200" | python3 -c 'import json,sys
+d=json.load(sys.stdin)
+rows=d.get("results", d) if isinstance(d, dict) else d
+print(next((o.get("uuid") for o in rows if isinstance(o, dict) and o.get("slug")==sys.argv[1]), ""))' "$slug" 2>/dev/null || true)"
+		if [ -z "$uuid" ]; then
+			echo "::warning::organisation ${slug} not found; identity-ways-in-screens will fail."
+			return 0
+		fi
+		$OCC config:app:set portaliq "org_presentation_${uuid}" \
+			--value="{\"oidc\":{\"${provider}\":{\"issuer\":\"https://${provider}.e2e.example\",\"clientId\":\"${slug}\",\"label\":\"${provider}\"}}}" >/dev/null
+		$OCC config:app:set portaliq "oidc_secret_${uuid}_${provider}" --value='e2e-not-a-secret' --sensitive >/dev/null
+		echo "[ci-seed] ways-in: ${slug} offers ${provider}"
+	done
+
+	local portal org policy
+	for row in e2e-ways-in:e2e-ways-org:activation e2e-registration-off:e2e-ways-org:off e2e-digid-only:e2e-digid-org:approval; do
+		IFS=: read -r portal org policy <<<"$row"
+		if [ "$(curl -sS "${auth[@]}" "${api}/objects/portaliq/portal?slug=${portal}" | rows_in)" != "0" ]; then
+			echo "[ci-seed] ways-in: portal ${portal} already there"
+			continue
+		fi
+		curl -sS -o /dev/null -w "[ci-seed] ways-in: portal ${portal} -> HTTP %{http_code}\n" "${auth[@]}" -X POST \
+			--data "{\"title\":\"${portal}\",\"slug\":\"${portal}\",\"status\":\"published\",\"organisation\":\"${org}\",\"theme\":\"vng\",\"authentication\":{\"modes\":[\"public\",\"oidc\"],\"registration\":{\"policy\":\"${policy}\"}}}" \
+			"${api}/objects/portaliq/portal" || true
+	done
+
+	if [ "$(curl -sS "${auth[@]}" "${api}/objects/portaliq/portalFormBinding?portal=e2e-ways-in" | rows_in)" != "0" ]; then
+		echo "[ci-seed] ways-in: reference binding already there"
+		return 0
+	fi
+	local type_id
+	type_id="$(curl -sS "${auth[@]}" -X POST \
+		--data '{"title":"E2E zaak op nummer","portalIdentityKind":["account","reference"]}' \
+		"${api}/objects/portaliq/portalCaseType" | python3 -c 'import json,sys
+d=json.load(sys.stdin)
+print(d.get("id") or (d.get("@self") or {}).get("id") or "")' 2>/dev/null || true)"
+	if [ -z "$type_id" ]; then
+		echo "::warning::the reference case type was not created; 'Follow your case' stays closed."
+		return 0
+	fi
+	# An external intake: the binding only has to declare the case type here.
+	curl -sS -o /dev/null -w '[ci-seed] ways-in: reference binding -> HTTP %{http_code}\n' "${auth[@]}" -X POST \
+		--data "{\"portal\":\"e2e-ways-in\",\"route\":\"e2e-zaak-op-nummer\",\"typeRegister\":\"portaliq\",\"typeSchema\":\"portalCaseType\",\"typeId\":\"${type_id}\",\"audience\":\"client\",\"deliverTo\":\"case\",\"intakeKind\":\"external\",\"externalUrl\":\"https://zaken.e2e.example/aanvraag\",\"allowedOrigins\":[\"https://zaken.e2e.example\"],\"challenge\":false,\"status\":\"published\"}" \
+		"${api}/objects/portaliq/portalFormBinding" || true
+}
+seed_ways_in
 
 # ── 6. Warm the site, and GATE on the site bundle serving as JavaScript ──────
 # The shared workflow serves Nextcloud with `php -S 0.0.0.0:8080`. It sets
@@ -589,5 +732,94 @@ WT_CODE="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 60 \
 	--data '{"value":"1"}' \
 	"${WT_BASE}/index.php/apps/portaliq/api/preferences/walkthrough_completed_version" || echo 000)"
 echo "[ci-seed] PUT preferences/walkthrough_completed_version -> HTTP ${WT_CODE}"
+
+# ── One published publication for the plain pages ───────────────────────────
+# site-honest-without-javascript task 3.4 (REQ-SHJ-003, REQ-SHJ-004): the
+# plain search and the plain publication page read opencatalogi's federation
+# endpoint on the server, so a browser stub cannot answer them. The workflow
+# installs opencatalogi through `e2e-additional-apps`; this seeds, through
+# opencatalogi's and OpenRegister's own API, the publication
+# tests/e2e/site-without-javascript.spec.ts searches for: published, one PDF
+# shared, and one unpublished sibling for "missing and withheld look the same".
+# Idempotent: a publication that already exists (by title) is reused.
+#
+# @spec openspec/changes/site-honest-without-javascript/tasks.md#3.4
+OC_ENABLED=""
+if [ -n "$OCC" ] && $OCC app:list --enabled 2>/dev/null | grep -qE '^\s*- opencatalogi:'; then
+	OC_ENABLED="yes"
+fi
+if [ -z "$OC_ENABLED" ]; then
+	echo "::warning::opencatalogi is not enabled; the plain publication scenarios in site-without-javascript.spec.ts will fail."
+else
+	OC_API="${BASE}/index.php/apps/opencatalogi/api"
+	OR_OBJECTS="${BASE}/index.php/apps/openregister/api/objects/publication/publication"
+	OC_IMPORT="$(curl -sS -o /dev/null -w '%{http_code}' -u "${USER_NAME}:${USER_PASS}" -X POST \
+		-H 'Content-Type: application/json' -H 'OCS-APIRequest: true' --data '{"force":true}' \
+		"${OC_API}/settings/import" || echo 000)"
+	echo "[ci-seed] opencatalogi settings/import -> HTTP ${OC_IMPORT}"
+	if [ "$OC_IMPORT" != "200" ]; then
+		echo "::error::opencatalogi's configuration import failed (HTTP ${OC_IMPORT}); the plain publication scenarios need its register."
+		exit 1
+	fi
+	# A catalog over the publication register, the way opencatalogi's own
+	# first-time setup makes one; tolerant, because an instance past its
+	# setup answers these with a refusal.
+	curl -sS -o /dev/null -X POST -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
+		-d 'default_catalog_scope=organisation' "${OC_API}/setup/config" || true
+	curl -sS -o /dev/null -X POST -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
+		"${OC_API}/setup/action/create-first-catalog" || true
+
+	# $1 title, $2 JSON body; prints the id.
+	seed_publication () {
+		local found
+		found="$(curl -sS -G -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
+			--data-urlencode "title=$1" --data-urlencode '_limit=1' "$OR_OBJECTS" \
+			| python3 -c 'import json,sys
+try:
+    d=json.load(sys.stdin); rows=d.get("results", d if isinstance(d,list) else [])
+    print((rows[0].get("id") or rows[0].get("@self",{}).get("id") or "") if rows else "")
+except Exception:
+    print("")' 2>/dev/null || true)"
+		if [ -n "$found" ]; then
+			echo "$found"
+			return 0
+		fi
+		curl -sS -X POST -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' \
+			-H 'Content-Type: application/json' --data "$2" "$OR_OBJECTS" \
+			| python3 -c 'import json,sys
+try:
+    d=json.load(sys.stdin); print(d.get("id") or d.get("@self",{}).get("id") or "")
+except Exception:
+    print("")' 2>/dev/null || true
+	}
+
+	PUB_DATE="$(date -u -d '-14 days' +%Y-%m-%dT%H:%M:%SZ)"
+	PUB_TITLE='Woo-besluit afvalinzameling 2026'
+	PUB_ID="$(seed_publication "$PUB_TITLE" "{\"title\":\"${PUB_TITLE}\",\"summary\":\"Het besluit over de nieuwe afvalinzameling in 2026.\",\"publicationDate\":\"${PUB_DATE}\",\"status\":\"published\",\"wooCategory\":\"infocat002\"}")"
+	DRAFT_TITLE='Woo-besluit afvalinzameling 2026 (concept)'
+	DRAFT_ID="$(seed_publication "$DRAFT_TITLE" "{\"title\":\"${DRAFT_TITLE}\",\"summary\":\"Nog niet gepubliceerd.\"}")"
+	if [ -z "$PUB_ID" ] || [ -z "$DRAFT_ID" ]; then
+		echo "::error::Could not create the publications the plain publication scenarios read (published '${PUB_ID}', draft '${DRAFT_ID}')."
+		exit 1
+	fi
+	echo "[ci-seed] publication '${PUB_TITLE}' -> ${PUB_ID}; unpublished sibling -> ${DRAFT_ID}"
+
+	# One shared PDF on the published publication; a re-run sees it and skips.
+	PDF_NAME='besluit-afvalinzameling-2026.pdf'
+	PDF_URL="${OR_OBJECTS}/${PUB_ID}/files"
+	if curl -sS -u "${USER_NAME}:${USER_PASS}" -H 'OCS-APIRequest: true' "$PDF_URL" | grep -q "$PDF_NAME"; then
+		echo "[ci-seed] publication file '${PDF_NAME}' (already there)"
+	else
+		PDF_BODY="$(python3 -c 'import json; print(json.dumps({"name": "besluit-afvalinzameling-2026.pdf", "content": "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[]/Count 0>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n", "share": True}))')"
+		PDF_CODE="$(curl -sS -o /dev/null -w '%{http_code}' -X POST -u "${USER_NAME}:${USER_PASS}" \
+			-H 'OCS-APIRequest: true' -H 'Content-Type: application/json' --data "$PDF_BODY" \
+			"$PDF_URL" || echo 000)"
+		echo "[ci-seed] publication file '${PDF_NAME}' -> HTTP ${PDF_CODE}"
+		case "$PDF_CODE" in
+			2??) ;;
+			*) echo "::error::Could not add the PDF the plain publication page downloads."; exit 1 ;;
+		esac
+	fi
+fi
 
 echo "[ci-seed] done."

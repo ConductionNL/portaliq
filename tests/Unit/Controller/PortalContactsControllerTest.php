@@ -15,7 +15,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
  */
 
 declare(strict_types=1);
@@ -26,14 +26,14 @@ use OCA\Portaliq\Auth\PortalProtected;
 use OCA\Portaliq\Controller\PortalContactsController;
 use OCA\Portaliq\Service\Identity\PortalAccountLookup;
 use OCA\Portaliq\Service\Identity\PortalContactService;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\IRequest;
 use PHPUnit\Framework\TestCase;
 
 /**
  * The contacts routes answer 401 without a session and map the outcomes to statuses.
  *
- * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t03
  */
 class PortalContactsControllerTest extends TestCase {
 
@@ -47,7 +47,7 @@ class PortalContactsControllerTest extends TestCase {
 	 */
 	private function controller(?array $subject, PortalContactService $service): PortalContactsController {
 		$request = $this->createMock(IRequest::class);
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
 		$lookup = $this->createMock(PortalAccountLookup::class);
 		$lookup->method('bySubjectRef')->willReturn(['displayName' => 'Ada']);

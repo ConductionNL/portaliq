@@ -11,7 +11,7 @@ use PHPUnit\Framework\TestCase;
  * form-flow-repeating-groups-calculations-and-decisions REQ-FFL-002: the six
  * operations, and a value the browser sent never survives.
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t03
  */
 class PortalFormCalculatorTest extends TestCase {
 
@@ -113,7 +113,7 @@ class PortalFormCalculatorTest extends TestCase {
 	 * The site shows the same value the server stores: both run the fixtures in
 	 * tests/fixtures/form-calculations.json (tests/form-calculations.spec.mjs is the other half).
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t04
 	 */
 	public function testTheServerAgreesWithTheSharedFixtures(): void {
 		$cases = json_decode((string)file_get_contents(__DIR__.'/../../../fixtures/form-calculations.json'), true);

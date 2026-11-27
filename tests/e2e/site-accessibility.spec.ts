@@ -52,16 +52,20 @@ interface AxeViolation {
  * Nextcloud's markup as a defect in Portaliq. At a real public origin the
  * chrome is absent and the scope is the page.
  *
- * @param page The Playwright page.
+ * @param page  The Playwright page.
+ * @param scope The selector axe runs on; the renderer's root by default.
  * @return The serious and critical violations.
  */
-async function seriousViolations(page: {
-	addScriptTag: (opts: { content: string }) => Promise<unknown>
-	evaluate: <T>(fn: string) => Promise<T>
-}): Promise<AxeViolation[]> {
+async function seriousViolations(
+	page: {
+		addScriptTag: (opts: { content: string }) => Promise<unknown>
+		evaluate: <T>(fn: string) => Promise<T>
+	},
+	scope = '[data-testid="site-root"]',
+): Promise<AxeViolation[]> {
 	await page.addScriptTag({ content: AXE_SOURCE })
 	const results = await page.evaluate<{ violations: AxeViolation[] }>(`
-		window.axe.run('[data-testid="site-root"]', {
+		window.axe.run(${JSON.stringify(scope)}, {
 			runOnly: { type: 'tag', values: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'] },
 		})
 	`)
@@ -203,7 +207,221 @@ test.describe('site renderer — accessibility', () => {
 	})
 })
 
+/**
+ * The reading room: the search page with results and facets, and a
+ * publication's own page (public-site-meets-wcag-aa REQ-PWA-001).
+ *
+ * The catalogue's answers are ROUTED in the browser, the page is real: the
+ * pages are the ones tests/e2e/fixtures/seed-cms.sh seeds (`/zoeken`,
+ * `/publicatie`), and the federated search block and the publication detail
+ * block render them exactly as they render a live answer from
+ * opencatalogi's `/api/federation/publications`. That is what lets these
+ * cases run on a fresh instance with no catalogue installed, and what they
+ * check is the markup the two blocks draw, not the catalogue's data.
+ *
+ * Two rows from two catalogues and two facet groups, because a facet column
+ * with one bare checkbox is not the page a visitor gets.
+ *
+ * @spec openspec/changes/archive/2026-11-25-public-site-meets-wcag-aa/specs/portaliq-cms/spec.md#requirement-the-public-site-meets-wcag-21-aa-on-every-page-state-it-serves-req-pwa-001
+ */
+const FEDERATION = '**/apps/opencatalogi/api/federation/publications**'
+const PUBLICATION_ID = '7a1b2c3d-0000-4000-a000-00000000a11y'
+const DOWNLOAD_URL = '/index.php/apps/opencatalogi/api/e2e-a11y/besluit.pdf'
+
+const SEARCH_ANSWER = {
+	results: [
+		{
+			id: PUBLICATION_ID,
+			name: 'Besluit op Woo-verzoek fietspad Reeshof',
+			summary: 'Het besluit en de documenten bij het Woo-verzoek over het fietspad.',
+			wooCategory: 'besluit',
+			organization: 'Gemeente Tilburg',
+			published: '2026-10-01T09:00:00+00:00',
+			'@self': { id: PUBLICATION_ID, schema: 'publication', directory: 'opencatalogi.nl' },
+		},
+		{
+			id: '7a1b2c3d-0000-4000-a000-00000000a12y',
+			name: 'Rapport verkeersveiligheid 2026',
+			summary: 'Onderzoek naar de verkeersveiligheid op de fietsroutes.',
+			wooCategory: 'onderzoeksrapport',
+			organization: 'Gemeente Venray',
+			published: '2026-09-15T09:00:00+00:00',
+			'@self': {
+				id: '7a1b2c3d-0000-4000-a000-00000000a12y',
+				schema: 'publication',
+				directory: 'venray.example.org',
+			},
+		},
+	],
+	total: 2,
+	page: 1,
+	pages: 1,
+	facets: {
+		wooCategory: {
+			buckets: [
+				{ key: 'besluit', label: 'Besluit', results: 1 },
+				{ key: 'onderzoeksrapport', label: 'Onderzoeksrapport', results: 1 },
+			],
+		},
+		organization: {
+			buckets: [
+				{ key: 'Gemeente Tilburg', results: 1 },
+				{ key: 'Gemeente Venray', results: 1 },
+			],
+		},
+	},
+}
+
+const ATTACHMENTS_ANSWER = {
+	results: [
+		{
+			id: 'e2e-a11y-doc-1',
+			title: 'Besluit fietspad Reeshof.pdf',
+			type: 'application/pdf',
+			size: 48213,
+			downloadUrl: DOWNLOAD_URL,
+		},
+	],
+	total: 1,
+}
+
+/**
+ * Answer the catalogue's reads in the browser: the search, the publication by
+ * id, its attachments and the download itself.
+ *
+ * @param page The Playwright page.
+ */
+async function routeTheCatalogue(page: Page): Promise<void> {
+	await page.route(FEDERATION, async (route) => {
+		const path = new URL(route.request().url()).pathname
+		if (path.endsWith('/attachments')) {
+			await route.fulfill({ json: ATTACHMENTS_ANSWER })
+			return
+		}
+		if (path.endsWith(`/${PUBLICATION_ID}`)) {
+			await route.fulfill({ json: SEARCH_ANSWER.results[0] })
+			return
+		}
+		await route.fulfill({ json: SEARCH_ANSWER })
+	})
+	await page.route(`**${DOWNLOAD_URL}`, (route) =>
+		route.fulfill({
+			status: 200,
+			contentType: 'application/pdf',
+			headers: { 'Content-Disposition': 'attachment; filename="besluit.pdf"' },
+			body: '%PDF-1.4\n%%EOF\n',
+		}),
+	)
+}
+
+/**
+ * Whether the focused element paints a focus indicator: an outline or a
+ * box-shadow, the same floor S15 asserts on the menu.
+ *
+ * @param page The Playwright page.
+ * @return The computed focus style and whether it shows.
+ */
+async function focusIndicator(page: Page): Promise<{ shows: boolean, style: string }> {
+	return page.evaluate(() => {
+		const el = document.activeElement as HTMLElement | null
+		if (!el) {
+			return { shows: false, style: 'no focused element' }
+		}
+		const cs = getComputedStyle(el)
+		const outline = cs.outlineStyle !== 'none' && cs.outlineWidth !== '0px'
+		const shadow = cs.boxShadow !== 'none' && cs.boxShadow !== ''
+		return {
+			shows: outline || shadow,
+			style: JSON.stringify({ outline: `${cs.outlineStyle} ${cs.outlineWidth}`, boxShadow: cs.boxShadow }),
+		}
+	})
+}
+
+test.describe('site renderer — the reading room', () => {
+	test('S13d: the search page with results and facets has no serious or critical axe violations', async ({
+		page,
+	}) => {
+		await routeTheCatalogue(page)
+		await page.goto(`${SITE}?route=/zoeken&_search=fietspad`)
+		await expect(page.getByTestId('federated-search-result')).toHaveCount(2)
+		await expect(page.getByTestId('federated-search-facets')).toBeVisible()
+		await expect(page.getByTestId('federated-search-sort')).toBeVisible()
+
+		// Every facet checkbox and the sort select carry a name a screen
+		// reader announces; axe checks it too, this names the control.
+		for (const box of await page
+			.getByTestId('federated-search-facets')
+			.getByRole('checkbox')
+			.all()) {
+			expect(await box.evaluate((el) => (el as HTMLInputElement).labels?.length ?? 0)).toBeGreaterThan(0)
+		}
+		await expect(page.getByLabel('Sorteren')).toBeVisible()
+
+		const violations = await seriousViolations(page)
+		expect(violations, describe(violations)).toEqual([])
+	})
+
+	test('S13e: a publication page has no serious or critical axe violations', async ({
+		page,
+	}) => {
+		await routeTheCatalogue(page)
+		await page.goto(`${SITE}?route=/publicatie/${PUBLICATION_ID}`)
+		await expect(page.getByTestId('publication-detail-title')).toHaveText(
+			'Besluit op Woo-verzoek fietspad Reeshof',
+		)
+		await expect(page.getByTestId('publication-document')).toHaveCount(1)
+
+		const violations = await seriousViolations(page)
+		expect(violations, describe(violations)).toEqual([])
+	})
+
+	test('S14b: every link and download of a publication takes a visible focus and opens with Enter', async ({
+		page,
+	}) => {
+		await routeTheCatalogue(page)
+		await page.goto(`${SITE}?route=/publicatie/${PUBLICATION_ID}`)
+		await expect(page.getByTestId('publication-document')).toHaveCount(1)
+
+		const detail = page.getByTestId('publication-detail')
+		const links = await detail.locator('a[href]').count()
+		expect(links, 'the publication page offers no link at all').toBeGreaterThan(0)
+
+		// Walk the page by Tab alone and record every control inside the block
+		// that takes focus. Deliberately not .focus(): an element that only a
+		// script can focus passes a focus() test and is skipped by a visitor.
+		const reached = new Set<string>()
+		for (let i = 0; i < 60 && reached.size < links; i += 1) {
+			await page.keyboard.press('Tab')
+			const inside = await page.evaluate(() => {
+				const el = document.activeElement
+				const block = document.querySelector('[data-testid="publication-detail"]')
+				if (!el || !block || !block.contains(el) || el.tagName !== 'A') {
+					return null
+				}
+				const all = [...block.querySelectorAll('a[href]')]
+				return String(all.indexOf(el))
+			})
+			if (inside === null) {
+				continue
+			}
+			const indicator = await focusIndicator(page)
+			expect(indicator.shows, `link ${inside} shows no focus: ${indicator.style}`).toBe(true)
+			reached.add(inside)
+		}
+		expect(reached.size, `${reached.size} of ${links} links were reached by Tab`).toBe(links)
+
+		// Enter on the download starts the download: a link that only answers a
+		// mouse click fails a keyboard visitor and passes a click-based test.
+		const download = detail.getByTestId('publication-document').locator('a[download]').first()
+		await download.focus()
+		const started = page.waitForEvent('download')
+		await page.keyboard.press('Enter')
+		expect((await started).url()).toContain(DOWNLOAD_URL)
+	})
+})
+
 test.describe('site renderer — responsive', () => {
+	// @e2e portaliq-cms::the-home-page-on-a-phone
 	test('S16: a phone viewport does not scroll horizontally', async ({ page }) => {
 		// 360x740 is a common Android size and narrower than the manifest grid's
 		// smallest breakpoint. A public municipal site is majority mobile.
@@ -224,6 +442,7 @@ test.describe('site renderer — responsive', () => {
 		).toBeLessThanOrEqual(overflow.clientWidth + 1)
 	})
 
+	// @e2e portaliq-cms::the-home-page-on-a-phone
 	test('S16b: grid widgets stack instead of squeezing on a phone', async ({
 		page,
 	}) => {
@@ -328,7 +547,7 @@ test.describe('signed-in portal — accessibility', () => {
  * from the footer, the statement names the date of the measurement it rests
  * on, and the statement page itself passes the same axe check.
  *
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
  */
 test.describe('site renderer — accessibility statement', () => {
 	test('the statement is linked from the footer and lists the measurement date', async ({
@@ -343,9 +562,12 @@ test.describe('site renderer — accessibility statement', () => {
 
 		await page.goto(SITE)
 		await expect(page.getByTestId('site-title')).toBeVisible()
+		// The href is the site's own address for the route: `/toegankelijkheid`
+		// in the path on a portal host, `?route=%2Ftoegankelijkheid` on the
+		// app path (siteAddress.js), so the link is found by its name.
 		const link = page
 			.getByTestId('site-subfooter-menu')
-			.locator('a[href$="/toegankelijkheid"]')
+			.getByRole('link', { name: 'Toegankelijkheid', exact: true })
 		await expect(link).toHaveCount(1)
 		await link.click()
 
@@ -364,6 +586,59 @@ test.describe('site renderer — accessibility statement', () => {
 		}
 
 		const violations = await seriousViolations(page)
+		expect(violations, describe(violations)).toEqual([])
+	})
+})
+
+/**
+ * site-honest-without-javascript task 4.1 (REQ-SHJ-002): the plain version of
+ * a page passes the same axe check as the site.
+ *
+ * axe runs with JavaScript on. That is not a contradiction: the plain page
+ * carries no script element (`tests/site-plain.spec.mjs` proves it), so the
+ * DOM axe reads is the one a visitor without JavaScript gets, and axe itself
+ * needs scripting to run. The plain page is rendered blank, without
+ * Nextcloud's chrome, so the whole document is the scope rather than the
+ * renderer's root, which the plain page does not have.
+ *
+ * The plain search reads the catalogue on the server, so a browser stub cannot
+ * answer it. On an instance without a catalogue the block shows its
+ * "unavailable" sentence with the link to the full site; that state is checked
+ * as it is, because it is the one such a visitor meets.
+ *
+ * @spec openspec/changes/site-honest-without-javascript/specs/portaliq-cms/spec.md
+ */
+test.describe('site renderer — the plain version', () => {
+	const PLAIN = `${SITE}/plain`
+
+	test('S13f: the plain version of a markdown page has no serious or critical axe violations', async ({
+		page,
+	}) => {
+		await page.goto(`${PLAIN}?route=/over-ons`)
+		await expect(page.locator('#pq-main h1')).toHaveText('Over ons')
+		// No script reached the page, so this DOM is the no-JavaScript one.
+		await expect(page.locator('script')).toHaveCount(0)
+
+		const violations = await seriousViolations(page, 'html')
+		expect(violations, describe(violations)).toEqual([])
+	})
+
+	test('S13g: the plain search page with a term has no serious or critical axe violations', async ({
+		page,
+	}) => {
+		await page.goto(`${PLAIN}?route=/zoeken&_search=afval`)
+		await expect(page.locator('#pq-main h1')).toHaveText('Zoeken in publicaties')
+		const field = page.locator(
+			'#pq-main form[role="search"] input[name="_search"]',
+		)
+		await expect(field).toHaveValue('afval')
+		// Whatever the catalogue answered, the block says so in words.
+		await expect(
+			page.locator('#pq-main [role="status"]').first(),
+		).not.toBeEmpty()
+		await expect(page.locator('script')).toHaveCount(0)
+
+		const violations = await seriousViolations(page, 'html')
 		expect(violations, describe(violations)).toEqual([])
 	})
 })

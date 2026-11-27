@@ -20,6 +20,22 @@
 -->
 <template>
 	<div class="page-grid-editor">
+		<!--
+			A REPORTING PAGE IS NOT COUNTED. A visitor row on it records that
+			somebody opened the form, so a page with a report widget belongs in
+			the portal's `traffic.excludedPaths` before it is published.
+		-->
+		<NcNoteCard
+			v-if="reportCounted"
+			type="warning"
+			data-testid="editor-report-counted">
+			{{
+				t(
+					'portaliq',
+					'This page is not excluded from visitor statistics. Add it before you publish.',
+				)
+			}}
+		</NcNoteCard>
 		<div
 			v-if="state.kind === 'markdown'"
 			class="page-grid-editor__markdown"
@@ -54,8 +70,10 @@
 			<WidgetPalettePanel
 				:open="paletteOpen"
 				:publicOnly="publicOnly"
+				:formSelected="formSelected"
 				@update:open="$emit('update:paletteOpen', $event)"
-				@choose="editor.addWidget" />
+				@choose="editor.addWidget"
+				@chooseField="addFormField" />
 
 			<!--
 				A DROP TARGET AROUND THE GRID, not on each cell: the fleet's
@@ -112,9 +130,17 @@
 							@keydown.enter.prevent="editor.select(item.id)"
 							@keydown.space.prevent="editor.select(item.id)">
 							<header class="page-grid-editor__cell-bar">
-								<span class="page-grid-editor__cell-key">{{
-									labelOf(item.widgetKey)
-								}}</span>
+								<span class="page-grid-editor__cell-name">
+									<span class="page-grid-editor__cell-key">{{
+										labelOf(item.widgetKey)
+									}}</span>
+									<span
+										v-if="widthLineOf(item)"
+										class="page-grid-editor__cell-width"
+										:data-testid="`designer-width-${item.id}`"
+										>{{ widthLineOf(item) }}</span
+									>
+								</span>
 								<NcButton
 									variant="tertiary"
 									:aria-label="t('portaliq', 'Remove this widget')"
@@ -200,11 +226,43 @@
 								:id="`field-${field.name}`"
 								:modelValue="fieldValue(field)"
 								@update:modelValue="onFieldInput(field, $event)" />
+							<!--
+								A form's fields are a list an editor builds, not JSON
+								to type (REQ-SNW-003): each field with its own
+								settings, added from the palette's Formulieren group.
+							-->
+							<template v-else-if="isFormFieldList(field)">
+								<label :for="`field-${field.name}`">{{ field.label }}</label>
+								<NcNoteCard
+									v-if="formRowNotice"
+									type="warning"
+									data-testid="designer-form-row-notice">
+									{{ formRowNotice }}
+								</NcNoteCard>
+								<FormFieldList
+									:id="`field-${field.name}`"
+									:idPrefix="`field-${selected.id}`"
+									:fields="formFieldsShown"
+									:readonly="!formRowWritable"
+									@update:fields="writeFormFields"
+									@add="openFieldPalette" />
+							</template>
 							<label v-else :for="`field-${field.name}`">{{
 								field.label
 							}}</label>
+							<!-- The choices an app declares for a block that reads its public index. -->
+							<PublicSourcePicker
+								v-if="field.picker && catalogueKinds.length > 0"
+								:picker="field.picker"
+								:widgetKey="selected.widgetKey"
+								:blockProps="selected.props || {}"
+								:kinds="catalogueKinds"
+								@set="(name, value) => editor.setProp(name, value)" />
 							<textarea
-								v-if="field.kind === 'text' || field.kind === 'json'"
+								v-if="
+									!isFormFieldList(field)
+									&& (field.kind === 'text' || field.kind === 'json')
+								"
 								:id="`field-${field.name}`"
 								class="page-grid-editor__input"
 								rows="6"
@@ -260,7 +318,9 @@
 									editor.setProp(field.name, $event.target.checked)
 								" />
 							<input
-								v-else-if="field.kind !== 'markdown'"
+								v-else-if="
+									field.kind !== 'markdown' && !isFormFieldList(field)
+								"
 								:id="`field-${field.name}`"
 								class="page-grid-editor__input"
 								:type="field.kind === 'number' ? 'number' : 'text'"
@@ -296,18 +356,23 @@
 import { CnDashboardGrid, dashboardWidgetRegistry } from '@conduction/nextcloud-vue'
 import { translate } from '@nextcloud/l10n'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
+import FormFieldList from './FormFieldList.vue'
 import MarkdownField from './MarkdownField.vue'
+import PublicSourcePicker from './PublicSourcePicker.vue'
 import WidgetPalettePanel from './WidgetPalettePanel.vue'
+import { addField } from '../lib/formFieldTypes.js'
 import {
 	fieldsFor,
 	isPublicWidget,
 	previewComponentFor,
 } from '../lib/pageWidgetCatalogue.js'
-import { widgetLabel } from '../lib/widgetLabels.js'
+import { widgetLabel, widgetWidthLine } from '../lib/widgetLabels.js'
 import { historyIntent } from './editHistory.js'
+import { boundFormId, formRowEditable } from './formRowFields.js'
 import { cellFromDrop } from './geometry.js'
 import { PALETTE_DRAG_TYPE } from './paletteDrag.js'
 import { recordListChoice } from './recordLists.js'
+import { reportPageIsCounted } from './reportExclusion.js'
 import {
 	formWidgetFor,
 	inspectorModeFor,
@@ -320,9 +385,11 @@ export default {
 
 	components: {
 		CnDashboardGrid,
+		FormFieldList,
 		MarkdownField,
 		NcButton,
 		NcNoteCard,
+		PublicSourcePicker,
 		WidgetPalettePanel,
 	},
 
@@ -378,6 +445,44 @@ export default {
 			type: Function,
 			default: null,
 		},
+
+		/**
+		 * Lists the kinds the installed apps declare for their public index:
+		 * `() => Promise<Array<{app, type, label, categories, filters, columns}>>`.
+		 * Without it a block that reads one is configured in JSON only.
+		 *
+		 * @type {(() => Promise<Array<object>>)|null}
+		 */
+		loadCatalogueKinds: {
+			type: Function,
+			default: null,
+		},
+
+		/**
+		 * The portal's `traffic.excludedPaths`, or null when the host could not
+		 * read them. With a list, a report widget on a page outside it shows
+		 * a warning; without one, nothing is said.
+		 *
+		 * @type {Array<string>|null}
+		 */
+		excludedPaths: {
+			type: Array,
+			default: null,
+		},
+
+		/**
+		 * Reads and writes the field list of the `form` row a form widget is
+		 * bound to: the client from `createFormRowFields()`. With it, a bound
+		 * widget's inspector edits that row, because the anonymous submit
+		 * accepts only the row's field ids (decision 24 Nov 2026, T11b
+		 * option b). Without it, the list is the widget's own.
+		 *
+		 * @type {object|null}
+		 */
+		formRows: {
+			type: Object,
+			default: null,
+		},
 	},
 
 	emits: ['update:paletteOpen'],
@@ -385,6 +490,16 @@ export default {
 	data() {
 		return {
 			jsonError: '',
+
+			/**
+			 * The bound form row's state from `formRows`, or null while the
+			 * selection is no bound form widget.
+			 *
+			 * @type {object|null}
+			 */
+			formRow: null,
+			// The group the palette's next field goes into; '' for the form.
+			formFieldInto: '',
 
 			/**
 			 * Whether a palette drag is over the canvas right now, so the drop
@@ -411,6 +526,14 @@ export default {
 			 * @type {Array<{app: string, id: string, label: string}>}
 			 */
 			recordLists: [],
+
+			/**
+			 * The kinds the apps declare for their public index; empty until
+			 * read, and when the host cannot list them.
+			 *
+			 * @type {Array<object>}
+			 */
+			catalogueKinds: [],
 		}
 	},
 
@@ -422,6 +545,83 @@ export default {
 		 */
 		state() {
 			return this.editor.state
+		},
+
+		/**
+		 * Whether a report widget sits on a page visitor statistics still count.
+		 *
+		 * @return {boolean} True when the warning shows.
+		 *
+		 * @spec openspec/changes/intake-report-pages/specs/report-pages/spec.md#requirement-report-pages-stay-out-of-visitor-statistics-req-irp-003
+		 */
+		reportCounted() {
+			return (
+				this.state.kind !== 'markdown'
+				&& reportPageIsCounted(
+					this.state.widgets,
+					this.state.page?.route,
+					this.excludedPaths,
+				)
+			)
+		},
+
+		/**
+		 * Whether the selected widget is a `form`, the one place the palette's
+		 * Formulieren group adds a field to (REQ-SNW-003).
+		 *
+		 * @return {boolean} True for a selected form.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		formSelected() {
+			return this.selected?.widgetKey === 'form'
+		},
+
+		/**
+		 * @return {string} The id of the form row the selected form widget is
+		 *   bound to, or '' when there is none or no client to reach it.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		boundForm() {
+			return this.formSelected && this.formRows
+				? boundFormId(this.selected?.props)
+				: ''
+		},
+
+		/**
+		 * @return {Array<object>|object|string} The fields the inspector lists:
+		 *   the bound row's, else the widget's own.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		formFieldsShown() {
+			return this.formRow ? this.formRow.fields : this.selected?.props?.fields || []
+		},
+
+		/**
+		 * @return {boolean} Whether the field list may be edited now.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		formRowWritable() {
+			return formRowEditable(this.formRow)
+		},
+
+		/**
+		 * @return {string} Why the bound row's fields cannot be edited, or ''.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		formRowNotice() {
+			const notices = {
+				loading: this.t('portaliq', 'Reading the fields of this form…'),
+				forbidden: this.t('portaliq', 'Only someone who may change this form can change its fields. What an anonymous visitor may send is set on the form, not on the page.'),
+				conflict: this.t('portaliq', 'Someone else changed this form in the meantime. Select the form again to read its latest fields.'),
+				missing: this.t('portaliq', 'The form this widget is bound to no longer exists.'),
+				failed: this.t('portaliq', 'The fields of this form could not be read or saved.'),
+			}
+			return this.formRow ? notices[this.formRow.state] || '' : ''
 		},
 
 		/**
@@ -495,6 +695,22 @@ export default {
 	watch: {
 		'state.selectedId': function () {
 			this.jsonError = ''
+			this.formFieldInto = ''
+		},
+
+		boundForm: {
+			immediate: true,
+			/**
+			 * Read the row a newly selected form widget is bound to.
+			 *
+			 * @param {string} formId The bound row's id, or ''.
+			 * @return {void}
+			 *
+			 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+			 */
+			handler(formId) {
+				this.readFormRow(formId)
+			},
 		},
 	},
 
@@ -517,6 +733,13 @@ export default {
 				this.recordLists = await this.loadRecordLists()
 			} catch {
 				this.recordLists = []
+			}
+		}
+		if (this.loadCatalogueKinds) {
+			try {
+				this.catalogueKinds = await this.loadCatalogueKinds()
+			} catch {
+				this.catalogueKinds = []
 			}
 		}
 	},
@@ -643,10 +866,21 @@ export default {
 		 *
 		 * @param {string} key The widget key.
 		 * @return {string} The name.
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-in-place-editing/spec.md#requirement-the-editor-names-a-block-by-its-widgets-name
+		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-the-editor-names-a-block-by-its-widgets-name
 		 */
 		labelOf(key) {
 			return widgetLabel(key, dashboardWidgetRegistry)
+		},
+
+		/**
+		 * The width line under a block's name ("8 kolommen").
+		 *
+		 * @param {object} item The placement.
+		 * @return {string} The line.
+		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-editor-toolbar-and-block-cards-read-as-the-board
+		 */
+		widthLineOf(item) {
+			return widgetWidthLine(item?.gridWidth)
 		},
 
 		/**
@@ -756,6 +990,100 @@ export default {
 		 * @return {void}
 		 * @spec openspec/specs/portal-page-designer/spec.md#requirement-the-admin-designer-and-the-portal-edit-mode-must-share-one-editor-core-req-pie-002
 		 */
+		/**
+		 * Whether this inspector field is a form's field list.
+		 *
+		 * @param {object} field The inspector field.
+		 * @return {boolean} True for the `fields` of a `form` widget.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		isFormFieldList(field) {
+			return this.formSelected && field.name === 'fields'
+		},
+
+		/**
+		 * Add a field of TYPE to the selected form, at the end of its list.
+		 * Nothing happens without a selected form: a field never lands on the
+		 * grid.
+		 *
+		 * @param {string} type The field type from the Formulieren group.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		addFormField(type) {
+			if (!this.formSelected) {
+				return
+			}
+			this.writeFormFields(addField(this.formFieldsShown, type, this.formFieldInto))
+		},
+
+		/**
+		 * Open the palette to add a field: to the group INTO, or to the form
+		 * itself for ''. The palette's next field goes there.
+		 *
+		 * @param {string} into The group's name, or ''.
+		 * @return {void}
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		openFieldPalette(into) {
+			this.formFieldInto = typeof into === 'string' ? into : ''
+			this.$emit('update:paletteOpen', true)
+		},
+
+		/**
+		 * Read the bound form row, or forget it for an unbound selection. A
+		 * read that comes back after the selection moved on is dropped.
+		 *
+		 * @param {string} formId The bound row's id, or ''.
+		 * @return {Promise<void>} Resolves when read.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		async readFormRow(formId) {
+			if (!formId) {
+				this.formRow = null
+				return
+			}
+			this.formRow = { state: 'loading', formId, row: null, version: '', fields: [] }
+			const next = await this.formRows.load(formId)
+			if (this.boundForm === formId) {
+				this.formRow = next
+			}
+		},
+
+		/**
+		 * Store a new field list. A bound widget writes its form row first and
+		 * takes the list onto the widget only when OpenRegister stored it, so
+		 * the page never shows a field the submit refuses. An unbound widget
+		 * keeps the list on its own props.
+		 *
+		 * @param {Array<object>} list The new field list.
+		 * @return {Promise<void>} Resolves when stored or refused.
+		 *
+		 * @spec openspec/changes/site-nlds-widget-palette/specs/portal-page-designer/spec.md#requirement-form-fields-must-be-added-inside-a-form-widget-req-snw-003
+		 */
+		async writeFormFields(list) {
+			if (!this.formRow) {
+				this.editor.setProp('fields', list)
+				return
+			}
+			if (!this.formRowWritable) {
+				return
+			}
+			const formId = this.formRow.formId
+			const next = await this.formRows.save(this.formRow, list)
+			if (this.boundForm !== formId) {
+				return
+			}
+			this.formRow = next
+			if (next.state === 'ready') {
+				this.editor.setProp('fields', next.fields)
+			}
+		},
+
 		onFieldInput(field, raw) {
 			this.jsonError = ''
 			if (field.kind === 'number') {
@@ -880,10 +1208,24 @@ export default {
 	background: var(--color-background-hover);
 }
 
+/* A block card is named as the board names it: the block's name in the
+   main ink, its width in a muted line under it (PtPagina "Hero" over
+   "12 kolommen"). */
+.page-grid-editor__cell-name {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
 .page-grid-editor__cell-key {
-	font-family: monospace;
-	font-size: 0.85em;
+	color: var(--color-main-text);
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.page-grid-editor__cell-width {
 	color: var(--color-text-maxcontrast);
+	font-size: 12px;
 }
 
 .page-grid-editor__cell-body {

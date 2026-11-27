@@ -37,27 +37,32 @@
  * @link https://conduction.nl
  *
  * @spec openspec/changes/supplier-portal/tasks.md#T08
- * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#1.1
- * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#2.1
- * @spec openspec/changes/portal-white-label-runtime-config/tasks.md#3.2
+ * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#1.1
+ * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#2.1
+ * @spec openspec/changes/archive/2026-11-24-portal-white-label-runtime-config/tasks.md#3.2
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\AccessibilityFramingInterface;
+use OCA\Portaliq\Kernel\Contracts\PlainPageRendererInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalNoticeReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalRuntimeConfigResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalThemeResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\SiteHeadInterface;
 use OCA\Portaliq\Service\SiteShell;
-use OCA\Portaliq\Service\PortalRuntimeConfigResolver;
-use OCA\Portaliq\Service\PortalThemeResolver;
-use OCA\Portaliq\Service\PortalNoticeReader;
-use OCA\Portaliq\Service\Cms\AccessibilityFraming;
-use OCA\Portaliq\Service\Cms\SiteHead;
+use OCA\Portaliq\Service\Cms\PlainAddress;
+use OCA\Portaliq\Service\Cms\SiteIcon;
+use OCA\Portaliq\Service\Publication\WithdrawnPublication;
+use OCA\Portaliq\Kernel\Contracts\SiteOrganisationInterface;
 use OCP\AppFramework\Controller;
+use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\NoAdminRequired;
 use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
-use OCP\AppFramework\Http\Attribute\AnonRateLimit;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\RedirectResponse;
 use OCP\AppFramework\Http\TemplateResponse;
@@ -82,6 +87,13 @@ class PortalPageController extends Controller {
 	private const STATUS_NOT_FOUND = 404;
 
 	/**
+	 * HTTP 410 Gone: what a withdrawn publication's page answers on a portal
+	 * that shows the withdrawal (publication-error-reports-and-withheld-notices
+	 * REQ-PER-004).
+	 */
+	private const STATUS_GONE = 410;
+
+	/**
 	 * Builds what the site shell template renders.
 	 *
 	 * @var SiteShell
@@ -92,31 +104,39 @@ class PortalPageController extends Controller {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request
-	 * @param PortalRuntimeConfigResolver $configResolver Resolves the serving
+	 * @param PortalRuntimeConfigResolverInterface $configResolver Resolves the serving
 	 *                                                    portal and the runtime
 	 *                                                    config built from it.
 	 * @param IURLGenerator $urlGenerator Builds the content API base handed to
 	 *                                    the site renderer.
-	 * @param PortalResolver $portalResolver Resolves the serving portal, so the
+	 * @param PortalResolverInterface $portalResolver Resolves the serving portal, so the
 	 *                                       shell knows whose theme to load.
-	 * @param PortalThemeResolver $themeResolver Maps that portal's theme
+	 * @param PortalThemeResolverInterface $themeResolver Maps that portal's theme
 	 *                                           reference to a real themiq
 	 *                                           token stylesheet.
-	 * @param SiteHead $siteHead The head of the page a site request asks for.
-	 * @param PortalNoticeReader $notices The notices running on the signed-in surface now.
-	 * @param AccessibilityFraming $framing Whether the accessibility measurement may frame this request.
+	 * @param SiteHeadInterface $siteHead The head of the page a site request asks for.
+	 * @param PortalNoticeReaderInterface $notices The notices running on the signed-in surface now.
+	 * @param AccessibilityFramingInterface $framing Whether the accessibility measurement may frame this request.
+	 * @param SiteIcon|null $siteIcon The portal's own tab icon.
+	 * @param PlainPageRendererInterface|null $plainPage The plain version of a page (site-honest-without-javascript).
+	 * @param SiteOrganisationInterface|null $siteOrganisation Names the portal's organisation in the head.
+	 * @param WithdrawnPublication|null $withdrawn Whether a path is a withdrawn publication's page; absent, none is.
 	 */
 	public function __construct(
 		IRequest $request,
-		PortalRuntimeConfigResolver $configResolver,
+		PortalRuntimeConfigResolverInterface $configResolver,
 		private readonly IURLGenerator $urlGenerator,
-		PortalResolver $portalResolver,
-		PortalThemeResolver $themeResolver,
-		SiteHead $siteHead,
-		PortalNoticeReader $notices,
-		private readonly AccessibilityFraming $framing,
+		PortalResolverInterface $portalResolver,
+		PortalThemeResolverInterface $themeResolver,
+		SiteHeadInterface $siteHead,
+		PortalNoticeReaderInterface $notices,
+		private readonly AccessibilityFramingInterface $framing,
+		?SiteIcon $siteIcon=null,
+		private readonly ?PlainPageRendererInterface $plainPage=null,
+		?SiteOrganisationInterface $siteOrganisation=null,
+		private readonly ?WithdrawnPublication $withdrawn=null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 		$this->shell = new SiteShell(
 			request: $request,
 			portalResolver: $portalResolver,
@@ -124,7 +144,9 @@ class PortalPageController extends Controller {
 			urlGenerator: $urlGenerator,
 			siteHead: $siteHead,
 			notices: $notices,
-			configResolver: $configResolver
+			configResolver: $configResolver,
+			siteIcon: $siteIcon,
+			siteOrganisation: $siteOrganisation
 		);
 	}//end __construct()
 
@@ -144,7 +166,7 @@ class PortalPageController extends Controller {
 	 *
 	 * @return RedirectResponse
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -167,7 +189,7 @@ class PortalPageController extends Controller {
 	 *
 	 * @return RedirectResponse
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- $path is bound by the
 	 * route definition and carries nothing the site can use.
@@ -185,7 +207,7 @@ class PortalPageController extends Controller {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-old-portal-links-must-land-on-the-site-req-srp-048
 	 */
 	private function siteAddress(): string {
 		$site = $this->urlGenerator->linkToRoute('portaliq.portalPage.site');
@@ -212,7 +234,7 @@ class PortalPageController extends Controller {
 	 *
 	 * @return TemplateResponse The site shell.
 	 *
-	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -229,11 +251,11 @@ class PortalPageController extends Controller {
 	 *
 	 * @return TemplateResponse The site shell.
 	 *
-	 * @spec openspec/changes/portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
+	 * @spec openspec/changes/archive/2026-11-12-portal-shared-runtime/specs/portal-shared-runtime/spec.md#requirement-the-portal-must-boot-the-shared-runtime-and-ship-no-react
 	 */
 	private function shellResponse(string $path): TemplateResponse {
 		$response = new TemplateResponse(
-			Application::APP_ID,
+			AppIdentity::APP_ID,
 			'site',
 			$this->shell->templateParams(path: $path),
 			// BASE, NOT PUBLIC — a white-label site may not wear Nextcloud's
@@ -287,6 +309,57 @@ class PortalPageController extends Controller {
 	}//end shellResponse()
 
 	/**
+	 * The plain version of a site page, for a browser without JavaScript
+	 * (site-honest-without-javascript REQ-SHJ-002).
+	 *
+	 * The same portal and route as `/site` (`?portal=`, `?org=` or the host,
+	 * and `?route=`), the same stylesheets and the same security policy, and
+	 * no script at all. Every page and menu is read as an ANONYMOUS visitor,
+	 * also when the request carries a session: this HTML must never hold a
+	 * resident's data. A route without a published page, and a publication
+	 * that is missing or withheld, answer 404.
+	 *
+	 * @return TemplateResponse The plain page.
+	 *
+	 * @spec openspec/changes/site-honest-without-javascript/specs/site-without-javascript/spec.md#requirement-the-server-renders-a-plain-version-of-every-public-page-req-shj-002
+	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t3
+	 */
+	#[PublicPage]
+	#[NoCSRFRequired]
+	#[NoAdminRequired]
+	#[AnonRateLimit(limit: 120, period: 60)]
+	public function plain(): TemplateResponse {
+		$asked = $this->shell->plainRequest();
+		$address = new PlainAddress(
+			siteBase: $this->urlGenerator->linkToRoute('portaliq.portalPage.site'),
+			portalSlug: $asked['slug']
+		);
+		// Without the renderer (never so through the container) the page
+		// answers as a route that does not exist, never with content.
+		$view = ['status' => self::STATUS_NOT_FOUND, 'title' => '', 'summary' => '', 'blocks' => [], 'menu' => []];
+		if ($this->plainPage !== null) {
+			$view = $this->plainPage->render(
+				portal: $asked['portal'],
+				route: $asked['route'],
+				locale: $asked['locale'],
+				asked: $asked,
+				address: $address
+			);
+		}
+
+		$params = $this->shell->templateParams(path: '');
+		$params['plain'] = $view;
+		$response = new TemplateResponse(AppIdentity::APP_ID, 'site-plain', $params, TemplateResponse::RENDER_AS_BLANK);
+		$response->setContentSecurityPolicy($this->framing->sitePolicy(request: $this->request));
+		if ($view['status'] === self::STATUS_NOT_FOUND || $this->shell->servesAPortal() === false) {
+			$response->setStatus(self::STATUS_NOT_FOUND);
+		}
+
+		return $response;
+	}//end plain()
+
+
+	/**
 	 * A site page named by its path: `/site/afval` is the route `/afval`.
 	 *
 	 * This is the address a proxy in front of Nextcloud rewrites a short
@@ -314,10 +387,40 @@ class PortalPageController extends Controller {
 		$response = $this->shellResponse(path: $path);
 		if ($this->shell->servesAPortal() === false) {
 			$response->setStatus(self::STATUS_NOT_FOUND);
+			return $response;
+		}
+
+		if ($this->isWithdrawnPage(path: $path) === true) {
+			$response->setStatus(self::STATUS_GONE);
 		}
 
 		return $response;
 	}//end sitePath()
+
+	/**
+	 * Whether the path is a withdrawn publication's page on a portal that
+	 * shows the withdrawal (publication-error-reports-and-withheld-notices
+	 * REQ-PER-004). The shell still renders: the site reads the withdrawal
+	 * itself, this only makes the status say what the page says.
+	 *
+	 * @param string $path The path under the site route.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-withdrawn-link-says-it-was-withdrawn-and-why-req-per-004
+	 */
+	private function isWithdrawnPage(string $path): bool {
+		if ($this->withdrawn === null) {
+			return false;
+		}
+
+		$slug = $this->shell->requestedPortalSlug();
+		if ($slug === '') {
+			$slug = null;
+		}
+
+		return $this->withdrawn->isWithdrawnRequest(request: $this->request, slug: $slug, path: $path);
+	}//end isWithdrawnPage()
 
 
 }//end class

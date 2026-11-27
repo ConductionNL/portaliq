@@ -27,6 +27,12 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\OpenRegister\Db\SchemaMapper;
+use OCA\OpenRegister\Service\Form\FormDestination;
+use OCA\OpenRegister\Service\Form\FormDestinationValidator;
+use OCA\OpenRegister\Service\Form\FormSubmission;
+use OCA\OpenRegister\Service\Form\FormSubmitService;
+use OCA\OpenRegister\Service\Form\FormSubmitter;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -44,17 +50,17 @@ class DestinationSubmit {
 	/**
 	 * OpenRegister's submit service.
 	 */
-	private const SUBMIT_SERVICE = 'OCA\\OpenRegister\\Service\\Form\\FormSubmitService';
+	private const SUBMIT_SERVICE = FormSubmitService::class;
 
 	/**
 	 * OpenRegister's build-time destination validator.
 	 */
-	private const VALIDATOR = 'OCA\\OpenRegister\\Service\\Form\\FormDestinationValidator';
+	private const VALIDATOR = FormDestinationValidator::class;
 
 	/**
 	 * OpenRegister's schema mapper, to hand the validator a schema entity.
 	 */
-	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
+	private const SCHEMA_MAPPER = SchemaMapper::class;
 
 	/**
 	 * Constructor.
@@ -101,13 +107,14 @@ class DestinationSubmit {
 		}
 
 		try {
+			// One write: the destination pair with the binding's mapping.
 			$answer = $service->submit(
-				destination: $destination,
-				mapping: $mapping,
-				payload: $payload,
-				subject: null,
-				idempotencyKey: $key,
-				scope: $scope
+				submission: new FormSubmission(
+					writes: [array_merge($destination, ['mapping' => $mapping])],
+					payload: $payload,
+					submitter: new FormSubmitter(subject: null, scope: $scope)
+				),
+				idempotencyKey: $key
 			);
 		} catch (Throwable $exception) {
 			return $this->refusalOf(exception: $exception, destination: $destination);
@@ -128,10 +135,16 @@ class DestinationSubmit {
 	 * @param array<string, mixed>                    $mapping     `fields` and `fixed`.
 	 * @param string                                  $audience    `public` or `authenticated`.
 	 *
+	 * OpenRegister's validator takes the schema and the audience as one
+	 * FormDestination; the older `schema:` and `options:` arguments are gone,
+	 * and calling them threw "Unknown named parameter $schema", so no form
+	 * binding could be published (found live, 25 Nov 2026).
+	 *
 	 * @return array<int, array<string, mixed>>|null The findings (empty when the mapping is
 	 *         valid), or null when the destination or the validator could not be reached.
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md
 	 */
 	public function findings(array $destination, array $mapping, string $audience): ?array {
 		$validator = $this->resolve(name: self::VALIDATOR);
@@ -141,7 +154,7 @@ class DestinationSubmit {
 		}
 
 		try {
-			$findings = $validator->validate(mapping: $mapping, schema: $schema, options: ['audience' => $audience]);
+			$findings = $validator->validate(mapping: $mapping, destination: new FormDestination(schema: $schema, audience: $audience));
 		} catch (Throwable $exception) {
 			$this->logger->warning('Portaliq: a form binding could not be checked', ['reason' => $exception->getMessage()]);
 			return null;

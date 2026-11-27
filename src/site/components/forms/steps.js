@@ -43,9 +43,11 @@ export function flowSteps(steps, titles) {
 		...(typeof step.description === 'string' && step.description !== ''
 			? { description: step.description }
 			: {}),
+		...stepNote(step.note),
 		fields: step.fields.filter((field) => typeof field === 'string'),
 		review: false,
 		...(step.decides === true ? { decides: true } : {}),
+		...stepFetches(step.fetch),
 	}))
 	const review = list.find((step) => step.review === true)
 	out.push({
@@ -58,6 +60,47 @@ export function flowSteps(steps, titles) {
 		review: true,
 	})
 	return out
+}
+
+/**
+ * A step's fetches, `{fetch: [{id, fields, checkLabel}]}`, as the server sent
+ * them; else nothing. The source and its inputs never reach the browser.
+ *
+ * @param {unknown} fetches The step's declared fetches.
+ * @return {object} `{fetch}` or `{}`.
+ *
+ * @spec openspec/changes/data-lookups-and-checks-in-forms/tasks.md#t05
+ */
+export function stepFetches(fetches) {
+	if (!Array.isArray(fetches)) {
+		return {}
+	}
+	const kept = fetches
+		.filter((fetch) => fetch && typeof fetch.id === 'string' && fetch.id !== '')
+		.map((fetch) => ({
+			id: fetch.id,
+			fields: Array.isArray(fetch.fields)
+				? fetch.fields.filter((field) => typeof field === 'string')
+				: [],
+			checkLabel: typeof fetch.checkLabel === 'string' ? fetch.checkLabel : '',
+		}))
+	return kept.length > 0 ? { fetch: kept } : {}
+}
+
+/**
+ * A step's note, `{note: {title, text}}`, when it has words; else nothing.
+ *
+ * @param {unknown} note The step's declared note.
+ * @return {object} `{note}` or `{}`.
+ * @spec openspec/changes/site-multi-step-forms/specs/portal-intake-form/spec.md#requirement-a-published-form-with-steps-must-be-filled-in-one-step-at-a-time-with-visible-progress-req-smf-010
+ */
+function stepNote(note) {
+	if (!note || typeof note !== 'object') {
+		return {}
+	}
+	const title = typeof note.title === 'string' ? note.title.trim() : ''
+	const text = typeof note.text === 'string' ? note.text.trim() : ''
+	return title === '' && text === '' ? {} : { note: { title, text } }
 }
 
 /**
@@ -219,7 +262,7 @@ export function retentionDate(iso, locale) {
  * @param {Array<object>} flow The steps walked through.
  * @param {string} id The step id.
  * @return {number} The index, or -1 when the flow has no such step.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t06
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t06
  */
 export function stepIndexById(flow, id) {
 	return (Array.isArray(flow) ? flow : []).findIndex(

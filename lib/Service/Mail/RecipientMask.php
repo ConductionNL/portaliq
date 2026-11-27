@@ -15,19 +15,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t03
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Mail;
 
+use OCA\Portaliq\Kernel\Contracts\RecipientMaskInterface;
+
 /**
  * An address with its middle hidden.
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t03
  */
-class RecipientMask {
+class RecipientMask implements RecipientMaskInterface {
 	/**
 	 * An address with its middle hidden: "sanne@example.nl" becomes "s***@example.nl".
 	 *
@@ -35,7 +37,7 @@ class RecipientMask {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t03
 	 */
 	public function mask(string $email): string {
 		$email = trim($email);

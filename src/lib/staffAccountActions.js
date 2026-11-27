@@ -33,6 +33,16 @@ const REFUSALS = {
 	reason_required: 'Give a reason.',
 	mail_not_sent:
 		'The invitation mail could not be sent, so nobody was invited. Try again.',
+	withdrawn:
+		'This invitation was withdrawn. Invite the address again instead.',
+}
+
+/**
+ * Refusals that read differently when an invitation is sent again.
+ */
+const RESEND_REFUSALS = {
+	already_accepted:
+		'This invitation was already accepted, so it is not sent again.',
 }
 
 /**
@@ -83,6 +93,57 @@ function text(value) {
 }
 
 /**
+ * What the provision route is sent for the dialog's fields: trimmed, the
+ * audience a client unless the dialog says otherwise.
+ *
+ * @param {object|null} fields The dialog's fields.
+ * @return {object} The body.
+ */
+function provisionBody(fields) {
+	return {
+		audience: text(fields?.audience) || 'client',
+		organisation: text(fields?.organisation),
+		identityType: text(fields?.identityType),
+		identityRef: text(fields?.identityRef),
+		email: text(fields?.email),
+		verifiedEmail: fields?.verifiedEmail === true,
+		displayName: text(fields?.displayName),
+	}
+}
+
+/**
+ * What the invitation route is sent for the dialog's fields: trimmed, the
+ * audience a client unless the dialog says otherwise.
+ *
+ * @param {object|null} fields The dialog's fields.
+ * @return {{email: string, organisation: string, audience: string}} The body.
+ */
+function invitationBody(fields) {
+	return {
+		email: text(fields?.email),
+		organisation: text(fields?.organisation),
+		audience: text(fields?.audience) || 'client',
+	}
+}
+
+/**
+ * What an issue still lacks before it may be sent: the organisation, then an
+ * identity reference or an e-mail address; '' when nothing.
+ *
+ * @param {object} body The provision body.
+ * @return {string} The English source sentence, or ''.
+ */
+function missingForIssue(body) {
+	if (body.organisation === '') {
+		return 'Give the organisation the account belongs to.'
+	}
+	if (body.identityRef === '' && body.email === '') {
+		return 'Give an identity reference or an e-mail address.'
+	}
+	return ''
+}
+
+/**
  * The calls behind the dialogs and row actions.
  *
  * @param {object} deps Collaborators.
@@ -107,12 +168,55 @@ export function createStaffAccountActions({
 	 * @param {object} body The JSON body.
 	 * @return {Promise<{ok: boolean, data?: object, message?: string}>}
 	 */
-	async function send(path, params, body) {
+	async function send(path, params, body, refusals = {}) {
 		try {
 			const response = await post(generateUrl(path, params), body)
 			return { ok: true, data: response?.data || {} }
 		} catch (error) {
-			return { ok: false, message: translate(failureKey(error)) }
+			const own = refusals[String(error?.response?.data?.error || '')]
+			return { ok: false, message: translate(own || failureKey(error)) }
+		}
+	}
+
+	/**
+	 * What the desk is told after the provision answered: issued, or refused
+	 * because the identity already has an account.
+	 *
+	 * @param {object} data The provision's answer.
+	 * @return {{ok: boolean, message: string}} The outcome.
+	 */
+	function issuedOutcome(data) {
+		if (data.isNew === false) {
+			return {
+				ok: false,
+				message: translate(
+					'An account for this identity already exists, so no second account was made.',
+				),
+			}
+		}
+		return {
+			ok: true,
+			message: translate(
+				'The account is issued. It becomes active when its owner signs in for the first time.',
+			),
+		}
+	}
+
+	/**
+	 * What the desk is told after an invitation went out: to whom, and until
+	 * when it is valid.
+	 *
+	 * @param {string} email The invited address.
+	 * @param {object} data The invitation route's answer.
+	 * @return {{ok: boolean, message: string}} The outcome.
+	 */
+	function invitedOutcome(email, data) {
+		return {
+			ok: true,
+			message: translate('Invitation sent to {email}. It is valid until {date}.', {
+				email,
+				date: formatDate(String(data.expiresAt || '')),
+			}),
 		}
 	}
 
@@ -125,30 +229,10 @@ export function createStaffAccountActions({
 		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-issue-and-withdraw-accounts-through-the-validated-actions-req-isa-003
 		 */
 		async issue(fields) {
-			const body = {
-				audience: text(fields?.audience) || 'client',
-				organisation: text(fields?.organisation),
-				identityType: text(fields?.identityType),
-				identityRef: text(fields?.identityRef),
-				email: text(fields?.email),
-				verifiedEmail: fields?.verifiedEmail === true,
-				displayName: text(fields?.displayName),
-			}
-			if (body.organisation === '') {
-				return {
-					ok: false,
-					message: translate(
-						'Give the organisation the account belongs to.',
-					),
-				}
-			}
-			if (body.identityRef === '' && body.email === '') {
-				return {
-					ok: false,
-					message: translate(
-						'Give an identity reference or an e-mail address.',
-					),
-				}
+			const body = provisionBody(fields)
+			const missing = missingForIssue(body)
+			if (missing !== '') {
+				return { ok: false, message: translate(missing) }
 			}
 			const sent = await send(
 				'/apps/portaliq/api/accounts/provision',
@@ -158,20 +242,7 @@ export function createStaffAccountActions({
 			if (sent.ok === false) {
 				return sent
 			}
-			if (sent.data.isNew === false) {
-				return {
-					ok: false,
-					message: translate(
-						'An account for this identity already exists, so no second account was made.',
-					),
-				}
-			}
-			return {
-				ok: true,
-				message: translate(
-					'The account is issued. It becomes active when its owner signs in for the first time.',
-				),
-			}
+			return issuedOutcome(sent.data)
 		},
 
 		/**
@@ -182,11 +253,7 @@ export function createStaffAccountActions({
 		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-invite-an-address-and-portaliq-mails-it-req-isa-001
 		 */
 		async invite(fields) {
-			const body = {
-				email: text(fields?.email),
-				organisation: text(fields?.organisation),
-				audience: text(fields?.audience) || 'client',
-			}
+			const body = invitationBody(fields)
 			if (body.email === '' || body.organisation === '') {
 				return {
 					ok: false,
@@ -197,16 +264,7 @@ export function createStaffAccountActions({
 			if (sent.ok === false) {
 				return sent
 			}
-			return {
-				ok: true,
-				message: translate(
-					'Invitation sent to {email}. It is valid until {date}.',
-					{
-						email: body.email,
-						date: formatDate(String(sent.data.expiresAt || '')),
-					},
-				),
-			}
+			return invitedOutcome(body.email, sent.data)
 		},
 
 		/**
@@ -239,6 +297,39 @@ export function createStaffAccountActions({
 		},
 
 		/**
+		 * Send an invitation that was not accepted again, with a new link.
+		 *
+		 * @param {object} row The invitation row.
+		 * @return {Promise<{ok: boolean, message: string}>}
+		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+		 */
+		async resendInvitation(row) {
+			const id = idOf(row)
+			if (id === '') {
+				return { ok: false, message: translate(failureKey(null)) }
+			}
+			const sent = await send(
+				'/apps/portaliq/api/invitations/{id}/resend',
+				{ id },
+				{ organisation: text(row?.organisation) },
+				RESEND_REFUSALS,
+			)
+			if (sent.ok === false) {
+				return sent
+			}
+			return {
+				ok: true,
+				message: translate(
+					'Invitation sent again to {email}. It is valid until {date}.',
+					{
+						email: text(row?.email),
+						date: formatDate(String(sent.data.expiresAt || '')),
+					},
+				),
+			}
+		},
+
+		/**
 		 * Withdraw a pending account, with the reason on the row.
 		 *
 		 * @param {object} account The account row.
@@ -266,6 +357,14 @@ export function createStaffAccountActions({
 }
 
 /**
+ * The object-store list each staff action changes, handed to `reload` so the
+ * host can fetch that list again in place (a full page reload would drop the
+ * toast that says what happened, REQ-ISA-011).
+ */
+export const INVITATION_LIST = 'portaliq-portalInvitation'
+export const ACCOUNT_LIST = 'portaliq-portalAccount'
+
+/**
  * The header and row actions the manifest names by handler.
  *
  * Issue and invite open a dialog that submits itself, so a refusal is shown
@@ -279,8 +378,8 @@ export function createStaffAccountActions({
  * @param {(row: object) => Promise<boolean>} deps.confirmWithdrawInvitation Asks before withdrawing.
  * @param {(text: string) => void} deps.notify Success toast.
  * @param {(text: string) => void} deps.notifyError Error toast.
- * @param {() => void} deps.reload Reloads the list.
- * @return {{issueAccount: Function, inviteSomeone: Function, withdrawInvitation: Function}}
+ * @param {(list: string) => void} deps.reload Fetches the named list (INVITATION_LIST, ACCOUNT_LIST) again.
+ * @return {{issueAccount: Function, inviteSomeone: Function, resendInvitation: Function, withdrawInvitation: Function}}
  * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-see-and-withdraw-invitations-req-isa-002
  */
 export function createStaffAccountHandlers({
@@ -296,14 +395,16 @@ export function createStaffAccountHandlers({
 	 * Report a dialog's outcome.
 	 *
 	 * @param {string|null} message The success sentence, or null.
+	 * @param {string} list The list the action changed.
 	 * @return {boolean}
+	 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
 	 */
-	function closed(message) {
+	function closed(message, list) {
 		if (typeof message !== 'string' || message === '') {
 			return false
 		}
 		notify(message)
-		reload()
+		reload(list)
 		return true
 	}
 
@@ -315,7 +416,7 @@ export function createStaffAccountHandlers({
 		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-issue-and-withdraw-accounts-through-the-validated-actions-req-isa-003
 		 */
 		async issueAccount() {
-			return closed(await openIssue((fields) => actions.issue(fields)))
+			return closed(await openIssue((fields) => actions.issue(fields)), ACCOUNT_LIST)
 		},
 
 		/**
@@ -325,7 +426,25 @@ export function createStaffAccountHandlers({
 		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-invite-an-address-and-portaliq-mails-it-req-isa-001
 		 */
 		async inviteSomeone() {
-			return closed(await openInvite((fields) => actions.invite(fields)))
+			return closed(await openInvite((fields) => actions.invite(fields)), INVITATION_LIST)
+		},
+
+		/**
+		 * `Opnieuw versturen` on an Invitations row.
+		 *
+		 * @param {{item: object}} payload The row action payload.
+		 * @return {Promise<boolean>}
+		 * @spec openspec/specs/portal-account-administration/spec.md#requirement-staff-send-an-invitation-again-req-isa-011
+		 */
+		async resendInvitation({ item }) {
+			const outcome = await actions.resendInvitation(item)
+			if (outcome.ok === false) {
+				notifyError(outcome.message)
+				return false
+			}
+			notify(outcome.message)
+			reload(INVITATION_LIST)
+			return true
 		},
 
 		/**
@@ -345,7 +464,7 @@ export function createStaffAccountHandlers({
 				return false
 			}
 			notify(outcome.message)
-			reload()
+			reload(INVITATION_LIST)
 			return true
 		},
 	}

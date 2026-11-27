@@ -1,0 +1,55 @@
+# Tasks: portal-headless-content-api
+
+> Public content API + caching + invalidation + throttling (ADR-032 `kind: code`).
+> Checkbox budget: 4 tasks × 2 = 8 unindented `- [ ]` lines (cap 20).
+
+## Implementation Tasks
+
+### Task 1: Public content endpoints
+- **spec_ref**: `openspec/changes/portal-headless-content-api/specs/portal-headless-content-api/spec.md#requirement-the-api-must-expose-a-sites-navigation-pages-glossary-and-media`
+- **files**: `lib/Controller/ContentController.php`, `lib/Service/ContentService.php`, `appinfo/routes.php`, `tests/Unit/Controller/ContentControllerTest.php`
+- **acceptance_criteria**:
+  - Site record, menu tree, page-by-route, page listing, glossary and media, every response scoped to the resolved website
+  - Every route declares its auth posture explicitly; public routes use the attribute form the fleet's public-endpoint sweep actually counts
+  - An unpublished page is indistinguishable from a non-existent route — no existence oracle
+  - A markdown body is returned as source, byte-identical; a grid body returns canonical `$defs.widgetEntry` shapes
+- [x] Implement
+- [x] Test
+
+### Task 2: Response cache keyed by audience
+- **spec_ref**: `openspec/changes/portal-headless-content-api/specs/portal-headless-content-api/spec.md#requirement-responses-must-be-cached-with-the-audience-in-the-key`
+- **files**: `lib/Service/ContentCache.php`, `tests/Unit/Service/ContentCacheTest.php`
+- **acceptance_criteria**:
+  - Key is website + route + locale + audience; anonymous and authenticated requests for one route never share an entry
+  - The audience component is proven load-bearing: with it removed the separation test FAILS, and that failure is observed before the key is trusted — a cache that ignores audience is a data leak, not a slow path
+  - Headers are stated ONCE per response: `private, no-store` for per-visitor, publicly cacheable for anonymous published content, with no contradictory second directive
+  - Cache hits are measured, so a cache that never hits is distinguishable from no cache at all
+- [x] Implement
+- [x] Test
+
+### Task 3: Event-driven invalidation
+- **spec_ref**: `openspec/changes/portal-headless-content-api/specs/portal-headless-content-api/spec.md#requirement-a-write-must-invalidate-the-affected-cache-entries`
+- **files**: `lib/Listener/ContentCacheInvalidationListener.php`, `tests/Unit/Listener/ContentCacheInvalidationListenerTest.php`
+- **acceptance_criteria**:
+  - A page update is visible on the next request without waiting for expiry
+  - A menu update invalidates the pages that render it
+  - Invalidation is website-scoped; another site's entries are untouched
+  - The listener does its work off the write path per ADR-078, or carries a reason-bearing inline annotation
+- [x] Implement
+- [x] Test
+
+### Task 4: Throttling and headless conformance
+- **spec_ref**: `openspec/changes/portal-headless-content-api/specs/portal-headless-content-api/spec.md#requirement-the-anonymous-read-path-must-be-throttled`
+- **files**: `lib/Controller/ContentController.php`, `tests/Integration/HeadlessConformanceTest.php`
+- **acceptance_criteria**:
+  - Anonymous reads are rate-limited; a cache hit is NOT an exemption
+  - The throttle is proven by two independent discriminators — an absent success is not evidence it fired
+  - A conformance test enumerates the built-in portal's capabilities and fails when one is unreachable through the public API, naming it
+  - The conformance test reaches into no Portaliq internal, or it is not testing headlessness
+- [x] Implement
+- [x] Test — live half `tests/e2e/headless-content-api.spec.ts`, 2/2 green on 25 Nov 2026 against a sandbox Nextcloud 34.0.6 (MariaDB, APCu, php -S) with the Zuiddrecht example site: the menu walk serves every linked route through `/api/content/page`, and past 240 reads `/api/content/faq` answers 429 while the content cache counters stand still (discriminator 2; by hand on `glossary`: 1 miss + 239 hits, then 20 refusals with hit count unchanged). The static half (every content route is PublicPage + AnonRateLimit, every URL the portal reads is routed) is `tests/Unit/Controller/HeadlessConformanceTest.php`
+
+## Build notes
+
+- The endpoints, cache, listener and throttle were already in place under the `portaliq-cms` spec; this change added the missing pieces: hit and miss counts (`CmsReader::cacheStats()`, exposed as `portaliq_content_cache_total` on the metrics route), the ADR-078 placement note on the invalidation listener, and tests that run the real read path with a working cache (`CmsContentCacheTest`) and read the routes (`HeadlessConformanceTest`).
+- The audience separation test was observed failing with the audience dropped from the key before it was trusted.

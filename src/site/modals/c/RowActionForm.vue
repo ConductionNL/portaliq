@@ -37,7 +37,7 @@ import { rowIdOf, translatorOr } from '../../components/c/forms.js'
  * table, starting from the row's own values, and a PATCH of only the answers
  * when it is sent. A transition without fields still runs at once.
  *
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
+ * @spec openspec/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
  */
 export default {
 	name: 'RowActionForm',
@@ -82,7 +82,7 @@ export default {
 		 * @param {object} body The typed answers.
 		 * @return {Promise<object>} The result in the form's send shape.
 		 *
-		 * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-update-row-action-that-needs-input-must-open-its-form-on-the-row
 		 */
 		async sendUpdate(body) {
 			const id = rowIdOf(this.row)
@@ -95,17 +95,4 @@ export default {
 }
 </script>
 
-<style scoped>
-.pq-rowaction {
-	margin-block: var(--utrecht-space-block-md, 1rem);
-	padding: var(--utrecht-space-block-md, 1rem);
-	border: var(--utrecht-border-width-sm, 1px) solid
-		var(--utrecht-color-grey-60, currentcolor);
-}
-
-.pq-rowaction__buttons {
-	display: flex;
-	flex-wrap: wrap;
-	gap: var(--utrecht-space-inline-sm, 0.5rem);
-}
-</style>
+<style scoped src="./rowActionDialog.css"></style>

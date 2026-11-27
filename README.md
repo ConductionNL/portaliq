@@ -45,6 +45,12 @@ portal-contribution registry. Employees stay internal.
 
 > **Canonical root configs** — `phpcs.xml`, `phpmd.xml`, `psalm.xml`, `phpstan.neon`, and `phpstan-bootstrap.php` in this repo are the fleet canonical. All Conduction PHP apps are expected to mirror these files byte-for-byte; per-app deviations belong in baselines (`phpstan-baseline.neon`, `psalm-baseline.xml`) not in the canonical files. Submit changes here and they propagate to the fleet via the template-sync flow — do **not** diverge per-app.
 
+## Test coverage
+
+<!-- coverage:start -->
+Measured test coverage: 90.1% of statements (PHP 90.1% of 35,717 statements), at commit `cf14bd3c8` on 2026-11-13. The JavaScript frontend is not in this figure, because it has no coverage measurement yet. The figures come from [`coverage-summary.json`](coverage-summary.json); refresh them with `composer coverage:publish`.
+<!-- coverage:end -->
+
 ## Screenshots
 
 Screenshots are captured automatically from the tutorial flows, not pasted in by hand. The journeydoc scaffold (hydra ADR-030) ships two tutorial stories under [`docs/tutorials/`](docs/tutorials/) — a user "first launch" walkthrough (the Dashboard) and an admin "manage settings" walkthrough (Admin Settings) — and a Playwright `docs-capture` project that turns each documented step into a PNG under `docs/static/screenshots/tutorials/`.
@@ -203,6 +209,12 @@ check failed (no oracle).
 with app config `dev_login_enabled` = `yes` (system `debug` does not open it)
 and always issues `trust: low` — the local-development door,
 unrelated to and unaffected by the OIDC edge.
+
+**Idle warning on request.** On a test instance, app config
+`session_idle_preview_enabled` = `yes` lets a signed-in page open the idle
+warning at once when its address holds `idleWarning=now`, so the warning
+can be measured and tested without waiting out the idle window. It is off
+unless set to `yes`.
 
 **Decoupling.** The RP is a standard OIDC client and does **not** hard-depend
 on OpenConnector — if OpenConnector later fronts a broker, it is just another
@@ -494,9 +506,8 @@ portaliq/
 ├── lib/                        # PHP backend
 │   ├── AppInfo/Application.php
 │   ├── Controller/             # DashboardController, SettingsController
-│   ├── Mcp/ExampleToolProvider.php  # AI Chat Companion tools (hydra ADR-034/035)
 │   ├── Service/SettingsService.php
-│   ├── Listener/DeepLinkRegistrationListener.php
+│   ├── Listener/               # Event listeners (no DeepLinkRegistrationListener yet; deep links are not registered with OpenRegister search, see #81)
 │   ├── Repair/InitializeSettings.php
 │   └── Settings/               # AdminSettings, app_template_register.json
 ├── templates/                  # PHP templates (SPA shells)
@@ -607,6 +618,29 @@ cd portaliq
 npm install && npm run build
 php occ app:enable portaliq
 ```
+
+### Try it with Docker
+
+The repository builds an evaluation image: the official Nextcloud image with portaliq and OpenRegister installed and enabled. It is meant for trying the app out and for test environments. For production, install the app from the Nextcloud App Store.
+
+```bash
+docker compose -f docker-compose.yml up -d --build
+```
+
+Open http://localhost:8080/apps/portaliq/ and sign in as `admin` with password `admin`. The first start takes a minute or two. Set `NEXTCLOUD_ADMIN_PASSWORD` and `APP_PORT` to change the password and the port; `docker-compose.yml` lists every setting. `docker compose -f docker-compose.yml down -v` removes the stack and its data.
+
+Released versions are published as `ghcr.io/conductionnl/portaliq`, so leaving out `--build` uses the published image.
+
+### Run it on Kubernetes
+
+`charts/portaliq` wraps the official [Nextcloud Helm chart](https://github.com/nextcloud/helm) and runs the same image with PostgreSQL:
+
+```bash
+helm dependency build charts/portaliq
+helm install portaliq charts/portaliq --set nextcloud.nextcloud.host=portaliq.example.org
+```
+
+Change the passwords in `charts/portaliq/values.yaml` before you install it anywhere that matters.
 
 ## Development
 
@@ -739,40 +773,48 @@ in the hydra repo for the full rationale.
 
 ### AI Chat Companion / MCP tools
 
-The template ships an example **MCP tool provider** so the in-app AI Chat
-Companion (a floating assistant rendered by `CnAppRoot` from
-`@conduction/nextcloud-vue`) can call your app's capabilities. See:
+Reads are derived by OpenRegister from the `x-openregister-mcp` dialect
+declared on the schemas in `lib/Settings/portaliq_register.json` (hydra
+ADR-063); staff write actions are curated tools in the one governed provider,
+`lib/Mcp/PortaliqToolProvider.php`. Hermiq governs both from the declared
+`scope` and `reach`: writes are denied to an agent until granted, and the
+three high-impact tools carry `requiresApproval: true` so a person approves
+each run. Annotations only restrict; the server-side checks are the UI's own.
 
-- `lib/Mcp/ExampleToolProvider.php` — the heavily-commented starting point. It
-  implements `OCA\OpenRegister\Mcp\IMcpToolProvider` and exposes two trivial
-  tools: `portaliq.ping` (echoes a message) and `portaliq.describeApp`
-  (returns the app id, version, and name).
-- `lib/AppInfo/Application.php` — registers the provider under the service
-  alias `OCA\OpenRegister\Mcp\IMcpToolProvider::{appId}`; OpenRegister's
-  `McpToolsService` discovers per-app providers by exactly that alias.
-- `tests/Stubs/Mcp/IMcpToolProvider.php` — a stand-in for the interface until
-  [openregister](https://github.com/ConductionNL/openregister) Codeberg PR #1466
-  (pre-migration, not migrated to GitHub)
-  merges; once the openregister app is installed alongside your app the real
-  interface takes over transparently.
-- `tests/Unit/Mcp/ExampleToolProviderTest.php` — the contract test.
+Derived reads (`search` and `get`, read-only, served through OpenRegister's
+`ObjectService` with the same authorization as the UI):
 
-**To wire up your app:**
+| Tool ids | Schema | scope × reach |
+| --- | --- | --- |
+| `portaliq.portalmessage.search` / `.get` | `portalMessage` | read × self |
+| `portaliq.portalsubmission.search` / `.get` | `portalSubmission` | read × instance |
+| `portaliq.portalnotification.search` / `.get` | `portalNotification` | read × instance |
 
-1. Rename `ExampleToolProvider` → `{YourApp}ToolProvider` (update the alias in
-   `Application.php` and the test).
-2. Replace the two example tools with real ones — each descriptor needs
-   `id` (`{appId}.{toolName}`), `name`, `description`, and an `inputSchema`
-   (JSON Schema object).
-3. In `invokeTool()`, **run per-object authorisation before any business logic
-   or data access** — validate args, then authorise, then delegate, then
-   return. `invokeTool()` MUST NOT throw — every failure path returns a
-   structured `['error' => ['code' => ..., 'message' => ...]]` array.
+Curated tools (each re-runs the check its screen needs: administrator, or
+content editor through the page editor's groups):
 
-References: hydra
-[ADR-034 (AI Chat Companion)](https://github.com/ConductionNL/hydra/blob/development/openspec/architecture/adr-034-ai-chat-companion.md)
-and ADR-035; and decidesk's `OCA\Decidesk\Mcp\DecideskToolProvider` as the
-production example (five real tools, deep links, source descriptors).
+| Tool id | Drives | scope × reach | Approval |
+| --- | --- | --- | --- |
+| `portaliq.trafficSummary` | `TrafficReportController::summary` totals | read × instance | — |
+| `portaliq.updatePortalContent` | page draft, menu or glossary term, as the caller | update × instance | — |
+| `portaliq.updatePageRegions` | a portal's regions, through `PortalRegionResolver` | update × instance | — |
+| `portaliq.applyTheme` | `PortalThemeChoice`, as `PortalThemeController::update` | update × instance | — |
+| `portaliq.publishPortalPage` | a page's draft becomes its live body | update × instance | required |
+| `portaliq.sendPortalMessage` | a staff message in one portal inbox | create × external | required |
+| `portaliq.revokeOrganisationSessions` | `SessionAdminController::revokeOrganisation`; answers counts only | delete × instance | required |
+
+Every executed curated tool writes a fact-only audit row (verb, target, acting
+user, tool id; never content). `portalAccount`, `portalSession` and
+`exampleDocument` are never tools.
+
+**No tool is reachable from the portal edge (ADR-046).** MCP lives on
+OpenRegister's internal Nextcloud surface; every curated tool refuses a call
+without a signed-in Nextcloud user, and a portal bearer never signs one in. No
+`/portal/` route and no public or bearer-guarded controller reaches the MCP
+surface (`tests/Unit/Mcp/PortalEdgeMcpTest.php`).
+
+See the capability spec `openspec/specs/portaliq-mcp-surface/spec.md` and
+the open change `openspec/changes/portaliq-mcp-adoption`.
 
 ### Code quality
 

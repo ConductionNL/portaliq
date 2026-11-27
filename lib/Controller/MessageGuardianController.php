@@ -22,21 +22,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/guardian-direct-messages/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#api-design
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\Identity\PortalContactService;
-use OCA\Portaliq\Service\Identity\PortalSelfServiceService;
-use OCA\Portaliq\Service\Messaging\GuardianMessageTranslator;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\GuardianMessageTranslatorInterface;
+use OCA\Portaliq\Kernel\Contracts\MessageContactReaderInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalContactServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSelfServiceServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\BearerSessionResolverInterface;
 use OCA\Portaliq\Service\Messaging\GuardianMessagingLeafInterface;
-use OCA\Portaliq\Service\Messaging\MessageContactReader;
-use OCA\Portaliq\Service\PortalSessionService;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -48,7 +48,9 @@ use OCP\IRequest;
 /**
  * Guardian read/create/post/mark-read path for message threads.
  *
- * @spec openspec/changes/guardian-direct-messages/design.md#api-design
+ * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#api-design
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class MessageGuardianController extends Controller implements PortalProtected {
 	/**
@@ -70,29 +72,29 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 * Constructor.
 	 *
 	 * @param IRequest $request The request.
-	 * @param PortalSessionService $session Resolves the subject from the bearer.
+	 * @param BearerSessionResolverInterface $session Resolves the subject from the bearer.
 	 * @param GuardianMessagingLeafInterface $messaging The messaging leaf.
-	 * @param GuardianMessageTranslator|null $translator Shows messages in the reader's
+	 * @param GuardianMessageTranslatorInterface|null $translator Shows messages in the reader's
 	 *                                                   language (translated-message-notice).
 	 *                                                   Nullable and trailing so a
 	 *                                                   controller built by hand keeps
 	 *                                                   its old shape.
-	 * @param PortalSelfServiceService|null $selfService Reads the reader's own `messageLanguage`.
-	 * @param MessageContactReader|null $contacts Who the resident may write to, per record
+	 * @param PortalSelfServiceServiceInterface|null $selfService Reads the reader's own `messageLanguage`.
+	 * @param MessageContactReaderInterface|null $contacts Who the resident may write to, per record
 	 *                                            (site-messages-per-record).
-	 * @param PortalContactService|null $portalContacts The resident's own approved contacts
+	 * @param PortalContactServiceInterface|null $portalContacts The resident's own approved contacts
 	 *                                                  (own-contacts-and-invitations T07).
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
+		private readonly BearerSessionResolverInterface $session,
 		private readonly GuardianMessagingLeafInterface $messaging,
-		private readonly ?GuardianMessageTranslator $translator = null,
-		private readonly ?PortalSelfServiceService $selfService = null,
-		private readonly ?MessageContactReader $contacts = null,
-		private readonly ?PortalContactService $portalContacts = null,
+		private readonly ?GuardianMessageTranslatorInterface $translator = null,
+		private readonly ?PortalSelfServiceServiceInterface $selfService = null,
+		private readonly ?MessageContactReaderInterface $contacts = null,
+		private readonly ?PortalContactServiceInterface $portalContacts = null,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -110,9 +112,9 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse `{id}` on success, 400 or 403 on refusal.
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-guardian-may-start-a-direct-thread-with-a-teacher-who-teaches-their-childs-group
 	 * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-resident-may-start-a-conversation-only-with-a-contact-of-their-own-record
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -135,14 +137,43 @@ class MessageGuardianController extends Controller implements PortalProtected {
 				return new JSONResponse(['error' => 'invalid'], Http::STATUS_BAD_REQUEST);
 			}
 
-			$contact = $this->ownContact(subject: $subject, contactId: $contactId);
-			if ($contactId === '') {
-				$contact = $this->contacts?->contactFor(subject: $subject, staffRef: $staffRef, recordRef: $recordRef);
-			}
+			$contact = $this->contactOf(subject: $subject, staffRef: $staffRef, recordRef: $recordRef, contactId: $contactId);
 
 			return $this->startConversation(subject: $subject, contact: $contact, title: $title, body: $body);
 		}
 
+		return $this->directThread(subject: $subject, staffRef: $staffRef);
+	}//end createThread()
+
+	/**
+	 * The contact a conversation starts with: one of the resident's own contact rows, else the
+	 * contact the app names for the record.
+	 *
+	 * @param array<string, mixed> $subject   The resolved subject.
+	 * @param string               $staffRef  The staff member's subjectRef.
+	 * @param string               $recordRef The record the conversation is about.
+	 * @param string               $contactId One of the resident's own approved contact rows, or ''.
+	 *
+	 * @return array<string, mixed>|null The proven contact, or null when refused.
+	 */
+	private function contactOf(array $subject, string $staffRef, string $recordRef, string $contactId): array|null {
+		$contact = $this->ownContact(subject: $subject, contactId: $contactId);
+		if ($contactId === '') {
+			$contact = $this->contacts?->contactFor(subject: $subject, staffRef: $staffRef, recordRef: $recordRef);
+		}
+
+		return $contact;
+	}//end contactOf()
+
+	/**
+	 * Start a direct thread with a staff member who teaches a group the guardian's audience reaches.
+	 *
+	 * @param array<string, mixed> $subject  The resolved subject.
+	 * @param string               $staffRef The staff member's subjectRef.
+	 *
+	 * @return JSONResponse `{id}`, or 403.
+	 */
+	private function directThread(array $subject, string $staffRef): JSONResponse {
 		$subjectRef = (string)($subject['subjectRef'] ?? '');
 		$id = $this->messaging->createThread(kind: 'direct', participantRefs: [$subjectRef, $staffRef], groupRef: null, createdBy: $subjectRef);
 		if ($id === null) {
@@ -150,14 +181,14 @@ class MessageGuardianController extends Controller implements PortalProtected {
 		}
 
 		return new JSONResponse(['id' => $id]);
-	}//end createThread()
+	}//end directThread()
 
 	/**
 	 * Every thread the guardian participates in.
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/design.md#api-design
+	 * @spec openspec/changes/archive/2026-09-28-guardian-direct-messages/design.md#api-design
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -215,7 +246,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 * @return JSONResponse `{id}`, or 403.
 	 *
 	 * @spec openspec/changes/site-messages-per-record/specs/portal-contribution-contract/spec.md#requirement-a-resident-may-start-a-conversation-only-with-a-contact-of-their-own-record
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	private function startConversation(array $subject, ?array $contact, string $title, string $body): JSONResponse {
 		$body  = trim($body);
@@ -261,7 +292,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, string>|null The contact in the shape a conversation takes.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	private function ownContact(array $subject, string $contactId): ?array {
 		$contact = $this->portalContacts?->approvedContact(
@@ -287,7 +318,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return array<string, mixed> The thread.
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	private function namedForReader(array $thread, string $subjectRef, array $names): array {
 		if ((string)($thread['recordRef'] ?? '') !== '' || is_array($thread['participantRefs'] ?? null) === false) {
@@ -343,8 +374,8 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 * @return JSONResponse The messages, or 404. A message translated into the
 	 *                      reader's `messageLanguage` carries `translation`.
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-the-stored-message-keeps-both-texts-and-the-provenance
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -373,7 +404,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return array<int, array<string, mixed>>
 	 *
-	 * @spec openspec/changes/translated-message-notice/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
+	 * @spec openspec/specs/guardian-message-translation/spec.md#requirement-translation-work-per-request-is-bounded-and-skips-what-needs-none
 	 */
 	private function inReadersLanguage(array $messages, string $subjectRef): array {
 		if ($this->translator === null || $this->selfService === null || $subjectRef === '') {
@@ -396,7 +427,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse 204 on success, 404 otherwise.
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-every-readpostmark-read-re-verifies-participation-server-side
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]
@@ -422,7 +453,7 @@ class MessageGuardianController extends Controller implements PortalProtected {
 	 *
 	 * @return JSONResponse 204 on success, 404 otherwise.
 	 *
-	 * @spec openspec/changes/guardian-direct-messages/specs/guardian-direct-messaging/spec.md#requirement-a-message-tracks-who-has-read-it
+	 * @spec openspec/specs/guardian-direct-messaging/spec.md#requirement-a-message-tracks-who-has-read-it
 	 */
 	#[PublicPage]
 	#[NoCSRFRequired]

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
 use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
+use OCA\Portaliq\Service\Mail\MailSite;
 use OCA\Portaliq\Service\PortalDeepLinkBuilder;
 use OCA\Portaliq\Service\PortalOrganisationConfigService;
 use OCA\Portaliq\Service\PortalResolver;
@@ -303,7 +304,16 @@ class PortalIdentityMailerTest extends TestCase {
 			$this->mailed['languages'][] = (string)$lang;
 			$l10n = $this->createMock(IL10N::class);
 			$l10n->method('t')->willReturnCallback(static fn (string $text, $parameters = []): string => vsprintf($text, (array)$parameters));
-			$l10n->method('l')->willReturnCallback(static fn (string $type, $value): string => $value->format('j F Y'));
+			// As Nextcloud's L10N::l(): only a mutable \DateTime is read as a moment.
+			$l10n->method('l')->willReturnCallback(
+				static function (string $type, $value): string {
+					if ($value instanceof \DateTime) {
+						return $value->format('j F Y');
+					}
+
+					return gmdate('j F Y', (int)$value);
+				}
+			);
 			return $l10n;
 		});
 
@@ -346,8 +356,7 @@ class PortalIdentityMailerTest extends TestCase {
 			mailer: $imailer,
 			l10nFactory: $factory,
 			deepLinks: new PortalDeepLinkBuilder($urls),
-			portals: $portals,
-			organisations: $organisations,
+			site: new MailSite(portals: $portals, organisations: $organisations),
 			logger: $logger
 		);
 	}//end mailer()

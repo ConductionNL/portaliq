@@ -13,14 +13,14 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-be-cookieless-unless-the-portal-persists-a-client-id
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-be-cookieless-unless-the-portal-persists-a-client-id
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
 
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\IAppConfig;
 
@@ -36,7 +36,7 @@ use OCP\IAppConfig;
  *
  * Portal is in the hash so the same browser on two portals is two visitors.
  *
- * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-be-cookieless-unless-the-portal-persists-a-client-id
+ * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-be-cookieless-unless-the-portal-persists-a-client-id
  */
 class VisitorHasher {
 
@@ -67,7 +67,7 @@ class VisitorHasher {
 	 *
 	 * @return string A 64-character hex digest.
 	 *
-	 * @spec openspec/changes/portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-be-cookieless-unless-the-portal-persists-a-client-id
+	 * @spec openspec/changes/archive/2026-11-04-portal-traffic-analytics/specs/portal-traffic-analytics/spec.md#requirement-measurement-must-be-cookieless-unless-the-portal-persists-a-client-id
 	 */
 	public function hash(string $portal, array $parts): string {
 		return hash('sha256', implode('|', array_merge([$this->salt(), $portal], $parts)));
@@ -80,21 +80,21 @@ class VisitorHasher {
 	 */
 	private function salt(): string {
 		$today = self::SALT_PREFIX . gmdate('Ymd', $this->time->getTime());
-		$existing = $this->config->getValueString(Application::APP_ID, $today, '');
+		$existing = $this->config->getValueString(AppIdentity::APP_ID, $today, '');
 		if ($existing !== '') {
 			return $existing;
 		}
 
 		// Rotation IS deletion. The old salt is not archived anywhere; that
 		// is what makes yesterday's hashes unrecomputable today.
-		foreach ($this->config->getKeys(Application::APP_ID) as $key) {
+		foreach ($this->config->getKeys(AppIdentity::APP_ID) as $key) {
 			if (str_starts_with($key, self::SALT_PREFIX) === true && $key !== $today) {
-				$this->config->deleteKey(Application::APP_ID, $key);
+				$this->config->deleteKey(AppIdentity::APP_ID, $key);
 			}
 		}
 
 		$salt = bin2hex(random_bytes(32));
-		$this->config->setValueString(Application::APP_ID, $today, $salt, false, true);
+		$this->config->setValueString(AppIdentity::APP_ID, $today, $salt, false, true);
 
 		return $salt;
 	}

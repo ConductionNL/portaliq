@@ -7,7 +7,7 @@
  * them: how many items are allowed, what a card is called and says, what is
  * missing, and what removing an item leaves.
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 
 /**
@@ -30,28 +30,44 @@ export const GROUP_WORDS = Object.freeze({
  *
  * @param {object} field The group field.
  * @return {{min: number, max: number, itemLabel: string, itemsLabel: string, addLabel: string}} The repeat settings; `max` 0 means no limit.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function repeatOf(field) {
 	const repeat = (field && field.repeat) || {}
-	const number = (value) => (Number.isInteger(value) && value > 0 ? value : 0)
-	const itemLabel =
-		typeof repeat.itemLabel === 'string' && repeat.itemLabel !== ''
-			? repeat.itemLabel
-			: GROUP_WORDS.item
+	const itemLabel = wordsOr(repeat.itemLabel, GROUP_WORDS.item)
 	return {
-		min: number(repeat.min) || (field && field.required === true ? 1 : 0),
-		max: number(repeat.max),
+		min: minimumOf(field, repeat),
+		max: positiveCount(repeat.max),
 		itemLabel,
-		itemsLabel:
-			typeof repeat.itemsLabel === 'string' && repeat.itemsLabel !== ''
-				? repeat.itemsLabel
-				: itemLabel,
-		addLabel:
-			typeof repeat.addLabel === 'string' && repeat.addLabel !== ''
-				? repeat.addLabel
-				: GROUP_WORDS.add,
+		itemsLabel: wordsOr(repeat.itemsLabel, itemLabel),
+		addLabel: wordsOr(repeat.addLabel, GROUP_WORDS.add),
 	}
+}
+
+/**
+ * @param {unknown} value A declared count.
+ * @return {number} The count when it is a whole number above zero, else 0.
+ */
+function positiveCount(value) {
+	return Number.isInteger(value) && value > 0 ? value : 0
+}
+
+/**
+ * @param {object|null} field The group field.
+ * @param {object} repeat Its `repeat`.
+ * @return {number} The declared minimum, else one for a required group, else 0.
+ */
+function minimumOf(field, repeat) {
+	return positiveCount(repeat.min) || (field && field.required === true ? 1 : 0)
+}
+
+/**
+ * @param {unknown} words A declared label.
+ * @param {string} fallback The label when none is declared.
+ * @return {string} The declared label, or the fallback.
+ */
+function wordsOr(words, fallback) {
+	return typeof words === 'string' && words !== '' ? words : fallback
 }
 
 /**
@@ -60,7 +76,7 @@ export function repeatOf(field) {
  * @param {object} field The group field.
  * @param {Array<object>} items The items so far.
  * @return {boolean} False once `repeat.max` items exist.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function canAdd(field, items) {
 	const { max } = repeatOf(field)
@@ -73,7 +89,7 @@ export function canAdd(field, items) {
  * @param {object} field The group field.
  * @param {number} index The item's place, from 0.
  * @return {string} For example "Bewoner 2".
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function itemTitle(field, index) {
 	return `${repeatOf(field).itemLabel} ${index + 1}`
@@ -86,7 +102,7 @@ export function itemTitle(field, index) {
  * @param {object} field The group field.
  * @param {object} item The item's answers.
  * @return {{first: string, rest: string}} The two lines; either may be empty.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function itemLines(field, item) {
 	const answers = (Array.isArray(field.fields) ? field.fields : [])
@@ -103,7 +119,7 @@ export function itemLines(field, item) {
  * @param {Array<object>} items The items so far.
  * @param {string} [template] The sentence, with `{n}` and `{item}`.
  * @return {string} The sentence, or ''.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function missingMessage(field, items, template = GROUP_WORDS.addMore) {
 	const repeat = repeatOf(field)
@@ -122,7 +138,7 @@ export function missingMessage(field, items, template = GROUP_WORDS.addMore) {
  * @param {Array<object>} items The items.
  * @param {number} index The item to remove.
  * @return {Array<object>} A new list without it.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function withoutItem(items, index) {
 	return (items || []).filter((_item, at) => at !== index)
@@ -135,7 +151,7 @@ export function withoutItem(items, index) {
  * @param {number} index The place of the changed item, or -1 for a new one.
  * @param {object} item The saved answers.
  * @return {Array<object>} A new list.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function withItem(items, index, item) {
 	const list = [...(items || [])]
@@ -154,19 +170,25 @@ export function withItem(items, index, item) {
  * @param {object} item The item's answers.
  * @param {string} [template] The message, with `{field}`.
  * @return {Record<string, string>} The message per sub-field.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function itemErrors(field, item, template = GROUP_WORDS.required) {
 	const errors = {}
 	for (const sub of Array.isArray(field.fields) ? field.fields : []) {
-		if (
-			sub.required === true
-			&& String((item || {})[sub.name] ?? '').trim() === ''
-		) {
+		if (isLeftEmpty(sub, item)) {
 			errors[sub.name] = template.split('{field}').join(sub.label || sub.name)
 		}
 	}
 	return errors
+}
+
+/**
+ * @param {object} sub A sub-field.
+ * @param {object|null} item The item's answers.
+ * @return {boolean} Whether it is required and the item leaves it empty.
+ */
+function isLeftEmpty(sub, item) {
+	return sub.required === true && String((item || {})[sub.name] ?? '').trim() === ''
 }
 
 /**
@@ -177,24 +199,35 @@ export function itemErrors(field, item, template = GROUP_WORDS.required) {
  * @param {Record<string, any>} values The values per field name.
  * @param {{addMore?: string, tooMany?: string}} [words] The sentences.
  * @return {Record<string, string>} The message per group.
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t02
  */
 export function groupCountErrors(fields, values, words = GROUP_WORDS) {
 	const errors = {}
 	for (const field of Array.isArray(fields) ? fields : []) {
-		if (!field || field.type !== 'group') {
-			continue
-		}
-		const items = Array.isArray((values || {})[field.name])
-			? values[field.name]
-			: []
-		const missing = missingMessage(field, items, words.addMore)
-		const { max } = repeatOf(field)
-		if (missing !== '') {
-			errors[field.name] = missing
-		} else if (max > 0 && items.length > max) {
-			errors[field.name] = words.tooMany.split('{n}').join(String(max))
+		const message = field && field.type === 'group' ? countError(field, { values, words }) : ''
+		if (message !== '') {
+			errors[field.name] = message
 		}
 	}
 	return errors
+}
+
+/**
+ * A group's count error: too few items, or too many.
+ *
+ * @param {object} field The group field.
+ * @param {{values: Record<string, unknown>|null, words: {addMore: string, tooMany: string}}} check The values per field name and the sentences.
+ * @return {string} The message, or '' when the count is right.
+ */
+function countError(field, check) {
+	const value = (check.values || {})[field.name]
+	const items = Array.isArray(value) ? value : []
+	const missing = missingMessage(field, items, check.words.addMore)
+	if (missing !== '') {
+		return missing
+	}
+	const { max } = repeatOf(field)
+	return max > 0 && items.length > max
+		? check.words.tooMany.split('{n}').join(String(max))
+		: ''
 }

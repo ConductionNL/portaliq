@@ -120,6 +120,31 @@ const VERSION_PATTERNS = [
 	/(?<![\w$])DEXIE_VERSION\s*=\s*["']([0-9][0-9A-Za-z.+-]*)["']/g,
 ]
 
+// Production since dexie 4.4.7: the minifier hoists the version into a
+// variable, `var bn="4.4.7"`, and the property reads `semVer:bn`. Follow the
+// identifier to its string assignment. Same left boundary as above, so
+// `xbn="1.2.3"` does not count as `bn`.
+const SEMVER_IDENTIFIER = /(?<![\w$])semVer\s*[:=]\s*([A-Za-z_$][\w$]*)(?![\w$(.])/g
+
+/**
+ * The versions a chunk names through `semVer:<identifier>`, each read from
+ * that identifier's string assignment in the same chunk.
+ *
+ * @param {string} text The chunk.
+ * @return {string[]} The versions found.
+ */
+function versionsViaIdentifier(text) {
+	const found = []
+	for (const m of text.matchAll(SEMVER_IDENTIFIER)) {
+		const name = m[1].replace(/\$/g, '\\$')
+		const assignment = new RegExp(`(?<![\\w$])${name}\\s*=\\s*["']([0-9][0-9A-Za-z.+-]*)["']`, 'g')
+		for (const a of text.matchAll(assignment)) {
+			found.push(a[1])
+		}
+	}
+	return found
+}
+
 if (!fs.existsSync(jsDir)) {
 	console.log(
 		'i dexie singleton: js/ not built yet, skipping (run npm run build first)',
@@ -168,6 +193,9 @@ for (const name of fs.readdirSync(jsDir).sort()) {
 		for (const m of text.matchAll(re)) {
 			versions.add(m[1])
 		}
+	}
+	for (const v of versionsViaIdentifier(text)) {
+		versions.add(v)
 	}
 	if (versions.size === 0) {
 		// A chunk carries Dexie's error string but no recognisable version

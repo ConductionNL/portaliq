@@ -189,6 +189,7 @@
 import axios from '@nextcloud/axios'
 import { translate } from '@nextcloud/l10n'
 import { NcButton, NcNoteCard } from '@nextcloud/vue'
+import { refusalKind } from './editorRefusal.js'
 import {
 	buildPageTree,
 	canDeletePage,
@@ -341,20 +342,20 @@ export default {
 		 * @spec openspec/specs/portal-in-place-editing/spec.md#requirement-pages-must-form-a-tree-an-editor-manages-from-the-portal-req-pie-010
 		 */
 		messageFor(error) {
-			if (isConflict(error)) {
+			const kind = refusalKind(error)
+			if (kind === 'conflict') {
 				return this.t(
 					'portaliq',
 					'Someone else changed this page in the meantime, so nothing was saved. The list now shows their version: try again.',
 				)
 			}
-			const status = error?.response?.status
-			if (status === 401 || status === 403) {
+			if (kind === 'forbidden') {
 				return this.t(
 					'portaliq',
 					'You are not allowed to change the pages of this portal.',
 				)
 			}
-			if (!error?.response && error?.message) {
+			if (kind === 'message') {
 				return this.t('portaliq', error.message)
 			}
 			return this.t('portaliq', 'That did not work. Nothing was changed.')

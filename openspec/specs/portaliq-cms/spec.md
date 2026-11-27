@@ -5,7 +5,7 @@
 **OpenSpec changes**:
 
 - [portal-cms-content-model](../../changes/archive/2026-10-09-portal-cms-content-model/) _(archived 2026-10-09)_
-- [portal-scoping-and-auth](../../changes/portal-scoping-and-auth/)
+- [portal-scoping-and-auth](../../changes/archive/2026-11-22-portal-scoping-and-auth/) _(archived 2026-11-22)_
 - [portal-headless-content-api](../../changes/portal-headless-content-api/)
 - [portal-shared-runtime](../../changes/portal-shared-runtime/)
 - [contribution-landing-page-action](../../changes/contribution-landing-page-action/)
@@ -46,6 +46,7 @@ the date, rig and test counts above are not retroactively theirs.
 | A page body is a grid or markdown | implemented |
 | Unpublished content is indistinguishable from absent | implemented |
 | Reads are cached, keyed by audience | implemented, with event-driven invalidation |
+| Content is served in the requested language | implemented in the content API (#703), unit-tested; the built-in renderer does not yet send a chosen language |
 | Markdown does not execute at a public origin | implemented |
 | Only explicitly public widgets render | implemented — via a local allow-list until nc-vue's registry carries `public` |
 | The renderer does not depend on Nextcloud globals | implemented |
@@ -214,6 +215,50 @@ invalidated on a content write, not by expiry alone.
 - **WHEN** a page is created at that route
 - **THEN** the next request serves it, without waiting for a TTL
 - @e2e `tests/e2e/site-security.spec.ts` (S8b)
+
+### Requirement: Content MUST be served in the language the visitor asked for
+
+A portal declares the `locales` it publishes in; the first is its default. A
+request's locale SHALL be resolved against that list, and an unknown or absent
+one SHALL become the default. A translation is a second content row with the
+same identity and another `locale`; a row without a `locale` is written for
+every language.
+
+One page SHALL be served per route: the page in the requested locale; failing
+that the page in the portal's default locale; failing that a page without a
+locale; and only then whichever page the route has, so a page that exists in
+some language is never answered as absent. The page list SHALL name each route
+once, in the language a read of that route would serve.
+
+Menus and glossary terms SHALL be translated as a set: the rows in the
+requested locale when it has any, otherwise the rows in the default locale,
+and in both cases every row without a locale. The cached response SHALL stay
+keyed by the requested locale, so one language's content never fills
+another's cache slot.
+
+#### Scenario: Two pages at one route each serve their own language
+
+- **GIVEN** a portal with `locales: ["nl", "en"]` and two published pages at
+  `/over-ons`, one `nl` and one `en`
+- **WHEN** the page is requested with `locale=en` and with `locale=nl`
+- **THEN** each request is served the page in its own language
+- **AND** each is cached under its own locale's key
+- @e2e exclude unit-tested — `tests/Unit/Service/CmsReaderTest.php::testEachLocaleGetsItsOwnPageAtTheSameRoute` and `::testEachLocalesPageIsCachedUnderItsOwnKey`; the built-in renderer does not yet send a chosen language, so no browser path reaches the English page
+
+#### Scenario: A language without a translation gets the default
+
+- **GIVEN** a route with a Dutch and an English page, the English one stored first
+- **WHEN** the page is requested in a locale that has no page there
+- **THEN** the Dutch page, in the portal's default locale, is served
+- @e2e exclude unit-tested — `tests/Unit/Service/CmsReaderTest.php::testAnUntranslatedLocaleIsServedThePortalsDefault`
+
+#### Scenario: Content from before a second language keeps being served
+
+- **GIVEN** a page, a menu and a glossary term stored without a `locale`
+- **WHEN** a translation of the page is added in `en`
+- **THEN** the unmarked page is still served in Dutch and the translation in English
+- **AND** the unmarked menu and term are served in both languages
+- @e2e exclude unit-tested — `tests/Unit/Service/CmsReaderTest.php::testAPageWithoutALocaleIsStillServed`, `::testMenusAreServedInTheRequestedLanguage` and `::testGlossaryTermsAreServedInTheRequestedLanguage`
 
 ### Requirement: Markdown MUST NOT execute at a public origin
 
@@ -545,21 +590,22 @@ When `consentRequired` is false, no consent record SHALL be written.
 - **WHEN** staff open it
 - **THEN** the answer SHALL be 422 `no_consent_statement`
 
-### Requirement: Where photos are taken, the roster MUST show each child's photo consent
+### Requirement: Where photos are taken, a guardian's own sign-ups MUST carry the child's photo consent
 
 `activityOffer` SHALL carry `photosTaken` (boolean). When it is true, every
-entry in the staff roster and in the guardian's own `mySignups` SHALL carry
-`photoConsent`, read through `GuardianAudienceFixtureReader::photoConsentGranted()`
-for the signing guardian and child (purpose `news`, the channel school photos
-are shared through). An absent consent entry SHALL read as false. When
-`photosTaken` is false, `photoConsent` SHALL be absent.
+entry in the guardian's own `mySignups` SHALL carry `photoConsent`, read through
+`GuardianAudienceFixtureReader::photoConsentGranted()` for the signing guardian
+and child (purpose `news`). An absent consent entry SHALL read as false. When
+`photosTaken` is false, `photoConsent` SHALL be absent. The staff roster with
+each child's photo consent is specified in learniq, change
+`school-activities-staff-side`, on board `learniq/LqActiviteiten` (decision 286).
 
-#### Scenario: The supervisor sees who may not be photographed
+#### Scenario: A guardian sees the photo consent on their own sign-up
 @e2e exclude {needs guardian consent fixtures on a live instance; asserted in tests/Unit/Service/ActivityRosterTest.php::testTheRosterShowsPhotoConsentWherePhotosAreTaken}
 
-- **GIVEN** an activity with `photosTaken: true` and two confirmed children, one with photo consent on file and one without
-- **WHEN** staff read the roster
-- **THEN** the first SHALL carry `photoConsent: true` and the second `photoConsent: false`
+- **GIVEN** an activity with `photosTaken: true` and a guardian's confirmed child without photo consent on file
+- **WHEN** the guardian reads their own sign-ups
+- **THEN** that sign-up SHALL carry `photoConsent: false`
 
 ### Requirement: An event is authored per school, group or child, with guardian RSVP
 
@@ -622,7 +668,7 @@ limits").
   `EventSignupServiceTest::testASignupIsRefusedOnceTheRoleIsFull`, asserting
   the write is never attempted; no UI surface
 
-### Requirement: A term-long activity MUST be offered with places set by capacity and supervision
+### Requirement: A term-long activity MUST be offered to guardians with the places staff set in learniq
 
 An `activityOffer` schema (register `portaliq`) SHALL carry `title`, `kind`
 (`club`, `sport`, `culture`, `trip`, `course`, `other`), the `target` shape
@@ -630,25 +676,18 @@ An `activityOffer` schema (register `portaliq`) SHALL carry `title`, `kind`
 `capacity` (at least 1), `waitlistEnabled`, `sessions[]` (`{id, start, end?,
 location?}`), `supervisorRefs[]`, `childrenPerSupervisor`, `paymentRequested`
 and `status` (`draft`, `open`, `closed`). It SHALL NOT carry an amount; a place
-that costs money SHALL be paid through a shillinq payment request (D19). The
-places of an activity SHALL be the lower of `capacity` and the number of
-distinct supervisors times `childrenPerSupervisor` (capacity alone when
-`childrenPerSupervisor` is 0 or absent). Staff SHALL NOT be able to open an
-activity that has no place.
+that costs money SHALL be paid through a shillinq payment request (D19). How
+staff set the places by capacity and supervision, and refuse to open an
+activity without a place, is specified in learniq, change
+`school-activities-staff-side`, on board `learniq/LqActiviteiten` (decision 286).
+Portaliq SHALL offer a guardian only the places that rule gives.
 
-#### Scenario: Supervision caps the places
+#### Scenario: A guardian is offered the places supervision allows
 @e2e exclude {a derived number on the server; asserted in tests/Unit/Service/ActivitySignupServiceTest.php::testPlacesAreTheLowerOfCapacityAndSupervision}
 
-- **GIVEN** an activity with `capacity: 20`, two supervisors and `childrenPerSupervisor: 8`
-- **WHEN** its places are computed
-- **THEN** the activity SHALL have 16 places
-
-#### Scenario: An activity without enough supervision does not open
-@e2e exclude {staff API refusal with no screen in this change; asserted in tests/Unit/Controller/ActivityControllerTest.php::testOpenRefusesAnActivityWithNoPlace}
-
-- **GIVEN** a draft activity with `childrenPerSupervisor: 8` and no supervisors
-- **WHEN** staff open it
-- **THEN** the answer SHALL be 422 `no_places` and the activity SHALL stay a draft
+- **GIVEN** an open activity with `capacity: 20`, two supervisors and `childrenPerSupervisor: 8`
+- **WHEN** a guardian in its audience reads it
+- **THEN** the activity SHALL offer 16 places
 
 ### Requirement: A guardian MUST be able to sign up one of their own children, with a waiting list when full
 
@@ -701,27 +740,19 @@ children.
 - **WHEN** staff set two supervisors
 - **THEN** two waitlisted children SHALL be confirmed in sign-up order
 
-### Requirement: Staff MUST be able to mark attendance per session
+### Requirement: Attendance per session MUST be marked on learniq's staff side
 
-Staff SHALL be able to mark a child `present`, `absent` or `excused` for one of
-the activity's declared sessions, only for a child with a confirmed place. A
-second mark for the same session and child SHALL update the first. An unknown
-session, a child without a confirmed place and an unknown status SHALL each be
-refused with 422 and nothing written.
+Marking a child present, absent or excused for an activity's session SHALL be
+specified in learniq, change `school-activities-staff-side`, on board
+`learniq/LqActiviteiten` (decision 286). The attendance rows SHALL refer to the
+portaliq `activityOffer` and its sign-ups.
 
-#### Scenario: A second mark corrects the first
-@e2e exclude {an upsert invariant on stored rows; asserted in tests/Unit/Service/ActivityAttendanceServiceTest.php::testASecondMarkUpdatesTheFirst}
+#### Scenario: A supervisor takes the activity register in learniq
+@e2e exclude {an ownership reference; the behaviour is specified and tested in learniq's school-activities-staff-side change}
 
-- **GIVEN** a child marked `absent` for session `week-3`
-- **WHEN** staff mark the same child `present` for `week-3`
-- **THEN** exactly one attendance row SHALL exist for that child and session, reading `present`
-
-#### Scenario: A waitlisted child cannot be marked present
-@e2e exclude {a refusal on the staff API; asserted in tests/Unit/Service/ActivityAttendanceServiceTest.php::testOnlyAConfirmedChildInADeclaredSessionIsMarked}
-
-- **GIVEN** a waitlisted child
-- **WHEN** staff mark that child present
-- **THEN** the answer SHALL be 422 `not_confirmed` and nothing SHALL be written
+- **GIVEN** a supervisor of an open activity
+- **WHEN** they take the register for a session
+- **THEN** they SHALL do so on learniq's Activiteiten page
 
 ### Requirement: Staff MUST be able to raise the contribution for an activity's confirmed places, and portaliq MUST write the reference
 
@@ -846,28 +877,29 @@ Publishing a news item MUST set `publishedAt` to the server's current time, neve
 
 ### Requirement: The header must never name a person by a number
 
-The site header MUST name a signed-in resident by their portal account's display name. A display name equal to the subject reference or to the account's identity number, or made of digits only (a BSN, a KvK number), MUST NOT be served by the session endpoint nor shown by the site: the line then reads "Ingelogd" ("Logged in"). Which name an account carries is set by provisioning or the broker, not by this rule.
+The site header MUST name a signed-in resident by their portal account's display name. A display name equal to the subject reference or to the account's identity number, or made of digits only (a BSN, a KvK number), MUST NOT be served by the session endpoint nor shown by the site: the account pill then shows a person icon and "Ingelogd". Which name an account carries is set by provisioning or the broker, not by this rule.
 
 #### Scenario: A BSN stored as the display name
 - GIVEN a portal account whose `displayName` is `999993653`, its identity number
 - WHEN the resident signs in on the site
-- THEN the session's `displayName` is empty and the header reads "Ingelogd"
+- THEN the session's `displayName` is empty and the account pill reads "Ingelogd"
 - @e2e exclude pinned by `SessionControllerTest::testIndexNamesThePersonNeverTheReference` and `tests/site-signed-in-shell.spec.mjs` ("the header says who is signed in")
 
 ### Requirement: The header must name the signed-in person, never their reference
 
-The session endpoint MUST answer the portal account's display name as `displayName`, and MUST answer `''` when the account has none or when the value equals the subject reference. The site header MUST show "Logged in as {name}" with that name, and "Logged in" when no name is known. The header MUST NOT show the subject reference.
+The session endpoint MUST answer the portal account's display name as `displayName`, and MUST answer `''` when the account has none or when the value equals the subject reference. The site header MUST show an account pill with the initials and that name, linking to the own area, and "Ingelogd" when no name is known. The pill's accessible name MUST read "Ingelogd als {name}, naar {own area}", or "Ingelogd, naar {own area}" without a name. The header MUST NOT show the subject reference.
 
 #### Scenario: A parent with a name on her account
 - GIVEN Fatima Hulstkamp's portal account carries the display name "Fatima Hulstkamp"
 - WHEN she signs in on the Dutch parent portal
-- THEN the header reads "Ingelogd als Fatima Hulstkamp"
+- THEN the account pill shows "Fatima Hulstkamp" with her initials
+- AND its accessible name reads "Ingelogd als Fatima Hulstkamp, naar Mijn Wilgenboom"
 - @e2e exclude pinned by `tests/site-signed-in-shell.spec.mjs` and `SessionControllerTest::testIndexNamesThePersonNeverTheReference`; live-checked on the primary-school instance
 
 #### Scenario: An account without a name
 - GIVEN a portal account without a display name
 - WHEN its holder signs in
-- THEN the header reads "Ingelogd" and shows no reference
+- THEN the account pill reads "Ingelogd" and shows no reference
 - @e2e exclude pinned by `tests/site-signed-in-shell.spec.mjs`
 
 ### Requirement: A menu block must show the portal's navigation in groups
@@ -895,7 +927,7 @@ When the CMS page on screen carries a `siteNavigation` block in its side region 
 #### Scenario: The header without its menu
 - GIVEN a page with the block in its side region
 - WHEN it renders
-- THEN the header shows no menu links and still shows "Ingelogd als ..." and the sign-out button
+- THEN the header shows no menu links and still shows the account pill and "Uitloggen"
 - @e2e exclude pinned by `tests/site-navigation.spec.mjs` (header rendered with and without its menu); live-checked on the primary-school instance
 
 ### Requirement: Staff write, change and publish news on a News screen
@@ -1168,6 +1200,130 @@ serve the `woo` bundle, and those URLs SHALL keep answering until the change
 - AND no byte of that directory is returned
 - @e2e exclude pinned by `tests/Unit/Controller/BundledSiteControllerTest.php`
 
+### Requirement: The sign-in card does not invite a signed-in visitor to sign in
+The `nlSignIn` widget shown as a card MUST show its `intro` only to a visitor who is not signed in. To a signed-in visitor it MUST show `signedInIntro` when the placement wrote one, and no intro otherwise.
+
+#### Scenario: A resident opens a publication
+@e2e exclude Node: tests/site-school-blocks.spec.mjs
+- GIVEN a card with the intro "Log in om deze publicatie in uw eigen dossier te bewaren." and no `signedInIntro`
+- WHEN a signed-in visitor sees it
+- THEN the card MUST show no intro, and its button MUST lead to the visitor's own area
+
+#### Scenario: The page wrote a text for a signed-in visitor
+@e2e exclude Node: tests/site-school-blocks.spec.mjs
+- GIVEN a card with a `signedInIntro`
+- WHEN a signed-in visitor sees it
+- THEN the card MUST show that text instead of the intro
+
+### Requirement: A page may give its aside a fixed width
+
+A grid page body MAY declare `aside` with a `width` (160 to 640 pixels) and a `gap` (0 to 160, default 48). The site MUST draw such a run as a main column taking the rest of the width and an aside of that width: a run with a widget starting at the left edge narrower than the page, a widget ending at the right edge, and otherwise only full-width widgets. A full-width widget MUST span both columns. Any other run, a page without `aside`, and a phone-width screen MUST lay out as before.
+
+#### Scenario: Zuiddrecht Home
+@e2e exclude Unit test in node: tests/site-grid.spec.mjs; PHPUnit CmsReaderTest
+- GIVEN the Zuiddrecht Home declares `aside: {width: 340, gap: 56}`
+- WHEN the page is drawn on a wide screen
+- THEN "Mijn Zuiddrecht" and "Openbare informatie" are 340px wide beside the news, 56px apart
+
+#### Scenario: A page without an aside
+@e2e exclude Unit test in node: tests/site-grid.spec.mjs
+- GIVEN a grid page that declares no `aside`
+- WHEN it is drawn
+- THEN every run uses the 12-column grid as before
+
+### Requirement: The page answer carries the page's help text
+
+The content API's page answer (`GET /api/content/page`) SHALL carry `helpText`: the page's help text, trimmed and capped
+as the pages list serves it, or an empty string when the page has none.
+
+#### Scenario: PtStemgedrag
+
+- **GIVEN** the published page "Hoe stemden de raadsleden" with a help text
+- **WHEN** the site asks for that page
+- **THEN** the answer carries the help text, and the page shows "Hulp bij deze pagina"
+
+### Requirement: A portal's minimum trust gates its content reads (REQ-CRG-004)
+
+When a portal declares `authentication.minTrust` above `low`, every content read for that portal that is not marked public SHALL compare the session's trust with it before it reads a page, and SHALL refuse a caller without a session or with a lower trust. The refusal SHALL carry no page body.
+
+#### Scenario: An anonymous caller on a DigiD portal
+- **GIVEN** a portal with `minTrust: substantial` and a published page `/mijn-regelingen`
+- **WHEN** a caller without a session requests that page through the content API
+- **THEN** the answer carries no page body and says the trust is insufficient
+- @e2e exclude refusal path with no UI surface. Covered by `ContentControllerTest::testAPrivatePortalServesNoContentAnonymously` and `ContentControllerTest::testASessionBelowTheTrustFloorIsRefusedAsForbidden` (403 `insufficient_trust`, no body).
+
+#### Scenario: A resident signed in at substantial
+- **WHEN** a resident whose session trust is `substantial` requests the same page
+- **THEN** the page is returned
+- @e2e exclude needs a substantial-trust session on CI. Covered by `ContentControllerTest::testASessionMeetingTheTrustFloorIsServed`.
+
+### Requirement: The glossary and the contributed services are blocks an editor places (REQ-CRG-006)
+
+The widget grid SHALL offer a `glossary` block and a `contributions` block that an editor places on any page. The host SHALL fetch the portal's own glossary terms, sorted alphabetically, for the glossary block, and the anonymous contributions aggregate for the contributions block. No route SHALL show either section unless a page places its block. A contributing app that fails SHALL leave the other entries of the contributions block in place.
+
+#### Scenario: An editor adds the glossary to a page
+- **GIVEN** a portal with the terms "Bestemmingsplan" and "Aanslag"
+- **WHEN** an editor places the glossary block on the page `/begrippen` and publishes it
+- **THEN** a visitor of `/begrippen` sees "Aanslag" before "Bestemmingsplan", and a page without the block shows no glossary
+- Covered end to end by `tests/e2e/site-content.spec.ts` ("S1b: the glossary is reachable and rendered", anchored with `@e2e`); the order is pinned by `CmsReaderTest::testGlossaryTermsAreAlphabetical`.
+
+#### Scenario: The home page lists the services
+- **GIVEN** two apps that contribute public services, one of which throws
+- **WHEN** a visitor opens a home page that places the contributions block
+- **THEN** the block lists the services of the app that answered
+- Covered end to end by `tests/e2e/site-content.spec.ts` ("S19: contributed surfaces reach the portal over the public contract", anchored with `@e2e`); a throwing contributor is `ContentControllerTest::testAThrowingRegistryDegradesToAnEmptyList` and the portal scope `ContentControllerTest::testContributionsAreAnonymousAndScopedToThePortal`.
+
+### Requirement: Header, footer and legal menus follow one position field (REQ-CRG-007)
+
+A portal's menu with `position` 0 SHALL render in the header. Every other menu SHALL render as a footer column, in position order. When the portal has two or more footer menus, the one with the highest position, at 2 or above, SHALL render as the legal strip under the footer instead. A portal with one footer menu SHALL keep it as a column. Each menu SHALL show one level of children, in their order.
+
+#### Scenario: Three footer menus
+- **GIVEN** menus at positions 0, 1, 2 and 3
+- **WHEN** a page renders
+- **THEN** the header shows menu 0, the footer shows menus 1 and 2 as columns, and menu 3 is the legal strip
+- @e2e exclude a pure split of the menu list. Covered by `tests/site-shell-blocks.spec.mjs` ("menus split by position: 0 header, 1 footer column, 2 or higher the legal strip"); one level of children by `CmsReaderTest::testMenusAreOrderedAndTruncatedToTwoLevels`.
+
+#### Scenario: One footer menu
+- **GIVEN** menus at positions 0 and 2
+- **WHEN** a page renders
+- **THEN** menu 2 is a footer column and there is no legal strip
+- @e2e exclude same split. `tests/site-shell-blocks.spec.mjs` asserts no legal strip for a list without a second footer menu (`subFooterMenuOf(MENUS.slice(0, 2))`); the exact 0-and-2 case has no test of its own yet.
+
+### Requirement: The site fits a phone without scrolling sideways (REQ-CRG-008)
+
+At a phone width of 360 pixels the site SHALL NOT scroll horizontally on any page, and the widgets of a grid row SHALL stack in one column instead of narrowing side by side.
+
+#### Scenario: The home page on a phone
+- **GIVEN** a home page with three widgets in one grid row
+- **WHEN** a visitor opens it at 360 pixels wide
+- **THEN** the page is no wider than the screen and the three widgets are stacked
+- Covered end to end by `tests/e2e/site-accessibility.spec.ts` ("S16: a phone viewport does not scroll horizontally" and "S16b: grid widgets stack instead of squeezing on a phone", anchored with `@e2e`).
+
+### Requirement: Publishing a page is the act that makes it public, and the editor is told so
+
+A new page SHALL start as a draft. Publishing SHALL be the only act that makes a page readable at its portal's public address without signing in. Before it publishes, the Publish control in the page designer and in the site edit mode SHALL say that anyone can read the page without signing in, name the address it will be served at, and ask the editor to confirm. The page list SHALL show for each page whether anyone can read it or it is a draft. Taking a published page back to draft SHALL make its route answer exactly as a route that does not exist.
+
+#### Scenario: An editor publishes a page and is told who can read it
+- **GIVEN** a draft page `Afval en milieu` at `/afval` in the portal `Zuiddrecht`
+- **WHEN** the editor chooses Publish
+- **THEN** a confirmation says "Iedereen kan deze pagina lezen, zonder in te loggen" and names the page's public address
+- **AND** after the editor confirms, a visitor who is not signed in reads the page at `/afval`
+- **AND** the page list shows `Afval en milieu` as public
+- @e2e exclude {specified only; task 1.3 adds the e2e}
+
+#### Scenario: An editor who does not confirm leaves the page private
+- **GIVEN** the same draft page
+- **WHEN** the editor chooses Publish and then cancels the confirmation
+- **THEN** the page stays a draft and `/afval` answers as a route that does not exist
+- @e2e exclude {specified only; task 1.3 adds the e2e}
+
+#### Scenario: An editor takes a public page back
+- **GIVEN** the published page `Afval en milieu`
+- **WHEN** the editor takes it back to draft
+- **THEN** `/afval` answers with the same status and body as a route that never existed
+- **AND** the page list shows it as a draft
+- @e2e exclude {specified only; task 1.3 adds the e2e}
+
 ## Notes
 
 - The "A page may carry a hero image reference" and "A public page may embed
@@ -1175,3 +1331,395 @@ serve the `woo` bundle, and those URLs SHALL keep answering until the change
   `contribution-landing-page-action` change (delta:
   `openspec/changes/contribution-landing-page-action/specs/portaliq-cms/spec.md`);
   same sync discipline until that change archives.
+
+### Requirement: The site MUST link the theme app's public bridge before a resolved token set (REQ-STB-001)
+
+When the serving portal's theme resolves to a token set, the site MUST link the theme app's `css/public-bridge.css` directly before that set. The bridge MUST load after the vendored NLDS sheets and `css/site-theme.css`, so a vendored `:root` default cannot override it. When no set resolves, the site MUST NOT link the bridge. When the installed theme app has no `css/public-bridge.css`, the site MUST NOT emit a link for it.
+
+#### Scenario: A Den Haag portal wears Den Haag colours
+- GIVEN a portal whose `theme` is `denhaag`
+- AND the `denhaag` set declares `--nldesign-color-primary` and no `--utrecht-*` token
+- WHEN a visitor opens the portal's home page
+- THEN the computed `--utrecht-document-color` equals the set's `--nldesign-color-text`
+- AND the header bar's computed background is not the vendored white
+
+#### Scenario: The bridge sits between the vendored sheets and the set
+- GIVEN a portal on a resolvable set
+- WHEN the site template renders
+- THEN `public-bridge.css` is linked after `nlds-app.css` and `site-theme.css`
+- AND it is linked directly before the set's stylesheet
+
+#### Scenario: A set with its own component roles keeps them
+- GIVEN a portal on the `vng` set, which declares `--utrecht-*` roles
+- WHEN the site renders with the bridge linked
+- THEN each `--utrecht-*` role the set declares computes to the set's value
+
+#### Scenario: No theme, no bridge
+- GIVEN a portal whose theme names no catalogued set
+- WHEN the site template renders
+- THEN neither a token set nor `public-bridge.css` is linked
+
+#### Scenario: A theme app without the bridge file
+- GIVEN the installed theme app has no `css/public-bridge.css`
+- WHEN a portal on a resolvable set renders
+- THEN the set is linked and no link to `public-bridge.css` is emitted
+
+### Requirement: The site MUST link the faces the theme app bundles (REQ-STB-002)
+
+When the serving portal's theme resolves to a set and the installed theme app ships `css/fonts.css`, the site MUST link that stylesheet from the theme app, so a family the set names through `--nldesign-font-family` is declared on the page. It MUST be linked after this app's own font stylesheets and before the theme app's uploaded-font stylesheet and the token set. It MUST NOT be linked when the theme app ships no such file or when no set resolves. The stylesheet and the font files it names MUST be readable by a signed-out visitor.
+
+#### Scenario: The example gemeente is drawn in Source Sans 3
+- GIVEN a portal on the example gemeente set, which names "Source Sans 3"
+- AND the theme app ships `css/fonts.css` declaring Source Sans 3 with `fonts/source-sans-3-latin-*.woff2`
+- WHEN a signed-out visitor opens the portal's home page
+- THEN the theme app's `css/fonts.css` is linked
+- AND headings and body text render in Source Sans 3, not the fallback
+
+#### Scenario: Order of the font stylesheets
+- GIVEN a portal on a resolvable set whose theme app ships `css/fonts.css`
+- WHEN the site template renders
+- THEN `fonts.css` is linked after `nlds-fonts.css` and before the uploaded-font stylesheet and the set
+
+#### Scenario: No bundled faces, no link
+- GIVEN the installed theme app has no `css/fonts.css`, or the portal's theme does not resolve
+- WHEN the site template renders
+- THEN no link to the theme app's `css/fonts.css` is emitted
+
+### Requirement: The product measures its own pages on this instance (REQ-SAS-001)
+
+The portal admin SHALL offer "Measure accessibility". It SHALL load the portal's home page, search
+page, one publication page, the not-found page and every page the administrator added to the list,
+each in a frame in the administrator's browser, run axe-core with the tags wcag2a, wcag2aa, wcag21a,
+wcag21aa and wcag22aa on the site root, and post the result to POST
+`/api/portals/{portal}/accessibility/measurements`. The server SHALL store an
+`accessibilityMeasurement` with `portal`, `measuredAt`, `measuredBy`, `axeVersion`, `tags`, `theme`,
+and per page `{url, measured: bool, reason?, violations: list<{rule, impact, nodes, helpUrl}>}`. A
+page that could not be loaded or framed SHALL be stored with `measured: false` and the reason, and
+SHALL NOT count as passing. axe-core SHALL load as a lazy admin chunk and SHALL NOT enter the site
+entry.
+
+#### Scenario: A run is stored with its evidence
+- **GIVEN** an administrator on a portal using theme "vng"
+- **WHEN** they run "Measure accessibility"
+- **THEN** one measurement SHALL be stored with the axe version, the five tags, theme "vng" and a row per page
+
+#### Scenario: A page that cannot be framed is not a pass
+- **GIVEN** a page that refuses to be framed
+- **WHEN** the measurement runs
+- **THEN** that page SHALL be stored with `measured: false` and the reason, and the statement SHALL list it as not measured
+
+### Requirement: Each portal publishes a statement in the national model (REQ-SAS-002)
+
+Each portal SHALL serve a public page at `/toegankelijkheid`, linked from the site footer, with the
+sections of the national model: the organisation and the website, the status, the evidence, the
+known issues, and how to report a barrier. The known issues SHALL be generated from the latest
+measurement: per violated rule, a plain-language sentence, the impact and the number of pages. The
+page SHALL show the date of the measurement it rests on and SHALL be regenerated when a new
+measurement is stored. When the administrator recorded the register URL, the page SHALL link to it.
+A portal that publishes its own page at `/toegankelijkheid` SHALL show that authored page on the
+route instead; every portal without one SHALL keep the generated statement.
+
+#### Scenario: The statement follows the measurement
+- **GIVEN** a measurement with a `color-contrast` violation of impact serious on two pages
+- **WHEN** an anonymous visitor opens `/toegankelijkheid`
+- **THEN** the known issues SHALL name insufficient colour contrast, serious, on two pages, and the measurement date
+
+#### Scenario: A newer measurement updates it
+- **GIVEN** the statement above
+- **WHEN** a new measurement without violations is stored
+- **THEN** the statement SHALL no longer list the contrast issue and SHALL show the new date
+
+#### Scenario: An authored page takes the route
+- **GIVEN** a portal whose site publishes a page "Toegankelijkheidsverklaring" at `/toegankelijkheid`
+- **WHEN** a visitor opens `/toegankelijkheid`
+- **THEN** the site SHALL show that page with its own title and breadcrumb
+- **AND** on a portal without such a page the generated statement SHALL show
+
+### Requirement: The status never goes beyond the evidence (REQ-SAS-003)
+
+The statement's status SHALL be A or B only when the administrator recorded an audit with party,
+date, report link and result, and the status SHALL then be the audit's result. Without an audit, the
+status SHALL be at most C, and the statement SHALL say that the product's automated measurement does
+not establish compliance. An audit older than three years SHALL NOT support A or B, and the admin
+SHALL say so.
+
+#### Scenario: No audit, no full compliance claim
+- **GIVEN** a measurement with no violations and no audit recorded
+- **WHEN** the statement is generated
+- **THEN** the status SHALL NOT be A or B, and the statement SHALL say an automated check does not establish compliance
+
+#### Scenario: An audit supports B
+- **GIVEN** an audit recorded on 2026-06-01 by an independent party with result B and a report link
+- **WHEN** the statement is generated
+- **THEN** the status SHALL be B and the evidence SHALL name the party, the date and the report
+
+### Requirement: The portal's favicon, logo and hero image come from the media library (REQ-PIA-001)
+
+`#portal` SHALL declare `favicon` and `heroImage` as references to a `media` object of the same
+portal, and `logo` SHALL accept a `media` reference as well as the existing URL. The portal settings
+form SHALL let an administrator pick each from the media library or upload an image into it. A
+favicon SHALL be a PNG, SVG or ICO; anything else SHALL be refused with the accepted types named. A
+media reference that belongs to another portal SHALL be refused.
+
+#### Scenario: An administrator sets the three images
+- **GIVEN** an administrator on the portal settings form
+- **WHEN** they upload a favicon, pick a logo and pick a hero image from the media library, and save
+- **THEN** `#portal.favicon`, `#portal.logo` and `#portal.heroImage` SHALL each reference a `media` object of that portal
+
+#### Scenario: A JPEG is not a favicon
+- **GIVEN** the favicon picker
+- **WHEN** the administrator uploads a JPEG
+- **THEN** it SHALL be refused, naming PNG, SVG and ICO
+
+### Requirement: The site head and the hero use the portal's images (REQ-PIA-002)
+
+`templates/site.php` SHALL emit `<link rel="icon">` from `#portal.favicon`, then `#portal.logo`,
+then the theme's icon, then portaliq's own mark, the first that resolves. The URL SHALL be a public
+media URL that answers without a session. The hero block SHALL use `#portal.heroImage` when its own
+background image is empty.
+
+#### Scenario: The favicon is the portal's own
+- **GIVEN** a portal with a favicon and a different logo
+- **WHEN** an anonymous visitor loads any site page
+- **THEN** the head SHALL carry one `<link rel="icon">` pointing at the favicon's public URL, which answers 200 without a session
+
+#### Scenario: A hero without its own image uses the portal's
+- **GIVEN** a home page hero block with no background image, and a portal hero image
+- **WHEN** the page renders
+- **THEN** the hero SHALL show the portal's hero image
+
+### Requirement: The portal names its organisation type from TOOI (REQ-PIA-003)
+
+`#portal` SHALL declare `organisationType` (a TOOI organisation type URI) and
+`organisationTypeLabel`. The settings form SHALL offer the concepts of the TOOI organisation type
+scheme from OpenRegister's concept register and SHALL store the URI and the label picked. When the
+scheme is not in the concept register, the picker SHALL say so and offer nothing, and no free text
+SHALL be accepted. The site SHALL use the label wherever it names the organisation's kind: the
+signed-in area's "Van ..." line (with the Dutch article of the label: "het" for waterschap and
+ministerie, "de" otherwise), the footer, and `<meta name="DCTERMS.creator">`. A portal without an
+organisation type SHALL say "Van de organisatie".
+
+#### Scenario: A water authority is not called a municipality
+- **GIVEN** a portal with `organisationType` the TOOI concept for waterschap and label "waterschap"
+- **WHEN** a signed-in resident opens a message from the organisation
+- **THEN** it SHALL read "Van het waterschap" and nowhere "Van de gemeente"
+
+#### Scenario: No type set
+- **GIVEN** a portal without an organisation type
+- **WHEN** the same message is opened
+- **THEN** it SHALL read "Van de organisatie"
+
+### Requirement: An editor MUST be able to manage content without the API
+
+Portaliq SHALL provide admin surfaces to create, edit and publish `website`,
+`menu`, `page` and `glossaryTerm` objects, built on the shared manifest-driven
+admin components rather than hand-rolled views.
+
+#### Scenario: A site is created and published end to end
+@e2e tests/e2e/cms-admin.spec.ts "a site is checked, published, served and rendered"
+
+- **GIVEN** an administrator with no API client
+- **WHEN** they create a website, a menu, a markdown page and a glossary term
+  through the UI and publish them
+- **THEN** the public content API serves them and the site renders
+
+#### Scenario: The surfaces are the shared components
+@e2e tests/e2e/cms-admin.spec.ts "the four content surfaces are the shared index pages"
+
+- **WHEN** the admin views are inspected
+- **THEN** they use the existing index/detail components over OpenRegister
+  objects, and no parallel object store is introduced
+
+### Requirement: Publishing MUST refuse content that would render broken
+
+Publishing SHALL validate that every menu item's in-site link resolves to a
+page on the same website, and that a published website has a page at `/`.
+
+#### Scenario: A menu item pointing at nothing is refused
+@e2e exclude covered by CmsPublishValidatorTest
+
+- **GIVEN** a menu item linking to an in-site route with no page
+- **WHEN** the menu is published
+- **THEN** it is refused, naming the route
+- **AND** this is the exact defect the rig produced: `/begrippen` sat in the
+  menu with no page behind it, and the only symptom was a console 404 on a
+  page that otherwise looked correct
+
+#### Scenario: A drafted target is distinguished from a missing one
+@e2e exclude covered by CmsPublishValidatorTest
+
+- **GIVEN** a menu item pointing at a page that exists but is still a draft
+- **WHEN** the menu is published
+- **THEN** the editor is warned rather than blocked — an editorial workflow
+  routinely links to something not yet released, and refusing it would make
+  the validation the obstacle instead of the guard
+
+#### Scenario: A site with no root page is refused
+@e2e exclude covered by CmsPublishValidatorTest
+
+- **GIVEN** a website with no published page at `/`
+- **WHEN** it is published
+- **THEN** it is refused
+- **AND** this prevents a site that 404s on its own front door, which
+  `open-venray` currently does
+
+#### Scenario: Duplicate routes within a site are refused
+@e2e exclude covered by PageRouteClaimTest and PageRouteGuardListenerTest
+
+- **GIVEN** two pages on one website with the same route
+- **WHEN** the second is saved
+- **THEN** it is refused
+
+### Requirement: Domain verification MUST be triggerable from the UI
+
+The admin surface SHALL show the TXT record a tenant must publish, and allow
+verification to be run and re-run.
+
+#### Scenario: The record to publish is shown
+@e2e tests/e2e/cms-admin.spec.ts "a pending domain shows its record, and the check runs again without re-adding it"
+
+- **GIVEN** a pending domain
+- **WHEN** the administrator views it
+- **THEN** the exact record name and value are shown, copyable
+
+#### Scenario: Verification can be retried
+@e2e tests/e2e/cms-admin.spec.ts "a pending domain shows its record, and the check runs again without re-adding it"
+
+- **GIVEN** a verification that failed because DNS had not propagated
+- **WHEN** it is run again later
+- **THEN** it succeeds without re-adding the domain
+
+### Requirement: A site's theme MUST change its rendered appearance
+
+The renderer SHALL load the token set for the resolved site's themiq theme.
+Two sites referencing different themes SHALL render visibly differently.
+
+#### Scenario: Two themed sites compute different colours
+@e2e tests/e2e/site-theme.spec.ts "two sites on different themes compute different colours for the same element"
+
+- **GIVEN** two websites referencing different themiq themes
+- **WHEN** each is rendered and the SAME element is inspected
+- **THEN** its computed colour differs between them
+- **AND** the assertion is on the COMPUTED value, not on the class name, the
+  presence of a token file, or the API's theme string — all three of those
+  already pass while the sites render identically
+
+#### Scenario: The token actually resolves
+@e2e tests/e2e/site-theme.spec.ts "a theme token resolves, and not to the component fallback"
+
+- **GIVEN** a rendered themed page
+- **WHEN** a theme token is read from the root element
+- **THEN** it has a value
+- **AND** it is not the component's own hard-coded fallback
+
+#### Scenario: Only the active theme is loaded
+@e2e tests/e2e/site-theme.spec.ts "only the active theme's token set is fetched"
+
+- **GIVEN** a site rendering under one theme
+- **WHEN** the stylesheets it transferred are inspected
+- **THEN** no other site's token set was fetched
+
+### Requirement: An unresolvable theme MUST be obvious, not silently default
+
+A site whose theme reference does not resolve SHALL report the failure and
+SHALL NOT fall back to a plausible-looking default.
+
+#### Scenario: A missing theme names itself
+@e2e exclude the name is in the server log; covered by PortalThemeResolverTest::testAThemeThatDoesNotResolveIsReportedByName
+
+- **GIVEN** a website referencing a theme that does not exist
+- **WHEN** it is served
+- **THEN** the failure names the missing theme
+
+#### Scenario: The unstyled state is visibly unstyled
+@e2e tests/e2e/site-theme.spec.ts "a theme that does not resolve leaves the page visibly unthemed"
+
+- **GIVEN** a site whose token set fails to load
+- **WHEN** it renders
+- **THEN** it does not present as a correctly-branded page
+- **AND** this is the point: a page that quietly falls back to reasonable
+  colours is never reported, which is how the defect this change fixes
+  survived being looked at
+
+### Requirement: Markup MUST carry NL Design component classes
+
+Rendered components SHALL emit NL Design component classes. A React
+design-system package SHALL NOT be introduced.
+
+#### Scenario: The rendered DOM carries the classes
+@e2e tests/e2e/site-theme.spec.ts "the rendered heading, links, paragraphs and table carry NL Design classes"
+
+- **GIVEN** a rendered page under an active theme
+- **WHEN** its markup is inspected
+- **THEN** NL Design component classes are present on the heading, links,
+  paragraphs and table
+- **AND** the count is greater than zero — it is currently exactly zero
+
+#### Scenario: No React design-system dependency appears
+@e2e exclude a dependency-set property with no UI surface
+
+- **GIVEN** the dependency set after this change
+- **THEN** it contains no `*-react` design-system package
+
+### Requirement: Portaliq MUST declare its dependency on themiq
+
+`appinfo/info.xml` SHALL declare the theming app as a dependency, and a
+missing install SHALL be reported rather than rendered around.
+
+#### Scenario: The dependency is declared
+@e2e exclude app-info.xsd cannot declare an app dependency; appinfo/info.xml names thematiq in its dependencies comment (decision 25 Nov 2026)
+
+- **WHEN** `appinfo/info.xml` is inspected
+- **THEN** it names the theming app
+
+#### Scenario: A missing theming app is reported
+@e2e exclude the report is a server log line; covered by PortalThemeResolverTest::testAMissingThemeAppIsNamedAsTheCause
+
+- **GIVEN** an installation without it
+- **WHEN** a website is served
+- **THEN** the failure names the missing dependency
+
+### Requirement: The public site meets WCAG 2.1 AA on every page state it serves (REQ-PWA-001)
+
+Every page state the site serves an anonymous visitor SHALL pass axe-core (wcag2a, wcag2aa, wcag21a, wcag21aa) with no serious or critical violation, at least on a widget grid page, a markdown page, the not-found page, the search page with results and facets, and a publication detail page. Every control SHALL work by keyboard alone with a visible focus indicator, and at 320 CSS pixels wide no page SHALL scroll horizontally outside a table's own scroll container.
+
+#### Scenario: The search page with facets
+- **GIVEN** a portal whose search page shows results from two catalogues with facet checkboxes and a sort select
+- **WHEN** axe-core checks the page against the WCAG 2.1 AA tags
+- **THEN** it reports no serious or critical violation
+- e2e: `tests/e2e/site-accessibility.spec.ts`
+
+#### Scenario: A publication by keyboard
+- **GIVEN** a visitor using only the keyboard on a publication detail page
+- **WHEN** they tab through it
+- **THEN** each link and download gets a visible focus and opens with Enter
+- e2e: `tests/e2e/site-accessibility.spec.ts`
+
+### Requirement: A page can show the organisation's locations on a map (REQ-SLM-001)
+
+The site SHALL offer a block that lists authored places, numbered in the order authored, each with its name and, when given, address, opening hours, a route link and its own links, beside a map that marks each place with a coordinate by the same number. With places of two or more kinds the block SHALL offer a chip per kind and one for all, and the list and the markers SHALL show only the chosen kind. Each marker SHALL carry the place's name, and the map SHALL say under it that it is a sketch, not real map data. A place with opening hours per weekday SHALL say whether it is open now and until when. The map SHALL request nothing from another site. A link that is not a site path, http(s), mailto or tel address SHALL be left out.
+
+#### Scenario: Three places of the municipality
+@e2e tests/e2e/site-location-map.spec.ts "Three places of the municipality, and the Afval chip narrows list and map"
+- **GIVEN** the Locaties page with the Stadskantoor, the Milieustraat and the Bibliotheek
+- **THEN** the heading reads "3 locaties" and the map shows markers 1, 2 and 3
+- **WHEN** the visitor chooses the chip "Afval"
+- **THEN** only the Milieustraat is listed and marked
+
+#### Scenario: A place says whether it is open now
+@e2e tests/e2e/site-location-map.spec.ts "A place says whether it is open now"
+- **GIVEN** the Stadskantoor with hours Monday to Friday 8.30 to 17.00
+- **WHEN** a visitor opens the page on a Monday at 10.15
+- **THEN** the Stadskantoor's card reads "Nu open tot 17:00 uur"
+- **AND** on a Sunday it reads "Nu gesloten"
+
+### Requirement: A portal's side cards read as drawn (REQ-PND-002)
+
+The side cards of a portal's page SHALL read as cards: the domain card SHALL list each domain (the first in bold), the certificate of the verified domain and the portal's languages in words ("Nederlands", not "nl"); the theme card SHALL show a swatch, the theme's name and a link to the themes; the status card SHALL show the state as a pill, when the portal last changed and how many of its pages wait to be published; the administrators card SHALL list each person with their initials, name and role.
+
+#### Scenario: the side cards of Gemeente Zuiddrecht
+- **GIVEN** the portal Gemeente Zuiddrecht in Dutch, with locale `nl` and chief editor Pieter Jansen
+- **WHEN** Pieter opens the portal
+- **THEN** the domain card reads Taal "Nederlands"
+- **AND** the administrators card reads "PJ Pieter Jansen, Hoofdredacteur"
+- @e2e exclude covered by tests/portal-side-cards-as-drawn.spec.mjs

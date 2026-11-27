@@ -6,8 +6,25 @@
  * (site-action-forms). Pure, with no imports, so a page of any slice can ask
  * it without loading the forms.
  *
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+ * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
  */
+
+/**
+ * The fields an action fills in itself: the stamped subject and row fields
+ * and the fields it sets.
+ *
+ * @param {object} action The action.
+ * @return {Set<string>} The fields.
+ */
+function stampedFields(action) {
+	return new Set(
+		[
+			action.subjectField,
+			action.rowField,
+			...Object.keys(action.set || {}),
+		].filter((field) => typeof field === 'string'),
+	)
+}
 
 /**
  * The fields of an action the resident fills in: its whitelisted fields,
@@ -17,19 +34,13 @@
  * @param {object} action The action.
  * @return {string[]} The fields.
  *
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+ * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
  */
 export function inputFields(action) {
 	if (!action || !Array.isArray(action.fields)) {
 		return []
 	}
-	const stamped = new Set(
-		[
-			action.subjectField,
-			action.rowField,
-			...Object.keys(action.set || {}),
-		].filter((field) => typeof field === 'string'),
-	)
+	const stamped = stampedFields(action)
 	const configs = action.fieldConfigs || {}
 	return action.fields.filter(
 		(field) =>
@@ -45,7 +56,7 @@ export function inputFields(action) {
  * @param {object} action The action.
  * @return {boolean} True when it has a field to fill in.
  *
- * @spec openspec/changes/site-action-forms/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
+ * @spec openspec/specs/site-forms/spec.md#requirement-an-action-that-needs-input-must-open-its-form-before-it-sends
  */
 export function asksInput(action) {
 	return inputFields(action).length > 0

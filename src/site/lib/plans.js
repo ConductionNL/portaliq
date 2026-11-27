@@ -27,6 +27,8 @@ const WORDS = {
 		goal: 'Doel',
 		endDate: 'Einddatum',
 		openActions: 'Open acties: {count}',
+		openActionsLabel: 'Open acties',
+		shared: 'Gedeeld',
 		progress: '{done} van {total} acties klaar',
 		open: 'Openen',
 		back: 'Alle plannen',
@@ -37,13 +39,14 @@ const WORDS = {
 		editGoal: 'Doel aanpassen',
 		actions: 'Acties',
 		addAction: 'Actie toevoegen',
-		actionTitle: 'Wat moet er gebeuren',
+		actionsProgress: '{done} van {total} klaar.',
+		pencilHint: 'Verander de status van een actie met het potlood.',
+		actionsCaption: 'Acties in het plan {plan}',
+		actionColumn: 'Actie',
+		editAction: 'Actie bewerken',
 		actionDate: 'Uiterlijk',
 		actionWho: 'Wie',
 		status: 'Status',
-		todo: 'Te doen',
-		doing: 'Bezig',
-		doneStatus: 'Klaar',
 		notes: 'Notities',
 		editNote: 'Notitie aanpassen',
 		participants: 'Deelnemers',
@@ -65,6 +68,17 @@ const WORDS = {
 		start: 'Plan starten',
 		saved: 'Uw wijziging is opgeslagen.',
 		pdfUnavailable: 'De pdf kan nu niet worden gemaakt.',
+		files: 'Bestanden',
+		addFile: 'Bestand toevoegen',
+		newVersion: 'Nieuwe versie uploaden',
+		version: 'Versie {version}',
+		newest: 'nieuwste',
+		earlier: 'Eerdere versies ({count})',
+		versionNote:
+			'Een nieuwe versie vervangt het bestand niet. De vorige versie blijft hieronder staan.',
+		noFiles: 'Er zijn nog geen bestanden.',
+		addedBy: '{name}, {date}',
+		chooseFile: 'Kies een bestand',
 	},
 	en: {
 		title: 'Collaborate',
@@ -87,6 +101,8 @@ const WORDS = {
 		goal: 'Goal',
 		endDate: 'End date',
 		openActions: 'Open actions: {count}',
+		openActionsLabel: 'Open actions',
+		shared: 'Shared',
 		progress: '{done} of {total} actions done',
 		open: 'Open',
 		back: 'All plans',
@@ -97,13 +113,14 @@ const WORDS = {
 		editGoal: 'Change the goal',
 		actions: 'Actions',
 		addAction: 'Add an action',
-		actionTitle: 'What has to be done',
+		actionsProgress: '{done} of {total} done.',
+		pencilHint: 'Change the status of an action with the pencil.',
+		actionsCaption: 'Actions in the plan {plan}',
+		actionColumn: 'Action',
+		editAction: 'Edit action',
 		actionDate: 'Due',
 		actionWho: 'Who',
 		status: 'Status',
-		todo: 'To do',
-		doing: 'Doing',
-		doneStatus: 'Done',
 		notes: 'Notes',
 		editNote: 'Change the note',
 		participants: 'Participants',
@@ -125,6 +142,17 @@ const WORDS = {
 		start: 'Start the plan',
 		saved: 'Your change is saved.',
 		pdfUnavailable: 'The PDF cannot be made right now.',
+		files: 'Files',
+		addFile: 'Add a file',
+		newVersion: 'Upload a new version',
+		version: 'Version {version}',
+		newest: 'newest',
+		earlier: 'Earlier versions ({count})',
+		versionNote:
+			'A new version does not replace the file. The previous version stays listed below.',
+		noFiles: 'There are no files yet.',
+		addedBy: '{name}, {date}',
+		chooseFile: 'Choose a file',
 	},
 }
 
@@ -200,6 +228,24 @@ export function chipCount(counts, chip) {
 }
 
 /**
+ * The days before the end date in which a card warns that the plan ends
+ * (design.md: the end alert shows in the last 14 days; board Plannen).
+ */
+export const ENDING_SOON_DAYS = 14
+
+/**
+ * Whether a card warns that its plan ends: in the last 14 days, or after.
+ *
+ * @param {number|null} days Whole days left, null without an end date.
+ * @return {boolean} True when the warning shows.
+ *
+ * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t10
+ */
+export function endingSoon(days) {
+	return typeof days === 'number' && days <= ENDING_SOON_DAYS
+}
+
+/**
  * "Loopt over 12 dagen af": how a card says how long the plan has left.
  *
  * @param {number|null} days Whole days left, null without an end date.
@@ -234,4 +280,19 @@ export function daysLine(days, words) {
 export function personLine(person, viewer, words) {
 	const name = person.ref === viewer ? words.you : person.displayName
 	return person.isOwner ? `${name}, ${words.maker}` : name
+}
+
+/**
+ * "Versie 2, nieuwste": the version line of a file on the plan page.
+ *
+ * @param {{version: number}} file The version.
+ * @param {boolean} newest Whether it is the newest version.
+ * @param {Record<string, string>} words The words.
+ * @return {string} The line.
+ *
+ * @spec openspec/changes/shared-plans-with-a-caseworker/tasks.md#t04
+ */
+export function versionLine(file, newest, words) {
+	const line = fill(words.version, { version: Number(file?.version) || 1 })
+	return newest ? `${line}, ${words.newest}` : line
 }

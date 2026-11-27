@@ -11,7 +11,7 @@
  *
  * @param {object} site The public site record.
  * @return {string} The route.
- * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t04
  */
 export function contactRouteOf(site) {
 	const route = String(site?.contactRoute || '')

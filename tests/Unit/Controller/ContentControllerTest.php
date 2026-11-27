@@ -24,12 +24,16 @@ use OCA\Portaliq\Contribution\PortalContributionFilter;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\ContentController;
 use OCA\Portaliq\Service\Assistant\PublicAssistantChannel;
+use OCA\Portaliq\Service\Cms\MediaReferences;
 use OCA\Portaliq\Service\Cms\PortalShell;
 use OCA\Portaliq\Service\CmsReader;
 use OCA\Portaliq\Service\Identity\NextcloudRegistrationDoor;
 use OCA\Portaliq\Service\PortalNoticeReader;
+use OCA\Portaliq\Service\PortalOrganisationConfigService;
+use OCA\Portaliq\Service\SiteOrganisation;
 use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCA\Portaliq\Service\TrafficConfigResolver;
 use OCP\App\IAppManager;
 use OCP\AppFramework\Http;
@@ -42,6 +46,7 @@ use OCP\IUserSession;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use OCA\Portaliq\Service\Assistant\PublicSourceScope;
 
 /**
  * The public content API's boundary behaviour.
@@ -79,7 +84,7 @@ class ContentControllerTest extends TestCase {
 	private ?PortalContributionRegistry $registry = null;
 
 	/** Set by the gate tests; null means the gate is never consulted. */
-	private ?PortalSessionService $session = null;
+	private ?BearerSessionResolver $session = null;
 
 	/**
 	 * The notice reader, when a test sets one.
@@ -101,6 +106,20 @@ class ContentControllerTest extends TestCase {
 	 * @var NextcloudRegistrationDoor|null
 	 */
 	private ?NextcloudRegistrationDoor $registrationDoor = null;
+
+	/**
+	 * Names the portal's organisation, or none.
+	 *
+	 * @var PortalOrganisationConfigService|null
+	 */
+	private ?PortalOrganisationConfigService $organisations = null;
+
+	/**
+	 * Resolves the portal's media:<id> images, or none.
+	 *
+	 * @var MediaReferences|null
+	 */
+	private ?MediaReferences $media = null;
 
 	/**
 	 * The incoming request.
@@ -159,13 +178,15 @@ class ContentControllerTest extends TestCase {
 			// assertion here uses a portal whose modes include `public`, so the
 			// content gate never consults this — which is the point: adding the
 			// gate must not change what a public portal serves.
-			session: ($this->session ?? $this->createMock(PortalSessionService::class)),
+			session: ($this->session ?? $this->createMock(BearerSessionResolver::class)),
 			traffic: new TrafficConfigResolver(),
 			urlGenerator: $this->urlGenerator(),
 			notices: ($this->notices ?? $this->createMock(PortalNoticeReader::class)),
 			userSession: ($this->userSession ?? $this->createMock(IUserSession::class)),
 			assistant: $assistant,
-			registrationDoor: $this->registrationDoor
+			registrationDoor: $this->registrationDoor,
+			siteOrganisation: ($this->organisations === null) ? null : new SiteOrganisation(organisations: $this->organisations), publicSourceScope: new PublicSourceScope(),
+			media: $this->media
 		);
 	}//end controller()
 
@@ -264,6 +285,144 @@ class ContentControllerTest extends TestCase {
 
 		$this->assertSame([$notice], $data['notices']);
 	}//end testSiteCarriesActiveNotices()
+
+
+	/**
+	 * woo-search-names-the-organisation: the site names its organisation by
+	 * id and name, so the search's organisation filter reads a name.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 */
+	public function testSiteNamesItsOrganisation(): void {
+		$this->resolver->method('resolve')->willReturn([...$this->portal(), 'organisation' => 'zuiddrecht']);
+		$this->organisations = $this->createMock(PortalOrganisationConfigService::class);
+		$this->organisations->expects($this->once())->method('resolve')->with('zuiddrecht')
+			->willReturn(['organisationId' => 'bacda7a4', 'organisationName' => 'Gemeente Zuiddrecht']);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame(['id' => 'bacda7a4', 'name' => 'Gemeente Zuiddrecht'], $data['organisation']);
+	}//end testSiteNamesItsOrganisation()
+
+
+	/**
+	 * portal-identity-from-the-admin REQ-PIA-001/002: the site sends the
+	 * portal's logo and hero image as public addresses, never as the
+	 * media:<id> reference the site could not load.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	public function testSiteSendsThePortalsImagesAsAddresses(): void {
+		$portal = $this->portal();
+		$this->resolver->method('resolve')->willReturn([...$portal, 'logo' => 'media:logo', 'heroImage' => 'media:hero']);
+		$this->media = $this->createMock(MediaReferences::class);
+		$this->media->expects($this->exactly(2))->method('image')->willReturnCallback(
+			static fn (string $portal, string $value): string => ($value === 'media:hero' ? 'https://x/media/hero?portal=' . $portal : 'https://x/media/logo?portal=' . $portal)
+		);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame('https://x/media/logo?portal=' . $portal['slug'], $data['logo']);
+		$this->assertSame('https://x/media/hero?portal=' . $portal['slug'], $data['heroImage']);
+	}//end testSiteSendsThePortalsImagesAsAddresses()
+
+
+	/**
+	 * An address logo is sent as stored; a reference that cannot be resolved is sent as nothing.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-site-head-and-the-hero-use-the-portals-images-req-pia-002
+	 */
+	public function testSiteNeverSendsAnUnresolvedReference(): void {
+		$this->resolver->method('resolve')->willReturn([...$this->portal(), 'logo' => '/apps/portaliq/logo/zuid.svg', 'heroImage' => 'media:hero']);
+
+		$data = $this->controller()->site()->getData();
+
+		$this->assertSame('/apps/portaliq/logo/zuid.svg', $data['logo']);
+		$this->assertSame('', $data['heroImage']);
+	}//end testSiteNeverSendsAnUnresolvedReference()
+
+
+	/**
+	 * The site names the organisation's kind from the label stored with the
+	 * portal's TOOI organisation type, and gets '' without one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 */
+	public function testSiteSendsTheOrganisationTypeLabel(): void {
+		$this->resolver->method('resolve')->willReturnOnConsecutiveCalls(
+			[...$this->portal(), 'organisationType' => 'https://identifier.overheid.nl/tooi/def/ont/Waterschap', 'organisationTypeLabel' => 'waterschap'],
+			$this->portal()
+		);
+
+		$this->assertSame('waterschap', $this->controller()->site()->getData()['organisationTypeLabel']);
+		$this->assertSame('', $this->controller()->site()->getData()['organisationTypeLabel']);
+	}//end testSiteSendsTheOrganisationTypeLabel()
+
+
+	/**
+	 * The footer's line comes with the site: "Een website van het waterschap"
+	 * for a Dutch portal with a type, '' without one.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-portal-names-its-organisation-type-from-tooi-req-pia-003
+	 */
+	public function testSiteSendsTheFooterKindLine(): void {
+		$this->resolver->method('resolve')->willReturnOnConsecutiveCalls(
+			[...$this->portal(), 'organisationTypeLabel' => 'waterschap'],
+			$this->portal()
+		);
+
+		$this->assertSame(
+			expected: 'Een website van het waterschap',
+			actual: $this->controller()->site(locale: 'nl')->getData()['organisationKindLine']
+		);
+		$this->assertSame(expected: '', actual: $this->controller()->site(locale: 'nl')->getData()['organisationKindLine']);
+	}//end testSiteSendsTheFooterKindLine()
+
+
+	/**
+	 * Without a way to name it, the site names no organisation.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 */
+	public function testSiteWithoutAnOrganisationNamesNone(): void {
+		$this->resolver->method('resolve')->willReturn([...$this->portal(), 'organisation' => 'onbekend']);
+		$this->organisations = $this->createMock(PortalOrganisationConfigService::class);
+		// An unknown slug resolves to the neutral default, which has no id.
+		$this->organisations->method('resolve')->willReturn(['organisationId' => '', 'organisationName' => 'Portaliq']);
+
+		$this->assertNull($this->controller()->site()->getData()['organisation']);
+
+		$this->organisations = null;
+		$this->assertNull($this->controller()->site()->getData()['organisation']);
+	}//end testSiteWithoutAnOrganisationNamesNone()
+
+
+	/**
+	 * A portal that names no organisation asks for none.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/woo-search-names-the-organisation/specs/portal-federated-search/spec.md#requirement-the-organisation-filter-reads-the-organisations-name
+	 */
+	public function testAPortalWithoutAnOrganisationSlugAsksForNone(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->organisations = $this->createMock(PortalOrganisationConfigService::class);
+		$this->organisations->expects($this->never())->method('resolve');
+
+		$this->assertNull($this->controller()->site()->getData()['organisation']);
+	}//end testAPortalWithoutAnOrganisationSlugAsksForNone()
 
 
 	/**
@@ -484,6 +643,24 @@ class ContentControllerTest extends TestCase {
 
 		$this->controller()->menus(portal: 'open-tilburg', locale: 'en');
 	}//end testASupportedLocaleIsHonoured()
+
+
+	/**
+	 * The page read is told both the requested locale and the portal's
+	 * default, so a route with no English page falls back to the Dutch one
+	 * rather than to whichever row comes first (#703).
+	 *
+	 * @return void
+	 */
+	public function testThePageReadKnowsThePortalsDefaultLocale(): void {
+		$this->resolver->method('resolve')->willReturn($this->portal());
+		$this->reader->expects($this->once())
+			->method('page')
+			->with('open-tilburg', '/over', 'en', 'anonymous', '', 'nl')
+			->willReturn(['route' => '/over']);
+
+		$this->controller()->page(route: 'over', portal: 'open-tilburg', locale: 'en');
+	}//end testThePageReadKnowsThePortalsDefaultLocale()
 
 
 	/**
@@ -764,7 +941,7 @@ class ContentControllerTest extends TestCase {
 	 */
 	public function testASessionBelowTheTrustFloorIsRefusedAsForbidden(): void {
 		$this->resolver->method('resolve')->willReturn($this->privatePortal(minTrust: 'high'));
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn(
 			['subjectRef' => 's-1', 'audience' => 'client', 'organisation' => 'org-1', 'trust' => 'low']
 		);
@@ -788,7 +965,7 @@ class ContentControllerTest extends TestCase {
 	 */
 	public function testASessionMeetingTheTrustFloorIsServed(): void {
 		$this->resolver->method('resolve')->willReturn($this->privatePortal(minTrust: 'substantial'));
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn(
 			['subjectRef' => 's-1', 'audience' => 'client', 'organisation' => 'org-1', 'trust' => 'high']
 		);
@@ -906,6 +1083,29 @@ class ContentControllerTest extends TestCase {
 		$this->assertFalse($this->controller()->site()->getData()['searchInsideDocuments']);
 	}//end testAPortalCanSwitchSearchInsideDocumentsOff()
 
+
+	/**
+	 * Both publication features are off on a new portal; switched on, the
+	 * site record says so, and never names the owner
+	 * (publication-error-reports-and-withheld-notices REQ-PER-001, REQ-PER-003).
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-error-reports-are-opt-in-and-need-a-named-owner-req-per-001
+	 */
+	public function testTheSiteRecordSaysWhichPublicationFeaturesAreOn(): void {
+		$on                                = $this->portal();
+		$on['publicationErrorReports']     = true;
+		$on['publicationErrorReportOwner'] = 'woo-redactie';
+		$on['showWithheldNotices']         = true;
+		$this->resolver->method('resolve')->willReturnOnConsecutiveCalls($this->portal(), $on);
+
+		$this->assertSame(['errorReports' => false, 'withheldNotices' => false], $this->controller()->site()->getData()['publications']);
+		$data = $this->controller()->site()->getData();
+		$this->assertSame(['errorReports' => true, 'withheldNotices' => true], $data['publications']);
+		$this->assertStringNotContainsString('woo-redactie', (string)json_encode($data));
+	}//end testTheSiteRecordSaysWhichPublicationFeaturesAreOn()
+
 	/**
 	 * REQ-PWR-001: a portal offering the account route is served the address of
 	 * Nextcloud's login page with a way back; one that does not is served none.
@@ -956,7 +1156,7 @@ class ContentControllerTest extends TestCase {
 			$appConfig,
 			$urls,
 			$this->createMock(IGroupManager::class),
-			$this->createMock(PortalResolver::class)
+			$this->createMock(PublishedPortals::class)
 		);
 	}//end registrationDoor()
 

@@ -13,12 +13,14 @@
  * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
  * @link      https://portaliq.conduction.nl
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Traffic;
+
+use OCA\Portaliq\Kernel\Contracts\TrafficExportInterface;
 
 /**
  * The daily records as a file: CSV with one row per portal-day-segment
@@ -28,9 +30,9 @@ namespace OCA\Portaliq\Service\Traffic;
  * cannot hold a ranked list; the JSON carries everything the object API
  * would, minus the `@self` envelope, for the caller that wants the lists.
  *
- * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+ * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
  */
-class TrafficExport {
+class TrafficExport implements TrafficExportInterface {
 
 	/**
 	 * The CSV columns, in order.
@@ -56,20 +58,13 @@ class TrafficExport {
 	];
 
 	/**
-	 * The formats.
-	 *
-	 * @var string[]
-	 */
-	public const FORMATS = ['csv', 'json'];
-
-	/**
 	 * The records as CSV.
 	 *
 	 * @param array<int, array<string, mixed>> $records The daily records.
 	 *
 	 * @return string The CSV, header first, CRLF lines.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
 	 */
 	public function csv(array $records): string {
 		$lines = [$this->line(values: self::COLUMNS)];
@@ -103,7 +98,7 @@ class TrafficExport {
 	 *
 	 * @return string The JSON array.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
 	 */
 	public function json(array $records): string {
 		$out = [];
@@ -126,7 +121,7 @@ class TrafficExport {
 	 *
 	 * @return string The name.
 	 *
-	 * @spec openspec/changes/portal-traffic-reporting/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-daily-records-must-be-exportable
 	 */
 	public function fileName(string $portal, string $from, string $to, string $segment, string $format): string {
 		$parts = ['traffic', $portal, $from, $to];
@@ -144,7 +139,7 @@ class TrafficExport {
 	 *
 	 * @return string The cell, empty when there are none.
 	 *
-	 * @spec openspec/changes/portal-traffic-zero-result-searches/specs/portal-traffic-reporting/spec.md#requirement-the-traffic-page-shows-what-the-public-did-not-find-req-pzr-002
+	 * @spec openspec/specs/portal-traffic-reporting/spec.md#requirement-the-traffic-page-shows-what-the-public-did-not-find-req-pzr-002
 	 */
 	private function termList(mixed $terms): string {
 		if (is_array($terms) === false) {
@@ -160,11 +155,12 @@ class TrafficExport {
 			$parts[] = $row['term'] . ' (' . (int)($row['count'] ?? 0) . ')';
 		}
 
-		return implode('; ', $parts);
+		return $this->neutralised(cell: implode('; ', $parts));
 	}
 
 	/**
-	 * A scalar as a CSV field: a boolean as 1 or 0, the rest as is.
+	 * A scalar as a CSV field: a boolean as 1 or 0, a number as is, a
+	 * string neutralised.
 	 *
 	 * @param int|float|string|bool $value The value.
 	 *
@@ -179,7 +175,28 @@ class TrafficExport {
 			return '0';
 		}
 
+		if (is_string($value) === true) {
+			return $this->neutralised(cell: $value);
+		}
+
 		return (string)$value;
+	}
+
+	/**
+	 * A text cell a spreadsheet will read as text: a cell that starts with
+	 * = + - @, a tab or a carriage return gets a leading apostrophe, as the
+	 * OWASP CSV guidance recommends.
+	 *
+	 * @param string $cell The cell.
+	 *
+	 * @return string The cell, prefixed when it would start a formula.
+	 */
+	private function neutralised(string $cell): string {
+		if ($cell !== '' && str_contains("=+-@\t\r", $cell[0]) === true) {
+			return "'" . $cell;
+		}
+
+		return $cell;
 	}
 
 	/**

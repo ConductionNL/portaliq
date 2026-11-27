@@ -286,7 +286,7 @@ test('stopping a held mandate asks first, and acting under it falls back to your
 		grantedAt: '2026-09-12T10:00:00Z',
 		expiresAt: '',
 	})
-	assert.match(line, /^All cases · given by the municipality on .+ · No end date$/)
+	assert.match(line, /^All cases · given by de organisatie on .+ · No end date$/)
 	const byParty = held.methods.line.call(reader, {
 		id: 'm9',
 		onBehalfOf: 'kvk:12345678',

@@ -19,7 +19,7 @@ import { test } from 'node:test'
 import { plansApi } from '../src/shared/areaApi.js'
 import { createPortalApi } from '../src/shared/portalApi.js'
 import { buildNav, shellSections } from '../src/shared/portalNav.js'
-import { chipCount, daysLine, fill, personLine, plansOfChip, planWords } from '../src/site/lib/plans.js'
+import { chipCount, daysLine, endingSoon, fill, personLine, plansOfChip, planWords, versionLine } from '../src/site/lib/plans.js'
 import { sitePageLoader } from '../src/site/pages/registry.js'
 import { loadSfc, renderSfc } from './support/render-sfc.mjs'
 
@@ -95,7 +95,7 @@ test('the words are Dutch and English with the same keys, and no em-dash', () =>
 
 test('the menu entry is Samenwerken under /mijn/samenwerken, only when the portal switched plans on', () => {
 	const session = { subjectRef: 'a' }
-	const areaPages = [{ special: 'samenwerken', label: 'Collaborate', icon: 'ClipboardCheckOutline' }]
+	const areaPages = [{ special: 'samenwerken', label: 'My plans', icon: 'ClipboardCheckOutline' }]
 	const entry = buildNav([], t, shellSections({ session, contributions: { contributions: [], areaPages }, threads: [], news: [] })).find((e) => e.special === 'samenwerken')
 	assert.equal(entry.key, '__samenwerken__')
 	assert.equal(typeof sitePageLoader(entry), 'function', 'the entry opens the plans page')
@@ -201,7 +201,6 @@ test('the plan page offers what the viewer may do and sends each change to the r
 		editing: '',
 		draft: '',
 		endDraft: '2026-10-27',
-		newAction: { title: '', endDate: '', assignee: 'sanne' },
 		newPerson: '',
 		session: { subjectRef: 'sanne' },
 		$emit: () => {},
@@ -210,25 +209,16 @@ test('the plan page offers what the viewer may do and sends each change to the r
 	}
 	const vm = { ...base, run: page.methods.run }
 	await page.methods.saveField.call({ ...vm, draft: 'Nieuw doel', run: page.methods.run }, 'goal')
-	await page.methods.setStatus.call(vm, { id: 'a1' }, 'done')
 	await page.methods.saveEnd.call(vm)
 	await page.methods.finish.call(vm)
 	await page.methods.removePerson.call(vm, { ref: 'mark' })
-	await page.methods.addAction.call({ ...vm, newAction: { title: ' Brieven ', endDate: '2026-09-20', assignee: 'mark' } })
 	await page.methods.addPerson.call({ ...vm, newPerson: 'c-mark' })
-	assert.deepEqual(calls.map(([action]) => action), ['update', 'updateAction', 'update', 'update', 'removeParticipant', 'addAction', 'addParticipants'])
+	assert.deepEqual(calls.map(([action]) => action), ['update', 'update', 'update', 'removeParticipant', 'addParticipants'])
 	assert.deepEqual(calls[0][1], { id: 'p1', data: { goal: 'Nieuw doel' } })
-	assert.deepEqual(calls[1][1], { id: 'p1', actionId: 'a1', data: { status: 'done' } })
-	assert.deepEqual(calls[2][1].data, { endDate: '2026-10-27' })
-	assert.deepEqual(calls[3][1].data, { status: 'done' })
-	assert.deepEqual(calls[4][1], { id: 'p1', ref: 'mark' })
-	assert.deepEqual(calls[5][1].data, { title: 'Brieven', assignee: 'mark', endDate: '2026-09-20' })
-	assert.deepEqual(calls[6][1].data, { contactIds: ['c-mark'] })
-
-	const empty = { ...vm, newAction: { title: '  ', endDate: '', assignee: 'sanne' } }
-	await page.methods.addAction.call(empty)
-	assert.equal(calls.length, 7, 'an action without a title sends nothing')
-	assert.equal(empty.problem, planWords('nl').failed)
+	assert.deepEqual(calls[1][1].data, { endDate: '2026-10-27' })
+	assert.deepEqual(calls[2][1].data, { status: 'done' })
+	assert.deepEqual(calls[3][1], { id: 'p1', ref: 'mark' })
+	assert.deepEqual(calls[4][1].data, { contactIds: ['c-mark'] })
 
 	const refused = { ...vm, api: apiFor(() => ({ ok: false, status: 403, error: 'forbidden', id: '' })) }
 	assert.equal(await page.methods.run.call(refused, 'update', { data: { endDate: '2026-12-01' } }), false)
@@ -247,6 +237,103 @@ test('the owner-only controls show for the owner of a running plan only', () => 
 		assert.match(around, /plan\.isOwner && plan\.canEdit/, `${control} is for the owner of a plan that is not done`)
 		assert.ok(block.length > 0)
 	}
-	assert.match(source, /:disabled="!plan\.canEdit"/, 'a done plan\'s statuses are read-only')
+	assert.match(source, /v-if="plan\.canEdit"[\s\S]{0,200}data-testid="plan-add-action"/, 'a done plan takes no new action')
 	assert.match(source, /plan\.state === 'action'[\s\S]*data-testid="plan-alert"/, 'the alert shows when the plan asks for action')
+})
+
+test('plan files: a new file and a new version go as multipart, a version line reads "Versie 2, nieuwste"', async () => {
+	const asked = []
+	globalThis.fetch = async (url, init = {}) => {
+		asked.push({ url, method: init.method || 'GET', body: init.body, headers: init.headers || {} })
+		return { ok: true, status: 200, json: async () => ({ ok: true }), blob: async () => new Blob(['x']) }
+	}
+	try {
+		const api = plansApi(createPortalApi({ apiBase: '/portal/api' }, { getToken: () => 'tok', setToken: () => {} }))
+		const file = new Blob(['budget'], { type: 'application/pdf' })
+		assert.equal((await api.addPlanFile('p1', file)).ok, true)
+		await api.addPlanFile('p1', file, 'f1')
+	} finally {
+		delete globalThis.fetch
+	}
+	assert.deepEqual(asked.map((a) => `${a.method} ${a.url}`), ['POST /portal/api/plans/p1/files', 'POST /portal/api/plans/p1/files'])
+	assert.ok(asked[0].body instanceof FormData)
+	assert.equal(asked[0].headers['Content-Type'], undefined, 'the browser sets the multipart boundary')
+	assert.equal(asked[0].headers.Authorization, 'Bearer tok')
+	assert.equal(asked[0].body.get('previousVersion'), null)
+	assert.equal(asked[1].body.get('previousVersion'), 'f1')
+
+	const nl = planWords('nl')
+	assert.equal(versionLine({ version: 2 }, true, nl), 'Versie 2, nieuwste')
+	assert.equal(versionLine({ version: 1 }, false, nl), 'Versie 1')
+	assert.equal(fill(nl.earlier, { count: 1 }), 'Eerdere versies (1)')
+	assert.equal(versionLine({ version: 3 }, true, planWords('en')), 'Version 3, newest')
+})
+
+test('the plan page sends a picked file as a new version of the file it was asked for, then forgets it', async () => {
+	const page = await loadSfc(PLAN)
+	const sent = []
+	let loaded = 0
+	const api = {
+		request: async (method, path, body) => {
+			sent.push({ method, path, previousVersion: body?.get?.('previousVersion') ?? null })
+			return { ok: true, status: 200, json: {} }
+		},
+	}
+	const input = { files: [new Blob(['b'])], value: 'C:/fakepath/b.pdf' }
+	const vm = { planId: 'p1', api, words: planWords('nl'), problem: '', notice: '', versionOf: '', $refs: { fileInput: { click: () => {} } }, $emit: () => {}, load: async () => { loaded++ } }
+	page.methods.chooseFile.call(vm, 'f1')
+	assert.equal(vm.versionOf, 'f1')
+	await page.methods.upload.call(vm, { target: input })
+	assert.deepEqual(sent, [{ method: 'POST', path: '/plans/p1/files', previousVersion: 'f1' }])
+	assert.equal(vm.versionOf, '', 'the next pick is a new file again')
+	assert.equal(input.value, '', 'the picker is cleared')
+	assert.equal(vm.notice, planWords('nl').saved)
+	assert.equal(loaded, 1)
+
+	await page.methods.upload.call(vm, { target: { files: [] } })
+	assert.equal(sent.length, 1, 'nothing picked, nothing sent')
+
+	const refused = { ...vm, api: { request: async () => ({ ok: false, status: 403, json: { error: 'forbidden' } }) } }
+	await page.methods.upload.call(refused, { target: { files: [new Blob(['b'])], value: 'x' } })
+	assert.equal(refused.problem, planWords('nl').failed)
+
+	const source = readFileSync(PLAN, 'utf8')
+	for (const id of ['plan-file-add', 'plan-file-new-version']) {
+		const around = source.slice(Math.max(0, source.indexOf(`data-testid="${id}"`) - 400), source.indexOf(`data-testid="${id}"`))
+		assert.match(around, /plan\.canEdit/, `${id} is offered only on a plan that is not done`)
+	}
+})
+
+test('an action of the plan opens the ActieBewerken dialog with the plan, its participants and who may delete it', async () => {
+	const page = await loadSfc(PLAN)
+	const plan = {
+		title: 'Schuldhulp op orde',
+		isOwner: false,
+		canEdit: true,
+		participants: [{ ref: 'sanne', displayName: 'Sanne de Vries', isOwner: true }, { ref: 'mark', displayName: 'Mark Jansen', isOwner: false }],
+	}
+	const vm = { planId: 'p1', plan, notice: 'x', actionOpen: null, viewer: 'mark' }
+	vm.assignees = page.computed.assignees.call(vm)
+	page.methods.openAction.call(vm, { id: 'a1', title: 'Budgetcoach bellen', owner: 'mark' })
+	const opened = vm.actionOpen.action
+	assert.deepEqual([opened.plan, opened.planTitle, opened.role, opened.mayDelete, opened.readOnly], ['p1', 'Schuldhulp op orde', 'member', true, false])
+	assert.deepEqual(opened.assignees.map((p) => p.ref), ['sanne', 'mark'])
+	page.methods.openAction.call(vm, { id: 'a2', title: 'Ander', owner: 'sanne' })
+	assert.equal(vm.actionOpen.action.mayDelete, false, 'a participant deletes only an action they added')
+	page.methods.openAction.call(vm, null)
+	assert.equal(vm.actionOpen.action, null, 'Actie toevoegen opens the dialog empty')
+	assert.equal(vm.notice, '')
+
+	const words = { you: 'u', once: 'Eenmalig', recurring: 'Elke maand', overdue: 'verlopen', today: 'vandaag', dayLeft: 'nog 1 dag', daysLeft: 'nog {days} dagen' }
+	assert.equal(page.methods.actionLine.call({ actionWords: words }, { kind: 'recurring', status: 'done', endDate: '2026-10-31' }), 'Elke maand')
+	assert.equal(page.methods.whoName.call({ actionWords: words, viewer: 'sanne' }, { assignee: 'sanne', assigneeName: 'Sanne' }), 'Sanne (u)')
+})
+
+test('a card warns that its plan ends only in the last 14 days, or after', () => {
+	assert.equal(endingSoon(12), true)
+	assert.equal(endingSoon(14), true)
+	assert.equal(endingSoon(15), false)
+	assert.equal(endingSoon(56), false)
+	assert.equal(endingSoon(-2), true)
+	assert.equal(endingSoon(null), false)
 })

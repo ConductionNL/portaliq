@@ -41,23 +41,36 @@ import {
 } from '@nextcloud/dialogs'
 import { translate as t } from '@nextcloud/l10n'
 import { generateUrl } from '@nextcloud/router'
-import { spawnDialog } from '@nextcloud/vue/functions/dialog'
 import FormEmbedDialog from './dialogs/FormEmbedDialog.vue'
 import InviteDialog from './dialogs/InviteDialog.vue'
 import IssueAccountDialog from './dialogs/IssueAccountDialog.vue'
+import LinkFormDialog from './dialogs/LinkFormDialog.vue'
+import MailTemplateDialog from './dialogs/MailTemplateDialog.vue'
+import NewPortalDialog from './dialogs/NewPortalDialog.vue'
 import NewsItemDialog from './dialogs/NewsItemDialog.vue'
 import RefuseAccessRequestDialog from './dialogs/RefuseAccessRequestDialog.vue'
+import RevealDecisionDialog from './dialogs/RevealDecisionDialog.vue'
+import RevealedContactDialog from './dialogs/RevealedContactDialog.vue'
+import { createPageSaver } from './editor/pageSaver.js'
 import { createAccessRequestHandlers } from './lib/accessRequestActions.js'
 import { createConnectionHandlers } from './lib/connectionRegistry.js'
+import { spawnLookDialog } from './lib/dialogLook.js'
 import { createFormBindingEmbed } from './lib/formBindingEmbed.js'
 import { createFormBindingPreview } from './lib/formBindingPreview.js'
 import { refreshList } from './lib/listRefresh.js'
+import { createMailTemplateApi, createMailTemplateHandlers } from './lib/mailTemplateEditing.js'
 import { createNewsApi, createNewsHandlers, NEWS_LIST } from './lib/newsAuthoring.js'
 import { createOpenPortalSite } from './lib/openPortalSite.js'
+import { createPageVisibilityHandlers } from './lib/pageVisibility.js'
+import { createPortalProvisioning, createPortalProvisioningHandlers } from './lib/portalProvisioning.js'
+import { createPublicationReportHandlers } from './lib/publicationReportActions.js'
+import { createRevealHandlers } from './lib/revealActions.js'
+import { createSessionHandlers } from './lib/sessionActions.js'
 import {
 	createStaffAccountActions,
 	createStaffAccountHandlers,
 } from './lib/staffAccountActions.js'
+import { createSubmissionHandlers } from './lib/submissionActions.js'
 
 /**
  * The `Open portal` row action, wired to Nextcloud's URL generator, toast and
@@ -89,12 +102,26 @@ const accessRequestHandlers = createAccessRequestHandlers({
 			labelConfirm: t('portaliq', 'Grant'),
 			labelReject: t('portaliq', 'Cancel'),
 		}),
-	askReason: () => spawnDialog(RefuseAccessRequestDialog),
+	askReason: () => spawnLookDialog(RefuseAccessRequestDialog),
 	notify: showSuccess,
 	notifyError: showError,
 	translate: (text) => t('portaliq', text),
 	// A row handler gets no handle on the list, so the page reloads to show
 	// the answered request in its new state.
+	reload: () => window.location.reload(),
+})
+
+/**
+ * The Handled and Not applicable row actions on the Error reports page
+ * (publication-error-reports-and-withheld-notices REQ-PER-002). See
+ * src/lib/publicationReportActions.js.
+ */
+const publicationReportHandlers = createPublicationReportHandlers({
+	post: (url, body) => axios.post(url, body),
+	generateUrl,
+	notify: showSuccess,
+	notifyError: showError,
+	translate: (text) => t('portaliq', text),
 	reload: () => window.location.reload(),
 })
 
@@ -122,7 +149,7 @@ const formBindingPreview = createFormBindingPreview({
 const formBindingEmbed = createFormBindingEmbed({
 	post: (url, body) => axios.post(url, body),
 	generateUrl,
-	openDialog: (props) => spawnDialog(FormEmbedDialog, props),
+	openDialog: (props) => spawnLookDialog(FormEmbedDialog, props),
 	notifyError: showError,
 	translate: (text) => t('portaliq', text),
 })
@@ -136,8 +163,8 @@ const staffAccountHandlers = createStaffAccountHandlers({
 			return Number.isNaN(date.getTime()) ? iso : date.toLocaleDateString()
 		},
 	}),
-	openIssue: (submit) => spawnDialog(IssueAccountDialog, { submit }),
-	openInvite: (submit) => spawnDialog(InviteDialog, { submit }),
+	openIssue: (submit) => spawnLookDialog(IssueAccountDialog, { submit }),
+	openInvite: (submit) => spawnLookDialog(InviteDialog, { submit }),
 	confirmWithdrawInvitation: (row) =>
 		showConfirmation({
 			name: t('portaliq', 'Withdraw this invitation?'),
@@ -153,8 +180,64 @@ const staffAccountHandlers = createStaffAccountHandlers({
 		}),
 	notify: showSuccess,
 	notifyError: showError,
-	// A header or row handler gets no handle on the list, so the page reloads
-	// to show the new account or the withdrawn invitation.
+	// A header or row handler gets no handle on the list, so it names the list
+	// it changed and that list is fetched again in place; reloading the whole
+	// page would drop the toast saying what happened (REQ-ISA-011). A list not
+	// fetched on this page yet falls back to the page reload.
+	reload: (list) => refreshList(list) || window.location.reload(),
+})
+/**
+ * `Naar het account` and `Sessie intrekken` on a Sessions row
+ * (staff-revoke-one-session). Revoking goes through SessionAdminController,
+ * admin only; see src/lib/sessionActions.js.
+ */
+const sessionHandlers = createSessionHandlers({
+	post: (url, body) => axios.post(url, body),
+	generateUrl,
+	confirmRevoke: () =>
+		showConfirmation({
+			name: t('portaliq', 'Revoke this session?'),
+			text: t('portaliq', 'The device signed in with it is signed out at once.'),
+			labelConfirm: t('portaliq', 'Revoke session'),
+			labelReject: t('portaliq', 'Cancel'),
+		}),
+	notify: showSuccess,
+	notifyError: showError,
+	translate: (text) => t('portaliq', text),
+	reload: () => window.location.reload(),
+	open: (url) => window.location.assign(url),
+})
+/**
+ * `Gesprek in Talk` and `Formulier koppelen` on a Submissions row
+ * (submission-row-actions). Talk goes through OpenRegister's Talk links on
+ * the submission; the form link writes `formBinding` only, and the write guard
+ * refuses any change to a proof field. See src/lib/submissionActions.js.
+ */
+const submissionHandlers = createSubmissionHandlers({
+	get: (url) => axios.get(url),
+	post: (url, body) => axios.post(url, body),
+	patch: (url, body) => axios.patch(url, body),
+	generateUrl,
+	open: (url) => window.open(url, '_blank', 'noopener'),
+	chooseForm: (options, current) => spawnLookDialog(LinkFormDialog, { options, current }),
+	notify: showSuccess,
+	notifyError: showError,
+	translate: (text) => t('portaliq', text),
+	reload: () => refreshList('portaliq-portalSubmission') || window.location.reload(),
+})
+/**
+ * `Toestaan` and `Weigeren` on the Reveal requests page
+ * (intake-report-pages T09). Each asks the reason and posts the custodian's
+ * decision; an allowed reveal shows the contact once, in its own dialog.
+ */
+const revealHandlers = createRevealHandlers({
+	post: (url, body) => axios.post(url, body),
+	generateUrl,
+	askReason: (allow) => spawnLookDialog(RevealDecisionDialog, { allow }),
+	showContact: (contact) => spawnLookDialog(RevealedContactDialog, { contact }),
+	notify: showSuccess,
+	notifyError: showError,
+	translate: (text) => t('portaliq', text),
 	reload: () => window.location.reload(),
 })
 /**
@@ -169,7 +252,7 @@ const newsHandlers = createNewsHandlers({
 		put: (url, body) => axios.put(url, body),
 		generateUrl,
 	}),
-	openDialog: (props) => spawnDialog(NewsItemDialog, props),
+	openDialog: (props) => spawnLookDialog(NewsItemDialog, props),
 	currentUser: () => getCurrentUser()?.uid || '',
 	translate: (text, vars) => t('portaliq', text, vars),
 	notify: showSuccess,
@@ -178,6 +261,68 @@ const newsHandlers = createNewsHandlers({
 	// the page, sort and filters it had (news-list-keeps-its-page). Only a
 	// list that was never fetched here falls back to reloading the page.
 	reload: () => refreshList(NEWS_LIST) || window.location.reload(),
+})
+
+/**
+ * `Take back to draft` on the Pages list (page-public-on-purpose): the page's
+ * route then answers as one that does not exist. Version-checked like the
+ * page designer's own writes; see src/lib/pageVisibility.js.
+ */
+const pageVisibilityHandlers = createPageVisibilityHandlers({
+	saver: createPageSaver({
+		get: (url) => axios.get(url),
+		put: (url, payload, config) => axios.put(url, payload, config),
+		url: (id) =>
+			generateUrl(`/apps/openregister/api/objects/portaliq/page/${encodeURIComponent(id)}`),
+	}),
+	translate: (text) => t('portaliq', text),
+	notify: showSuccess,
+	notifyError: showError,
+	reload: () => window.location.reload(),
+})
+
+/**
+ * `New portal` on the Portals page (operate-portals-per-organisation T07):
+ * a draft portal for an organisation through PortalProvisionController,
+ * instance administrators only; see src/lib/portalProvisioning.js.
+ */
+const portalProvisioningHandlers = createPortalProvisioningHandlers({
+	provisioning: createPortalProvisioning({
+		post: (url, body) => axios.post(url, body),
+		generateUrl,
+		translate: (text, vars) => t('portaliq', text, vars),
+	}),
+	openDialog: (submit) => spawnLookDialog(NewPortalDialog, { submit }),
+	notify: showSuccess,
+	reload: () => window.location.reload(),
+})
+
+/**
+ * `New mail text`, `Change` and `Back to the default text` on the Mail
+ * templates page (mail-templates-admin-screen T06). The editor checks a text
+ * against its kind's variables before it is stored; see
+ * src/lib/mailTemplateEditing.js.
+ */
+const mailTemplateHandlers = createMailTemplateHandlers({
+	api: createMailTemplateApi({
+		get: (url) => axios.get(url),
+		post: (url, body) => axios.post(url, body),
+		put: (url, body) => axios.put(url, body),
+		del: (url) => axios.delete(url),
+		generateUrl,
+	}),
+	openEditor: (props) => spawnLookDialog(MailTemplateDialog, props),
+	confirmReset: () =>
+		showConfirmation({
+			name: t('portaliq', 'Put the default text back?'),
+			text: t('portaliq', 'This portal sends the default text of this mail again.'),
+			labelConfirm: t('portaliq', 'Put the default text back'),
+			labelReject: t('portaliq', 'Cancel'),
+		}),
+	notify: showSuccess,
+	notifyError: showError,
+	translate: (text, vars) => t('portaliq', text, vars),
+	reload: () => window.location.reload(),
 })
 
 export default {
@@ -205,6 +350,7 @@ export default {
 	 * AccessRequestAdminController, and a grant also records the mandate.
 	 */
 	...accessRequestHandlers,
+	...publicationReportHandlers,
 	/**
 	 * `Check form` row action on the Request forms index page.
 	 */
@@ -222,4 +368,25 @@ export default {
 	 * form, because news is written through NewsController's staff routes.
 	 */
 	...newsHandlers,
+	/**
+	 * The Pages list's `Take back to draft` (page-public-on-purpose).
+	 */
+	...pageVisibilityHandlers,
+	/**
+	 * The Sessions list's row actions (staff-revoke-one-session).
+	 */
+	...sessionHandlers,
+	/**
+	 * The Submissions list's Talk and form-link row actions (submission-row-actions).
+	 */
+	...submissionHandlers,
+	/**
+	 * The Reveal requests page's row actions (intake-report-pages T09).
+	 */
+	...revealHandlers,
+	...mailTemplateHandlers,
+	/**
+	 * The Portals page's `New portal` (operate-portals-per-organisation T07).
+	 */
+	...portalProvisioningHandlers,
 }

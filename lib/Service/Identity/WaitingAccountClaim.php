@@ -20,8 +20,8 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-secret-joins-the-signed-in-account/specs/portal-identity-space/spec.md
- * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -30,11 +30,12 @@ namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
 use OCA\Portaliq\Service\PortalObjectWriter;
+use SensitiveParameter;
 
 /**
  * Joins the waiting account a secret opened.
  *
- * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class WaitingAccountClaim {
 	/**
@@ -77,12 +78,12 @@ class WaitingAccountClaim {
 	 *
 	 * @return string CLAIMED, NOT_VALID or CONFLICT.
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function claim(
 		array $account,
 		string $waitingId,
-		#[\SensitiveParameter] string $secret,
+		#[SensitiveParameter] string $secret,
 		DateTimeImmutable $moment,
 		PortalAccountLookup $lookup,
 		array $subject,
@@ -156,9 +157,9 @@ class WaitingAccountClaim {
 	 *
 	 * @return UnboundAccount|null
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
-	private function moveRules(bool $moving, #[\SensitiveParameter] string $secret, array $account, array $subject): ?UnboundAccount {
+	private function moveRules(bool $moving, #[SensitiveParameter] string $secret, array $account, array $subject): ?UnboundAccount {
 		if ($moving === false || $this->secrets->isCode(secret: $secret) === true) {
 			return null;
 		}
@@ -179,7 +180,7 @@ class WaitingAccountClaim {
 	 * @return array<string, mixed>|null
 	 */
 	private function reread(
-		#[\SensitiveParameter] string $secret,
+		#[SensitiveParameter] string $secret,
 		array $account,
 		DateTimeImmutable $moment,
 		PortalAccountLookup $lookup,
@@ -204,7 +205,7 @@ class WaitingAccountClaim {
 	 *
 	 * @return bool
 	 *
-	 * @spec openspec/changes/invitation-joins-an-unbound-account/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	private function mayMove(WaitingAccountJoin $join, array $account, array $waiting, ?UnboundAccount $rules): bool {
 		return $rules !== null && $join->mayAdoptAudience(account: $account, waiting: $waiting, unbound: $rules) === true;

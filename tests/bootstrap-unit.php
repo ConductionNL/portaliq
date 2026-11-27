@@ -116,19 +116,10 @@ if (is_dir($serverTestsLib)) {
 	$loader->register(true);
 }
 
-// Load test stubs for cross-app classes that are only present when the other app
-// is installed. The IMcpToolProvider stub stands in for openregister PR #1466
-// (ai-chat-companion-orchestrator) so a hand-written MCP tool provider can be
-// unit-tested in standalone CI. AbstractToolHandler provides the standardised
-// auth helpers such a provider would use. Both are also registered via
-// autoload-dev PSR-4 in composer.json (OCA\OpenRegister\ -> tests/Stubs/) for
-// non-bootstrapped runs. Portaliq itself ships no hand-written provider (see
-// openspec/changes/portaliq-mcp-adoption) — the stubs stay for any app or
-// future provider that does.
-if (class_exists(\OCA\OpenRegister\Mcp\AbstractToolHandler::class) === false) {
-	require_once __DIR__ . '/Stubs/Mcp/AbstractToolHandler.php';
-}
-
+// Load the IMcpToolProvider stub when OpenRegister is not installed, so the one
+// governed provider (lib/Mcp/PortaliqToolProvider.php, hermiq-ai-tooling) can
+// be unit-tested standalone. Reads stay derived from the x-openregister-mcp
+// dialect in lib/Settings/portaliq_register.json (portaliq-mcp-adoption).
 if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 	require_once __DIR__ . '/Stubs/Mcp/IMcpToolProvider.php';
 }
@@ -139,6 +130,63 @@ if (interface_exists(\OCA\OpenRegister\Mcp\IMcpToolProvider::class) === false) {
 // hydra connection-registry design D6 and integriq's own classes on
 // `development`, and load only when the real classes are absent. Without OCP on
 // the autoload path their parent class is missing, so they are skipped then.
+// OpenRegister's leaf contract (change-proposal-queue): verbatim copies under
+// tests/Stubs/OpenRegister, used only when OpenRegister itself is not loadable,
+// so the leaf tests run in CI where no sibling checkout exists.
+foreach ([
+	'Exception\\NotImplementedException' => 'Exception/NotImplementedException.php',
+	// What OpenRegister throws when an owning app's hook stops a write (the-owning-apps-refusal-reads-as-no-longer-possible).
+	'Exception\\HookStoppedException' => 'Exception/HookStoppedException.php',
+	'Service\\Integration\\IntegrationProvider' => 'Service/Integration/IntegrationProvider.php',
+	// The object-scoped CRUD half of the contract and the refs it takes (openregister main, 25 Nov 2026).
+	'Kernel\\Contracts\\RegisterSchemaRef' => 'Kernel/Contracts/RegisterSchemaRef.php',
+	'Kernel\\Contracts\\ObjectRef' => 'Kernel/Contracts/ObjectRef.php',
+	'Service\\Integration\\RefIntegrationProvider' => 'Service/Integration/RefIntegrationProvider.php',
+	'Service\\Integration\\LeafIdentity' => 'Service/Integration/LeafIdentity.php',
+	'Service\\Integration\\LeafAvailability' => 'Service/Integration/LeafAvailability.php',
+	'Service\\Integration\\LeafRendering' => 'Service/Integration/LeafRendering.php',
+	'Service\\Integration\\LeafDescriptor' => 'Service/Integration/LeafDescriptor.php',
+	'Event\\RegisterLeafProvidersEvent' => 'Event/RegisterLeafProvidersEvent.php',
+	// The form submit and draft value objects (openregister #7788, #7964):
+	// DraftOwner first, the others name it.
+	'Service\\Object\\DraftOwner' => 'Service/Object/DraftOwner.php',
+	'Service\\Object\\DiscardDraftRequest' => 'Service/Object/DiscardDraftRequest.php',
+	'Service\\Form\\FormSubmitter' => 'Service/Form/FormSubmitter.php',
+	'Service\\Form\\FormSubmission' => 'Service/Form/FormSubmission.php',
+	// What FormDestinationValidator::validate() takes (openregister main, 25 Nov 2026).
+	'Service\\Form\\FormDestination' => 'Service/Form/FormDestination.php',
+	// The concept register's reader (portal-identity-from-the-admin 3.1).
+	'Service\\Vocabulary\\ConceptRepository' => 'Service/Vocabulary/ConceptRepository.php',
+	// What ObjectService::saveObjects() takes (openregister #9108): the defaults first.
+	'Kernel\\Contracts\\Value\\BulkBatchDefaults' => 'Kernel/Contracts/Value/BulkBatchDefaults.php',
+	'Kernel\\Contracts\\Value\\BulkSaveOptions' => 'Kernel/Contracts/Value/BulkSaveOptions.php',
+] as $orStubClass => $orStubFile) {
+	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
+		&& class_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false
+		&& interface_exists('\\OCA\\OpenRegister\\' . $orStubClass) === false
+	) {
+		require_once __DIR__ . '/Stubs/OpenRegister/' . $orStubFile;
+	}
+}
+
+unset($orStubClass, $orStubFile);
+
+// Thematiq's contrast arithmetic (nldesign-theme-integration): a verbatim copy,
+// used only when thematiq itself is not loadable.
+if (class_exists('\\OCA\\Thematiq\\Service\\ContrastService') === false) {
+	require_once __DIR__ . '/Stubs/Thematiq/Service/ContrastService.php';
+}
+
+// And its custom token set validator (nldesign-theme-integration 4.2): a
+// verbatim copy, plus the one converter constant it reads.
+if (class_exists('\\OCA\\Thematiq\\Service\\TokenSetConverterService') === false) {
+	require_once __DIR__ . '/Stubs/Thematiq/Service/TokenSetConverterService.php';
+}
+
+if (class_exists('\\OCA\\Thematiq\\Service\\CustomTokenSetValidator') === false) {
+	require_once __DIR__ . '/Stubs/Thematiq/Service/CustomTokenSetValidator.php';
+}
+
 foreach (['ConnectionStatusReportedEvent', 'ConnectionRefreshRequestedEvent', 'DigitalPostSendRequestedEvent', 'DigitalPostDeliveredEvent'] as $integriqStubEvent) {
 	if (class_exists('\\OCP\\EventDispatcher\\Event') === true
 		&& class_exists('\\OCA\\Integriq\\Event\\' . $integriqStubEvent) === false
@@ -159,3 +207,5 @@ if (class_exists('\\OCA\\OpenRegister\\Service\\Relation\\ObjectTreeQuery') === 
 if (class_exists('\\OCA\\OpenRegister\\Kernel\\Contracts\\Value\\ObjectFindOptions') === false) {
 	require_once __DIR__ . '/Stubs/OpenRegister/Kernel/Contracts/Value/ObjectFindOptions.php';
 }
+// Nextcloud runtime doubles (OC, Doctrine DBAL constants) for a run without Nextcloud.
+require_once __DIR__ . '/Stubs/Nextcloud/runtime.php';

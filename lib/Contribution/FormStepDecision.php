@@ -17,7 +17,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
  */
 
 declare(strict_types=1);
@@ -29,7 +29,7 @@ namespace OCA\Portaliq\Contribution;
  * fills and the step each outcome opens. Anything malformed drops the whole
  * decision, so a half-declared rule never runs.
  *
- * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
  */
 class FormStepDecision {
 	/**
@@ -45,7 +45,7 @@ class FormStepDecision {
 	 *
 	 * @return array<string, mixed>|null The decision, or null to drop it.
 	 *
-	 * @spec openspec/changes/form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md#t05
 	 */
 	public function normalise(mixed $decision, array $known): ?array {
 		if (is_array($decision) === false) {
@@ -54,11 +54,7 @@ class FormStepDecision {
 
 		$rule   = ($decision['rule'] ?? null);
 		$output = ($decision['output'] ?? null);
-		if ($this->isToken(value: $rule) === false) {
-			return null;
-		}
-
-		if (is_string($output) === false || in_array($output, $known, true) === false) {
+		if ($this->namesKnown(rule: $rule, output: $output, known: $known) === false) {
 			return null;
 		}
 
@@ -69,6 +65,27 @@ class FormStepDecision {
 
 		return ['rule' => $rule, 'inputs' => $inputs, 'output' => $output, 'nextStep' => $this->nextSteps(declared: ($decision['nextStep'] ?? []))];
 	}//end normalise()
+
+	/**
+	 * Whether the rule is a plain token and the output a known field.
+	 *
+	 * @param mixed              $rule   The declared rule.
+	 * @param mixed              $output The declared output field.
+	 * @param array<int, string> $known  The known field names.
+	 *
+	 * @return bool
+	 */
+	private function namesKnown(mixed $rule, mixed $output, array $known): bool {
+		if ($this->isToken(value: $rule) === false) {
+			return false;
+		}
+
+		if (is_string($output) === false || in_array($output, $known, true) === false) {
+			return false;
+		}
+
+		return true;
+	}//end namesKnown()
 
 	/**
 	 * Whether a value is a plain token.

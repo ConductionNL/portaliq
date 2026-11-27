@@ -15,17 +15,16 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
-use OCA\Portaliq\Service\Mail\MailLog;
-use OCA\Portaliq\Service\Mail\RecipientMask;
-use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\MailLogInterface;
+use OCA\Portaliq\Kernel\Contracts\MailTemplateRendererInterface;
 use OCA\Portaliq\Settings\PortaliqAdmin;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
@@ -36,35 +35,37 @@ use OCP\IRequest;
 use OCP\IUserSession;
 use OCP\Mail\IMailer;
 use Psr\Log\LoggerInterface;
-use Throwable;
 
 /**
  * The admin's side of the mail templates screen: the kinds of mail, a check
  * and preview of a text, a test mail to the admin's own address, and a
  * resend of a failed mail.
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class MailTemplateAdminController extends Controller {
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest             $request  The request.
-	 * @param MailTemplateRenderer $renderer The kinds of mail and their variables.
-	 * @param MailLog              $mailLog  The send log.
+	 * @param MailTemplateRendererInterface $renderer The kinds of mail and their variables.
+	 * @param MailLogInterface              $mailLog  The send log.
 	 * @param IMailer              $mailer   Sends the test mail.
 	 * @param IUserSession         $session  Names the admin whose address gets the test mail.
 	 * @param LoggerInterface      $logger   Logs a test mail that was not sent.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly MailTemplateRenderer $renderer,
-		private readonly MailLog $mailLog,
+		private readonly MailTemplateRendererInterface $renderer,
+		private readonly MailLogInterface $mailLog,
 		private readonly IMailer $mailer,
 		private readonly IUserSession $session,
 		private readonly LoggerInterface $logger,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -72,12 +73,12 @@ class MailTemplateAdminController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
 	 */
 	#[AuthorizedAdminSetting(PortaliqAdmin::class)]
 	public function kinds(): JSONResponse {
 		$kinds = [];
-		foreach (MailTemplateRenderer::TEMPLATES as $key => $kind) {
+		foreach (MailTemplateRendererInterface::TEMPLATES as $key => $kind) {
 			$kinds[] = ['key' => $key, 'label' => $kind['label'], 'variables' => $kind['variables']];
 		}
 
@@ -93,7 +94,7 @@ class MailTemplateAdminController extends Controller {
 	 *
 	 * @return JSONResponse `ok`, the unknown variables, and the preview.
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
 	 */
 	#[AuthorizedAdminSetting(PortaliqAdmin::class)]
 	public function preview(string $templateKey='', string $subject='', string $body=''): JSONResponse {
@@ -122,7 +123,7 @@ class MailTemplateAdminController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
 	 */
 	#[AuthorizedAdminSetting(PortaliqAdmin::class)]
 	#[UserRateLimit(limit: 20, period: 60)]
@@ -140,47 +141,10 @@ class MailTemplateAdminController extends Controller {
 			return new JSONResponse(['error' => 'no_admin_address'], Http::STATUS_CONFLICT);
 		}
 
-		try {
-			$mail = $this->mailer->createEMailTemplate('portaliq.mail.test', []);
-			$label = (string)MailTemplateRenderer::TEMPLATES[$templateKey]['label'];
-			$line = $this->renderer->preview(key: $templateKey, text: $this->orElse(text: $subject, fallback: $label));
-			$mail->setSubject(trim((string)preg_replace('/\s+/', ' ', $line)));
-			$mail->addHeader();
-			$mail->addBodyText($this->renderer->preview(key: $templateKey, text: $this->orElse(text: $body, fallback: $label)));
-			$mail->addFooter();
+		$sender = new SampleMailSender(mailer: $this->mailer, renderer: $this->renderer, logger: $this->logger);
 
-			$message = $this->mailer->createMessage();
-			$message->setTo([$email]);
-			$message->useTemplate($mail);
-			$failed = $this->mailer->send($message);
-		} catch (Throwable $failure) {
-			$this->logger->warning('Portaliq: test mail not sent', ['exception' => get_class($failure)]);
-
-			return new JSONResponse(['error' => 'not_sent'], Http::STATUS_BAD_GATEWAY);
-		}
-
-		if (count($failed) > 0) {
-			return new JSONResponse(['error' => 'not_sent'], Http::STATUS_BAD_GATEWAY);
-		}
-
-		return new JSONResponse(['sent' => true, 'to' => (new RecipientMask())->mask(email: $email)]);
+		return $sender->send(sample: new SampleMail(templateKey: $templateKey, subject: $subject, body: $body, email: $email));
 	}//end test()
-
-	/**
-	 * A text, or the fallback when it is empty.
-	 *
-	 * @param string $text     The text.
-	 * @param string $fallback What to use instead.
-	 *
-	 * @return string
-	 */
-	private function orElse(string $text, string $fallback): string {
-		if (trim($text) === '') {
-			return $fallback;
-		}
-
-		return $text;
-	}//end orElse()
 
 	/**
 	 * Send a failed mail again: queue a new row that points back at it.
@@ -189,7 +153,7 @@ class MailTemplateAdminController extends Controller {
 	 *
 	 * @return JSONResponse
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t04
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t04
 	 */
 	#[AuthorizedAdminSetting(PortaliqAdmin::class)]
 	#[UserRateLimit(limit: 20, period: 60)]

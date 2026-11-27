@@ -21,7 +21,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 
 declare(strict_types=1);
@@ -29,11 +29,12 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use OCP\Security\ISecureRandom;
+use SensitiveParameter;
 
 /**
  * Mints, shows and normalises an invitation code.
  *
- * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+ * @spec openspec/specs/portal-identity-space/spec.md
  */
 class InvitationCode {
 	/**
@@ -64,7 +65,7 @@ class InvitationCode {
 	 *
 	 * @return string Twelve characters of the alphabet, or '' when the source gave too few.
 	 *
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function mint(ISecureRandom $random): string {
 		$code = $random->generate(self::LENGTH, self::ALPHABET);
@@ -82,7 +83,7 @@ class InvitationCode {
 	 *
 	 * @return string
 	 *
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
 	public function shown(string $code): string {
 		return implode('-', str_split($code, self::GROUP));
@@ -96,9 +97,9 @@ class InvitationCode {
 	 *
 	 * @return string The plain code, or ''.
 	 *
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
-	public function normalise(#[\SensitiveParameter] string $typed): string {
+	public function normalise(#[SensitiveParameter] string $typed): string {
 		$plain = strtoupper((string)preg_replace('/[\s\-]+/', '', $typed));
 		if ($this->isCode(value: $plain) === false) {
 			return '';
@@ -120,9 +121,9 @@ class InvitationCode {
 	 *
 	 * @return string The hash, or '' when the instance has no secret.
 	 *
-	 * @spec openspec/changes/invitation-code-from-a-letter/specs/portal-identity-space/spec.md
+	 * @spec openspec/specs/portal-identity-space/spec.md
 	 */
-	public function keyedHash(#[\SensitiveParameter] string $code, #[\SensitiveParameter] string $instanceSecret): string {
+	public function keyedHash(#[SensitiveParameter] string $code, #[SensitiveParameter] string $instanceSecret): string {
 		if ($code === '' || $instanceSecret === '') {
 			return '';
 		}

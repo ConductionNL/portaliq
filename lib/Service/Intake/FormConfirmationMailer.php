@@ -23,11 +23,13 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Intake;
 
 use DateTimeImmutable;
-use OCA\Portaliq\AppInfo\Application;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\FormConfirmationMailerInterface;
 use OCA\Portaliq\Service\Mail\MailLog;
 use OCA\Portaliq\Service\Mail\MailTemplateRenderer;
 use OCP\IL10N;
 use OCP\L10N\IFactory;
+use OCP\Mail\IEMailTemplate;
 use OCP\Mail\IMailer;
 use Psr\Log\LoggerInterface;
 use Throwable;
@@ -43,7 +45,7 @@ use Throwable;
  *
  * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
  */
-class FormConfirmationMailer {
+class FormConfirmationMailer implements FormConfirmationMailerInterface {
 	private const DEFAULT_LANGUAGE = 'nl';
 
 	/**
@@ -106,52 +108,15 @@ class FormConfirmationMailer {
 	 */
 	public function send(string $email, array $site, string $reference, string $formName, array $summary, array $moments = []): bool {
 		try {
-			$locales  = (array)($site['locales'] ?? []);
-			$language = self::DEFAULT_LANGUAGE;
-			if (is_string($locales[0] ?? null) === true && $locales[0] !== '') {
-				$language = $locales[0];
-			}
+			$l10n = $this->l10nFor(site: $site);
 
-			$l10n = $this->l10nFactory->get(Application::APP_ID, $language);
+			$mail  = $this->mailer->createEMailTemplate('portaliq.form.confirmation', []);
+			$slug  = trim((string)($site['slug'] ?? ''));
+			$text  = $this->confirmationText(l10n: $l10n, site: $site, reference: $reference, formName: $formName);
+			$lines = array_merge($this->momentLines(l10n: $l10n, moments: $moments), $this->summaryLines(summary: $summary));
+			$this->writeMail(mail: $mail, l10n: $l10n, text: $text, lines: $lines);
 
-			$mail = $this->mailer->createEMailTemplate('portaliq.form.confirmation', []);
-			$slug = trim((string)($site['slug'] ?? ''));
-			$text = [
-				'subject' => $l10n->t('We have received your request'),
-				'body' => $l10n->t('Your request %1$s has been received under reference %2$s.', [$formName, $reference]),
-			];
-			if ($this->renderer !== null) {
-				$text = $this->renderer->render(
-					portal: $slug,
-					key: 'form-confirmation',
-					values: ['portal' => trim((string)($site['title'] ?? '')), 'reference' => $reference, 'formName' => $formName],
-					subject: $text['subject'],
-					body: $text['body']
-				);
-			}
-
-			$mail->setSubject($text['subject']);
-			$mail->addHeader();
-			$mail->addHeading($l10n->t('We have received your request'));
-			$mail->addBodyText($text['body']);
-			foreach ($this->momentLines(l10n: $l10n, moments: $moments) as $line) {
-				$mail->addBodyText($line);
-			}
-
-			foreach ($summary as $line) {
-				$mail->addBodyText($line['label'] . ': ' . $line['value']);
-			}
-
-			$mail->addFooter();
-
-			$message = $this->mailer->createMessage();
-			$message->setTo([$email]);
-			$message->useTemplate($mail);
-
-			$sent = (count($this->mailer->send($message)) === 0);
-			$this->logSend(slug: $slug, email: $email, reference: $reference, sent: $sent);
-
-			return $sent;
+			return $this->deliver(mail: $mail, email: $email, slug: $slug, reference: $reference);
 		} catch (Throwable $failure) {
 			// The exception's own message is left out: a transport error may quote the recipient or the body.
 			$this->logger->warning('Portaliq: form confirmation mail not sent', ['exception' => get_class($failure)]);
@@ -160,6 +125,121 @@ class FormConfirmationMailer {
 			return false;
 		}
 	}//end send()
+
+	/**
+	 * The portal's language: its first locale, or the default.
+	 *
+	 * @param array<string, mixed> $site The portal.
+	 *
+	 * @return IL10N
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
+	 */
+	private function l10nFor(array $site): IL10N {
+		$locales  = (array)($site['locales'] ?? []);
+		$language = self::DEFAULT_LANGUAGE;
+		if (is_string($locales[0] ?? null) === true && $locales[0] !== '') {
+			$language = $locales[0];
+		}
+
+		return $this->l10nFactory->get(AppIdentity::APP_ID, $language);
+	}//end l10nFor()
+
+	/**
+	 * The confirmation's subject and body, through the portal's mail template when one renders.
+	 *
+	 * @param IL10N                $l10n      The portal's language.
+	 * @param array<string, mixed> $site      The portal.
+	 * @param string               $reference The submission's reference.
+	 * @param string               $formName  The form's name.
+	 *
+	 * @return array{subject: string, body: string}
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
+	 */
+	private function confirmationText(IL10N $l10n, array $site, string $reference, string $formName): array {
+		$slug = trim((string)($site['slug'] ?? ''));
+		$text = [
+			'subject' => $l10n->t('We have received your request'),
+			'body' => $l10n->t('Your request %1$s has been received under reference %2$s.', [$formName, $reference]),
+		];
+		if ($this->renderer !== null) {
+			$text = $this->renderer->render(
+				portal: $slug,
+				key: 'form-confirmation',
+				values: ['portal' => trim((string)($site['title'] ?? '')), 'reference' => $reference, 'formName' => $formName],
+				subject: $text['subject'],
+				body: $text['body']
+			);
+		}
+
+		return $text;
+	}//end confirmationText()
+
+	/**
+	 * The answers to repeat, one line each.
+	 *
+	 * @param array<int, array{label: string, value: string}> $summary The answers to repeat.
+	 *
+	 * @return array<int, string>
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
+	 */
+	private function summaryLines(array $summary): array {
+		$lines = [];
+		foreach ($summary as $line) {
+			$lines[] = $line['label'] . ': ' . $line['value'];
+		}
+
+		return $lines;
+	}//end summaryLines()
+
+	/**
+	 * Write the subject, heading, body and extra lines into the mail.
+	 *
+	 * @param IEMailTemplate                     $mail  The mail template.
+	 * @param IL10N                              $l10n  The portal's language.
+	 * @param array{subject: string, body: string} $text  The subject and body.
+	 * @param array<int, string>                 $lines The lines after the body.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
+	 */
+	private function writeMail(IEMailTemplate $mail, IL10N $l10n, array $text, array $lines): void {
+		$mail->setSubject($text['subject']);
+		$mail->addHeader();
+		$mail->addHeading($l10n->t('We have received your request'));
+		$mail->addBodyText($text['body']);
+		foreach ($lines as $line) {
+			$mail->addBodyText($line);
+		}
+
+		$mail->addFooter();
+	}//end writeMail()
+
+	/**
+	 * Send the mail and log the send.
+	 *
+	 * @param IEMailTemplate $mail      The written mail.
+	 * @param string         $email     The address.
+	 * @param string         $slug      The portal slug.
+	 * @param string         $reference The submission's reference.
+	 *
+	 * @return bool True when the mail server took it.
+	 *
+	 * @spec openspec/changes/form-statements-intro-and-confirmation-mail/tasks.md#t05
+	 */
+	private function deliver(IEMailTemplate $mail, string $email, string $slug, string $reference): bool {
+		$message = $this->mailer->createMessage();
+		$message->setTo([$email]);
+		$message->useTemplate($mail);
+
+		$sent = (count($this->mailer->send($message)) === 0);
+		$this->logSend(slug: $slug, email: $email, reference: $reference, sent: $sent);
+
+		return $sent;
+	}//end deliver()
 
 	/**
 	 * The lines naming when the request arrived, when its term starts and
@@ -221,7 +301,7 @@ class FormConfirmationMailer {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t03
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t03
 	 */
 	private function logSend(string $slug, string $email, string $reference, bool $sent): void {
 		if ($this->mailLog === null) {

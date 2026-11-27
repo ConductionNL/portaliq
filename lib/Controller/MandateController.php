@@ -26,16 +26,15 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Controller;
 
-use OCA\Portaliq\AppInfo\Application;
 use OCA\Portaliq\Auth\PortalProtected;
-use OCA\Portaliq\Service\Identity\MandateParties;
-use OCA\Portaliq\Service\Identity\PortalAccountLookup;
-use OCA\Portaliq\Service\Identity\PortalIdentityMailer;
-use OCA\Portaliq\Service\Identity\PortalMandateAdminService;
-use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
-use OCA\Portaliq\Service\Intake\PortalCaseTypeChoices;
-use OCA\Portaliq\Service\PortalResolver;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\AppIdentity;
+use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalCaseTypeChoicesInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalMandateAdminServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\Attribute\AnonRateLimit;
@@ -43,38 +42,44 @@ use OCP\AppFramework\Http\Attribute\NoCSRFRequired;
 use OCP\AppFramework\Http\Attribute\PublicPage;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\IRequest;
+use OCA\Portaliq\Kernel\Contracts\MandatePartiesInterface;
 
 /**
  * Manage who may act for the session's party, and stop a mandate held.
  *
  * @spec openspec/changes/site-mandates-the-represented-manage/design.md#d5-routes-and-checks
+ *
+ * @SuppressWarnings(PHPMD.CouplingBetweenObjects) -- the count includes the route attributes
+ *   (NoAdminRequired, NoCSRFRequired, ...) a controller declares.
  */
 class MandateController extends Controller implements PortalProtected {
 	/**
 	 * Constructor.
 	 *
 	 * @param IRequest                    $request  The request.
-	 * @param PortalSessionService        $session  Resolves the bearer.
-	 * @param PortalMandateAdminService   $mandates The mandate service.
-	 * @param PortalIdentityMailer        $mailer   Mails the invitation link to the invitee, never to the inviter.
-	 * @param PortalAccountLookup         $accounts The name and address of who holds a mandate, and of the inviter.
-	 * @param PortalCaseTypeChoices       $choices  The case types a mandate may be narrowed to.
-	 * @param PortalResolver              $portals  The portal being visited.
-	 * @param PortalPartyTreeResolver     $tree     The organisations a mandate reaching down covers.
+	 * @param PortalSessionServiceInterface        $session  Resolves the bearer.
+	 * @param PortalMandateAdminServiceInterface   $mandates The mandate service.
+	 * @param PortalIdentityMailerInterface        $mailer   Mails the invitation link to the invitee, never to the inviter.
+	 * @param PortalAccountLookupInterface         $accounts The name and address of who holds a mandate, and of the inviter.
+	 * @param PortalCaseTypeChoicesInterface       $choices  The case types a mandate may be narrowed to.
+	 * @param PortalResolverInterface              $portals  The portal being visited.
+	 * @param MandatePartiesInterface $mandateParties The MandateParties helper.
+	 * @param PortalPartyTreeResolverInterface     $tree     The organisations a mandate reaching down covers.
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- each collaborator is one screen element of the Machtigingen board.
 	 */
 	public function __construct(
 		IRequest $request,
-		private readonly PortalSessionService $session,
-		private readonly PortalMandateAdminService $mandates,
-		private readonly PortalIdentityMailer $mailer,
-		private readonly PortalAccountLookup $accounts,
-		private readonly PortalCaseTypeChoices $choices,
-		private readonly PortalResolver $portals,
-		private readonly PortalPartyTreeResolver $tree,
+		private readonly PortalSessionServiceInterface $session,
+		private readonly PortalMandateAdminServiceInterface $mandates,
+		private readonly PortalIdentityMailerInterface $mailer,
+		private readonly PortalAccountLookupInterface $accounts,
+		private readonly PortalCaseTypeChoicesInterface $choices,
+		private readonly PortalResolverInterface $portals,
+		private readonly MandatePartiesInterface $mandateParties,
+		private readonly PortalPartyTreeResolverInterface $tree,
 	) {
-		parent::__construct(appName: Application::APP_ID, request: $request);
+		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
 
 	/**
@@ -95,7 +100,7 @@ class MandateController extends Controller implements PortalProtected {
 
 		$items = $this->mandates->given(party: $party, organisation: (string)$subject['organisation']);
 
-		return new JSONResponse(['party' => $party, 'items' => array_map(fn (array $item): array => $this->named(item: $item), $items)]);
+		return new JSONResponse(['party' => $party, 'items' => $items]);
 	}//end given()
 
 	/**
@@ -159,7 +164,7 @@ class MandateController extends Controller implements PortalProtected {
 
 		$inviter = $this->accounts->bySubjectRef(subjectRef: (string)$subject['subjectRef']);
 		$sent    = $this->mailer->send(
-			template: PortalIdentityMailer::TEMPLATE_MANDATE_INVITATION,
+			template: PortalIdentityMailerInterface::TEMPLATE_MANDATE_INVITATION,
 			email: trim($email),
 			secret: $result['token'],
 			organisation: (string)$subject['organisation'],
@@ -192,7 +197,7 @@ class MandateController extends Controller implements PortalProtected {
 		}
 
 		$result = $this->mandates->accept(token: $token, subject: $subject);
-		if ($result === PortalMandateAdminService::OWN_INVITATION) {
+		if ($result === PortalMandateAdminServiceInterface::OWN_INVITATION) {
 			return new JSONResponse(['error' => $result], Http::STATUS_CONFLICT);
 		}
 
@@ -269,11 +274,11 @@ class MandateController extends Controller implements PortalProtected {
 		}
 
 		$result = $this->mandates->setExpiry(party: $party, organisation: (string)$subject['organisation'], id: $id, day: $expiresAt);
-		if ($result === PortalMandateAdminService::BAD_END_DATE) {
+		if ($result === PortalMandateAdminServiceInterface::BAD_END_DATE) {
 			return new JSONResponse(['error' => $result], Http::STATUS_BAD_REQUEST);
 		}
 
-		if ($result === PortalMandateAdminService::GONE) {
+		if ($result === PortalMandateAdminServiceInterface::GONE) {
 			return new JSONResponse(['error' => $result], Http::STATUS_CONFLICT);
 		}
 
@@ -296,7 +301,7 @@ class MandateController extends Controller implements PortalProtected {
 			return new JSONResponse(['authenticated' => false], Http::STATUS_UNAUTHORIZED);
 		}
 
-		$holders = (new MandateParties())->holdersOf(subject: $subject);
+		$holders = $this->mandateParties->holdersOf(subject: $subject);
 		$items = $this->mandates->held(holders: $holders, organisation: (string)($subject['organisation'] ?? ''));
 
 		return new JSONResponse(['items' => array_map(fn (array $item): array => $this->tree->withReach(mandate: $item), $items)]);
@@ -322,32 +327,13 @@ class MandateController extends Controller implements PortalProtected {
 
 		return $this->noContentOrMissing(
 			result: $this->mandates->stop(
-				holders: (new MandateParties())->holdersOf(subject: $subject),
+				holders: $this->mandateParties->holdersOf(subject: $subject),
 				organisation: (string)($subject['organisation'] ?? ''),
 				id: $id,
 				actor: (string)($subject['subjectRef'] ?? '')
 			)
 		);
 	}//end stop()
-
-	/**
-	 * A mandate in the given list carries the name and address of the
-	 * account that holds it; an invitation keeps the address it went to.
-	 *
-	 * @param array<string, mixed> $item The listed mandate or invitation.
-	 *
-	 * @return array<string, mixed>
-	 */
-	private function named(array $item): array {
-		$holder = (string)($item['holder'] ?? '');
-		if (($item['kind'] ?? '') !== 'mandate' || str_starts_with($holder, 'subject:') === false) {
-			return $item;
-		}
-
-		$account = $this->accounts->bySubjectRef(subjectRef: substr($holder, strlen('subject:')));
-
-		return $item + ['name' => (string)($account['displayName'] ?? ''), 'email' => (string)($account['email'] ?? '')];
-	}//end named()
 
 	/**
 	 * The session, its party, and the refusal when there is none.
@@ -362,7 +348,7 @@ class MandateController extends Controller implements PortalProtected {
 
 		// A session acting under a mandate carries `mandate`: it manages nothing
 		// on the represented party's behalf (design D1).
-		$party = (new MandateParties())->partyOf(subject: $subject);
+		$party = $this->mandateParties->partyOf(subject: $subject);
 		if ($party === null || (string)($subject['organisation'] ?? '') === '' || ($subject['actingUnderMandate'] ?? false) === true) {
 			return [$subject, '', new JSONResponse(['error' => 'forbidden'], Http::STATUS_FORBIDDEN)];
 		}

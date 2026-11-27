@@ -25,12 +25,13 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
-use OCA\Portaliq\Contribution\PortalProviderLocator;
-use OCA\Portaliq\Contribution\TimelineProviderMethod;
+use OCA\Portaliq\Kernel\Contracts\CollectionDocumentsInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalProviderLocatorInterface;
 use OCP\AppFramework\Http\StreamResponse;
 use Psr\Log\LoggerInterface;
 use ReflectionMethod;
 use Throwable;
+use OCA\Portaliq\Kernel\Contracts\TimelineProviderMethodInterface;
 
 /**
  * The order of an open: the caller has proven the object is the subject's in a
@@ -39,7 +40,7 @@ use Throwable;
  *
  * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t4
  */
-class CollectionDocuments {
+class CollectionDocuments implements CollectionDocumentsInterface {
 
 	/**
 	 * What open() answers when the document is not listed (or cannot be read).
@@ -49,27 +50,22 @@ class CollectionDocuments {
 	public const NOT_FOUND = 'not_found';
 
 	/**
-	 * What open() answers when the `opened` hook did not return true.
-	 *
-	 * @var string
-	 */
-	public const REFUSED = 'refused';
-
-	/**
 	 * Constructor.
 	 *
 	 * @param PortalCaseDocumentReader $published Asks the app what it lists for an object.
 	 * @param PortalFileReader $files Streams a file from OpenRegister.
 	 * @param PortalAuditHook $audit Records each download.
-	 * @param PortalProviderLocator $locator Finds the app's provider for the hook.
+	 * @param PortalProviderLocatorInterface $locator Finds the app's provider for the hook.
 	 * @param LoggerInterface $logger Records a refused hook.
+	 * @param TimelineProviderMethodInterface $timelineProviderMethod The TimelineProviderMethod helper.
 	 */
 	public function __construct(
 		private readonly PortalCaseDocumentReader $published,
 		private readonly PortalFileReader $files,
 		private readonly PortalAuditHook $audit,
-		private readonly PortalProviderLocator $locator,
+		private readonly PortalProviderLocatorInterface $locator,
 		private readonly LoggerInterface $logger,
+		private readonly TimelineProviderMethodInterface $timelineProviderMethod,
 	) {
 	}//end __construct()
 
@@ -111,88 +107,289 @@ class CollectionDocuments {
 	 * @spec openspec/changes/site-member-voting-record-and-confidential-papers/tasks.md#t5
 	 */
 	public function open(array $subject, string $app, array $documents, array $object, string $documentId): StreamResponse|string {
-		$file = null;
-		$entries = $this->published->entries(appId: $app, method: (string)($documents['provider'] ?? ''), caseId: $object['id']);
-		foreach ($entries as $entry) {
-			if ($entry['id'] === $documentId) {
-				$file = $entry['file'];
-				break;
-			}
+		return $this->openListed(
+			run: new DocumentOpening(subject: $subject, app: $app, documents: $documents, object: $object, documentId: $documentId)
+		);
+	}//end open()
+
+	/**
+	 * Open the bundle the collection's `bundle` method answers for the
+	 * object: the first well-formed entry of its answer, read the same way
+	 * a listed document is, and recorded as a download.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param string $app The contributing app.
+	 * @param array<string, mixed> $documents The collection's `documents` declaration.
+	 * @param array{register: string, schema: string, id: string} $object The proven object.
+	 *
+	 * @return StreamResponse|null The stream, or null when there is no bundle.
+	 *
+	 * @spec openspec/changes/documents-grouped-per-record/tasks.md#task-2
+	 */
+	public function bundle(array $subject, string $app, array $documents, array $object): ?StreamResponse {
+		$method = ($documents['bundle'] ?? null);
+		if (is_string($method) === false || $method === '') {
+			return null;
 		}
 
-		if ($file === null || $documentId === '') {
+		$first = ($this->published->entries(appId: $app, method: $method, caseId: $object['id'])[0] ?? []);
+		if (is_array($first['file'] ?? null) === false) {
+			return null;
+		}
+
+		$stream = $this->streamOf(file: $first['file']);
+		if ($stream !== null) {
+			$this->recordDownload(run: new DocumentOpening(subject: $subject, app: $app, documents: $documents, object: $object, documentId: ''));
+		}
+
+		return $stream;
+	}//end bundle()
+
+	/**
+	 * The download conditions a listed document carries, from the app's
+	 * `terms` hook: whether it may be opened now and, when not, the
+	 * conditions in force with their version. Null when the collection
+	 * declares no `terms` hook, the document is not listed, or the hook
+	 * cannot answer; only `mayDownload`, `message` and `agreement` pass.
+	 *
+	 * @param DocumentOpening $opening The subject, app, declaration, proven object and listed entry.
+	 *
+	 * @return array<string, mixed>|null The conditions, or null.
+	 *
+	 * @spec openspec/changes/document-download-terms/tasks.md#task-1
+	 */
+	public function terms(DocumentOpening $opening): ?array {
+		$provider = $this->listedHookProvider(run: $opening, hook: 'terms');
+		if ($provider === null) {
+			return null;
+		}
+
+		try {
+			$answer = $provider->{(string)$opening->documents['terms']}(
+				$opening->object['id'],
+				$opening->documentId,
+				$this->hookSubject(subject: $opening->subject)
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: the terms hook failed', ['app' => $opening->app]);
+			return null;
+		}
+
+		if (is_array($answer) === false) {
+			return null;
+		}
+
+		return array_intersect_key($answer, array_flip(['mayDownload', 'message', 'agreement']));
+	}//end terms()
+
+	/**
+	 * Record, through the app's `accept` hook, that the session's subject
+	 * accepted the conditions in the version shown. Fail closed: no hook, an
+	 * unlisted document, an empty version, a throw or anything but true
+	 * answers false.
+	 *
+	 * @param DocumentOpening $opening The subject, app, declaration, proven object and listed entry.
+	 * @param string          $version The version of the conditions shown.
+	 *
+	 * @return bool True when the document may now be opened.
+	 *
+	 * @spec openspec/changes/document-download-terms/tasks.md#task-1
+	 */
+	public function accept(DocumentOpening $opening, string $version): bool {
+		$provider = $this->listedHookProvider(run: $opening, hook: 'accept');
+		if ($provider === null || trim($version) === '') {
+			return false;
+		}
+
+		try {
+			$accepted = $provider->{(string)$opening->documents['accept']}(
+				$opening->object['id'],
+				$opening->documentId,
+				$this->hookSubject(subject: $opening->subject),
+				trim($version)
+			);
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: the accept hook failed', ['app' => $opening->app]);
+			return false;
+		}
+
+		return $accepted === true;
+	}//end accept()
+
+	/**
+	 * The app's provider for a declared hook on a listed document, or null.
+	 *
+	 * @param DocumentOpening $run  The opening.
+	 * @param string          $hook The declared hook.
+	 *
+	 * @return object|null
+	 */
+	private function listedHookProvider(DocumentOpening $run, string $hook): ?object {
+		if (isset($run->documents[$hook]) === false || $run->documentId === '' || $this->listedFile(run: $run) === null) {
+			return null;
+		}
+
+		return $this->hookProvider(run: $run, hook: $hook);
+	}//end listedHookProvider()
+
+	/**
+	 * Stream a listed file from OpenRegister, or null.
+	 *
+	 * @param array<string, string> $file Where the file lives: register, schema, id, fileId.
+	 *
+	 * @return StreamResponse|null
+	 */
+	private function streamOf(array $file): ?StreamResponse {
+		return $this->files->streamFile(register: $file['register'], schema: $file['schema'], id: $file['id'], fileId: $file['fileId']);
+	}//end streamOf()
+
+	/**
+	 * Open the listed document when the app's hook, if it declares one,
+	 * allows it, and record the download.
+	 *
+	 * @param DocumentOpening $run The opening.
+	 *
+	 * @return StreamResponse|string The stream, or NOT_FOUND, or REFUSED.
+	 */
+	private function openListed(DocumentOpening $run): StreamResponse|string {
+		$file = $this->listedFile(run: $run);
+		if ($file === null || $run->documentId === '') {
 			return self::NOT_FOUND;
 		}
 
-		// Fail closed: anything but true, or a throw, streams nothing.
-		if (isset($documents['opened']) === true) {
-			$allowed = $this->hookAllows(app: $app, method: (string)$documents['opened'], objectId: $object['id'], documentId: $documentId, subject: $subject);
-			if ($allowed === false) {
-				return self::REFUSED;
-			}
+		if ($this->refusedByHook(run: $run) === true) {
+			return self::REFUSED;
 		}
 
-		$stream = $this->files->streamFile(register: $file['register'], schema: $file['schema'], id: $file['id'], fileId: $file['fileId']);
+		$stream = $this->streamOf(file: $file);
 		if ($stream === null) {
 			return self::NOT_FOUND;
 		}
 
-		$this->audit->download(
-			subjectRef: (string)($subject['subjectRef'] ?? ''),
-			organisation: (string)($subject['organisation'] ?? ''),
-			register: $object['register'],
-			schema: $object['schema'],
-			id: $object['id']
-		);
+		$this->recordDownload(run: $run);
 
 		return $stream;
-	}//end open()
+	}//end openListed()
+
+	/**
+	 * Where the listed entry's file lives, or null when the object lists no
+	 * such entry.
+	 *
+	 * @param DocumentOpening $run The opening.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function listedFile(DocumentOpening $run): ?array {
+		$entries = $this->published->entries(appId: $run->app, method: (string)($run->documents['provider'] ?? ''), caseId: $run->object['id']);
+		foreach ($entries as $entry) {
+			if ($entry['id'] === $run->documentId) {
+				return $entry['file'];
+			}
+		}
+
+		return null;
+	}//end listedFile()
+
+	/**
+	 * Whether a declared `opened` hook refuses. Fail closed: anything but
+	 * true, or a throw, streams nothing.
+	 *
+	 * @param DocumentOpening $run The opening.
+	 *
+	 * @return bool
+	 */
+	private function refusedByHook(DocumentOpening $run): bool {
+		return isset($run->documents['opened']) === true && $this->hookAllows(run: $run) === false;
+	}//end refusedByHook()
+
+	/**
+	 * Record the download for the session's subject and the proven object.
+	 *
+	 * @param DocumentOpening $run The opening.
+	 *
+	 * @return void
+	 */
+	private function recordDownload(DocumentOpening $run): void {
+		$this->audit->download(
+			subjectRef: (string)($run->subject['subjectRef'] ?? ''),
+			organisation: (string)($run->subject['organisation'] ?? ''),
+			register: $run->object['register'],
+			schema: $run->object['schema'],
+			id: $run->object['id']
+		);
+	}//end recordDownload()
 
 	/**
 	 * Call the app's `opened` hook; true only when it returned exactly true.
 	 *
 	 * The subject it gets is the session's, never the request's.
 	 *
-	 * @param string $app The contributing app.
-	 * @param string $method The declared hook.
-	 * @param string $objectId The object id.
-	 * @param string $documentId The document id.
-	 * @param array<string, mixed> $subject The resolved subject.
+	 * @param DocumentOpening $run The opening.
 	 *
 	 * @return bool True when the hook allowed the opening.
 	 */
-	private function hookAllows(string $app, string $method, string $objectId, string $documentId, array $subject): bool {
-		$provider = $this->locator->locate(appId: $app);
-		if ($provider === null || (new TimelineProviderMethod())->accepts(name: $method) === false || method_exists($provider, $method) === false) {
-			$this->logger->warning('Portaliq: the opened hook cannot be called', ['app' => $app]);
-			return false;
-		}
-
-		$reflection = new ReflectionMethod($provider, $method);
-		if ($reflection->isPublic() === false || $reflection->isStatic() === true) {
+	private function hookAllows(DocumentOpening $run): bool {
+		$provider = $this->hookProvider(run: $run);
+		if ($provider === null) {
 			return false;
 		}
 
 		try {
-			$allowed = $provider->{$method}(
-				$objectId,
-				$documentId,
-				[
-					'subjectRef' => (string)($subject['subjectRef'] ?? ''),
-					'trust' => (string)($subject['trust'] ?? ''),
-					'identityType' => (string)($subject['identityType'] ?? ''),
-					'audience' => (string)($subject['audience'] ?? ''),
-				]
+			$allowed = $provider->{(string)$run->documents['opened']}(
+				$run->object['id'],
+				$run->documentId,
+				$this->hookSubject(subject: $run->subject)
 			);
 		} catch (Throwable $e) {
-			$this->logger->warning('Portaliq: the opened hook failed', ['app' => $app]);
+			$this->logger->warning('Portaliq: the opened hook failed', ['app' => $run->app]);
 			return false;
 		}
 
 		if ($allowed !== true) {
-			$this->logger->warning('Portaliq: the opened hook refused', ['app' => $app]);
+			$this->logger->warning('Portaliq: the opened hook refused', ['app' => $run->app]);
 		}
 
 		return $allowed === true;
 	}//end hookAllows()
+
+	/**
+	 * The app's provider when its declared hook is a public instance method,
+	 * else null (logged when the hook cannot be named or found).
+	 *
+	 * @param DocumentOpening $run  The opening.
+	 * @param string          $hook The declared hook: `opened`, `terms` or `accept`.
+	 *
+	 * @return object|null
+	 */
+	private function hookProvider(DocumentOpening $run, string $hook='opened'): ?object {
+		$method = (string)$run->documents[$hook];
+		$provider = $this->locator->locate(appId: $run->app);
+		if ($provider === null || $this->timelineProviderMethod->accepts(name: $method) === false || method_exists($provider, $method) === false) {
+			$this->logger->warning('Portaliq: the ' . $hook . ' hook cannot be called', ['app' => $run->app]);
+			return null;
+		}
+
+		$reflection = new ReflectionMethod($provider, $method);
+		if ($reflection->isPublic() === false || $reflection->isStatic() === true) {
+			return null;
+		}
+
+		return $provider;
+	}//end hookProvider()
+
+	/**
+	 * What the hook is told about the subject: the session's, and only these.
+	 *
+	 * @param array<string, mixed> $subject The resolved subject.
+	 *
+	 * @return array{subjectRef: string, trust: string, identityType: string, audience: string}
+	 */
+	private function hookSubject(array $subject): array {
+		return [
+			'subjectRef' => (string)($subject['subjectRef'] ?? ''),
+			'trust' => (string)($subject['trust'] ?? ''),
+			'identityType' => (string)($subject['identityType'] ?? ''),
+			'audience' => (string)($subject['audience'] ?? ''),
+		];
+	}//end hookSubject()
 }//end class

@@ -29,7 +29,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+ * @spec openspec/changes/archive/2026-11-24-an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
  */
 
 declare(strict_types=1);
@@ -37,17 +37,19 @@ declare(strict_types=1);
 namespace OCA\Portaliq\Service\Identity;
 
 use DateTimeImmutable;
+use OCA\Portaliq\Auth\PortalAuthConfig;
+use OCA\Portaliq\Kernel\Contracts\NextcloudAccountProvisionerInterface;
 use OCA\Portaliq\Service\PortalObjectReader;
 use OCA\Portaliq\Service\PortalObjectWriter;
-use OCA\Portaliq\Service\PortalResolver;
+use OCA\Portaliq\Service\PublishedPortals;
 use OCP\IUserManager;
 
 /**
  * Provisions an active `nextcloud`-mode portal account for an app.
  *
- * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+ * @spec openspec/changes/archive/2026-11-24-an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
  */
-class NextcloudAccountProvisioner {
+class NextcloudAccountProvisioner implements NextcloudAccountProvisionerInterface {
 	/**
 	 * The register and schema of a portal account.
 	 */
@@ -75,13 +77,13 @@ class NextcloudAccountProvisioner {
 	 * @param PortalObjectReader $reader  Looks accounts up.
 	 * @param PortalObjectWriter $writer  Writes the new account.
 	 * @param IUserManager       $users   Whether the Nextcloud user exists.
-	 * @param PortalResolver     $portals The published portals.
+	 * @param PublishedPortals     $portals The published portals.
 	 */
 	public function __construct(
 		private readonly PortalObjectReader $reader,
 		private readonly PortalObjectWriter $writer,
 		private readonly IUserManager $users,
-		private readonly PortalResolver $portals,
+		private readonly PublishedPortals $portals,
 	) {
 	}//end __construct()
 
@@ -100,7 +102,7 @@ class NextcloudAccountProvisioner {
 	 *         `refused`, `unknown_user`, `unknown_portal`, `portal_mismatch`, `mode_not_offered`,
 	 *         `conflict`, `not_active` or `unavailable`.
 	 *
-	 * @spec openspec/changes/an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+	 * @spec openspec/changes/archive/2026-11-24-an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- one parameter per field
 	 * of the account asked for, as on the provision event it answers.
@@ -114,12 +116,9 @@ class NextcloudAccountProvisioner {
 		string $email = '',
 		string $displayName = '',
 	): array|string {
-		if (in_array('', [$appId, $uid, $portal, $audience, $organisation], true) === true) {
-			return 'refused';
-		}
-
-		if ($this->users->userExists($uid) === false) {
-			return 'unknown_user';
+		$asked = $this->askRefusal(required: [$appId, $uid, $portal, $audience, $organisation], uid: $uid);
+		if ($asked !== null) {
+			return $asked;
 		}
 
 		$refusal = $this->portalRefusal(slug: $portal, organisation: $organisation);
@@ -153,6 +152,28 @@ class NextcloudAccountProvisioner {
 	}//end provision()
 
 	/**
+	 * Why the ask itself is refused: a required field is empty or the user is unknown; null when it holds.
+	 *
+	 * @param array<int, string> $required The required fields.
+	 * @param string             $uid      The Nextcloud user id.
+	 *
+	 * @return string|null `refused`, `unknown_user`, or null.
+	 *
+	 * @spec openspec/changes/archive/2026-11-24-an-app-provisions-a-nextcloud-account/specs/portal-identity-space/spec.md#requirement-an-app-may-provision-an-active-account-for-a-nextcloud-user
+	 */
+	private function askRefusal(array $required, string $uid): string|null {
+		if (in_array('', $required, true) === true) {
+			return 'refused';
+		}
+
+		if ($this->users->userExists($uid) === false) {
+			return 'unknown_user';
+		}
+
+		return null;
+	}//end askRefusal()
+
+	/**
 	 * Whether a live account in the tenant already holds this address.
 	 *
 	 * Compared without regard to case (security review L4); a withdrawn or
@@ -178,10 +199,7 @@ class NextcloudAccountProvisioner {
 				limit: 5
 			);
 			foreach ($rows as $row) {
-				if (strtolower((string)($row['email'] ?? '')) === strtolower($email)
-					&& ($row['organisation'] ?? '') === $organisation
-					&& in_array(($row['status'] ?? self::STATUS_ACTIVE), self::CLOSED, true) === false
-				) {
+				if ($this->holdsAddress(row: $row, email: $email, organisation: $organisation) === true) {
 					return true;
 				}
 			}
@@ -189,6 +207,21 @@ class NextcloudAccountProvisioner {
 
 		return false;
 	}//end addressHeld()
+
+	/**
+	 * Whether one account row is a live account in the tenant holding the address.
+	 *
+	 * @param array<string, mixed> $row          The account row.
+	 * @param string               $email        The address.
+	 * @param string               $organisation The tenant.
+	 *
+	 * @return bool
+	 */
+	private function holdsAddress(array $row, string $email, string $organisation): bool {
+		return strtolower((string)($row['email'] ?? '')) === strtolower($email)
+			&& ($row['organisation'] ?? '') === $organisation
+			&& in_array(($row['status'] ?? self::STATUS_ACTIVE), self::CLOSED, true) === false;
+	}//end holdsAddress()
 
 	/**
 	 * Why the portal cannot take this account, or null when it can.
@@ -215,7 +248,7 @@ class NextcloudAccountProvisioner {
 			return 'portal_mismatch';
 		}
 
-		if (in_array(self::MODE, (array)($portal['authentication']['modes'] ?? []), true) === false) {
+		if (PortalAuthConfig::fromPortal(portal: $portal)->offers(mode: self::MODE) === false) {
 			return 'mode_not_offered';
 		}
 

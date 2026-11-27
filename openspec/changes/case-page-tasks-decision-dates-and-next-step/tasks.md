@@ -6,7 +6,7 @@
 - [x] **T04**: `CitizenCase.vue`: the button at the current step and the greyed next step from `portalStatusActions`; hide the button when the target is not available (REQ-CPT-003)
 - [x] **T05**: `CitizenCase.vue` Gegevens rows "Verwacht besluit" and "Uiterlijk klaar op"; `src/site/components/mijn/CaseCard.vue` takes `legalDecisionDate` for its due day (REQ-CPT-002)
 - [x] **T06**: node test `tests/case-page-next-step.spec.mjs` for the banner, the other-case exclusion, the failed read, both date rows and the button rules
-- [ ] **T07**: Ask dossiq, in its issue tracker, to write the two dates and declare `caseField` and `portalStatusActions` for its case types
+- [x] **T07**: Ask dossiq, in its issue tracker, to write the two dates and declare `caseField` and `portalStatusActions` for its case types — filed as ConductionNL/dossiq#6886
 - [ ] **T08**: Live check against the Zaak board on the Zuiddrecht example site; screenshots in the build PR — not run: needs a live instance
 
 ## Build notes

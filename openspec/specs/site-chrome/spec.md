@@ -104,3 +104,35 @@ the plain list of buttons.
 - GIVEN cards for `public` and for a mode with no text
 - WHEN `/api/content/site` is read
 - THEN neither card is served
+
+### Requirement: Browser translation leaves names and personal data alone (REQ-PDU-001)
+
+The site SHALL mark with `translate="no"` the resident's name, the represented party's name, addresses, e-mail addresses, phone numbers, licence plates and reference numbers wherever it shows them, and SHALL NOT mark the labels and sentences around them. A contribution field marked `personal: true`, or typed as e-mail, telephone or URI, SHALL be marked the same way.
+
+#### Scenario: The greeting
+- **WHEN** Sanne Visser opens Mijn Zuiddrecht
+- **THEN** "Sanne Visser" sits in an element with `translate="no"` and the greeting word does not
+
+#### Scenario: Her address on Mijn gegevens
+- **WHEN** she opens Mijn gegevens
+- **THEN** "Lindelaan 12" is marked `translate="no"` and the label "Uw adres" is not
+
+#### Scenario: A personal field of a contribution
+- **WHEN** a contribution marks the field `kenteken` as `personal: true`
+- **THEN** the case page shows its value marked `translate="no"`
+
+### Requirement: The not-found page offers a way on (REQ-SCN-004)
+
+A route that does not exist or is not published SHALL render "Pagina niet gevonden" with "Foutcode 404", the site search box when the portal has search, and links to the homepage, to the resident area when the portal has one, and to the portal's contact route when that route exists. It SHALL ask the visitor to report a broken link through Contact. The answer SHALL stay identical for an unpublished page and a route that never existed.
+
+#### Scenario: A mistyped address
+- **WHEN** a visitor opens `/parkeren-vergunning`, which does not exist
+- **THEN** the page shows the search box and links to De homepage, Mijn Zuiddrecht and Contact
+
+#### Scenario: A portal without a contact page
+- **WHEN** the portal has no `/contact` route
+- **THEN** the not-found page shows no Contact link and no report sentence
+
+#### Scenario: Draft and missing look the same
+- **WHEN** a visitor opens an unpublished page and a route that never existed
+- **THEN** both answers are identical

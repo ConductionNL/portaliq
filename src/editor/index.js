@@ -58,6 +58,7 @@ export {
 	bodyFor,
 	discardPayload,
 	draftPayload,
+	draftStatusPayload,
 	isMainWidget,
 	publishPayload,
 	readBody,
@@ -73,6 +74,12 @@ export {
 	renameMenuItem,
 	sortedMenuItems,
 } from './menuModel.js'
+export {
+	boundFormId,
+	createFormRowFields,
+	formRowEditable,
+	refusalOf,
+} from './formRowFields.js'
 export { createPageEditor } from './pageEditor.js'
 export { createPageSaver, isConflict, PageConflictError } from './pageSaver.js'
 export {
@@ -86,6 +93,13 @@ export {
 } from './pageTree.js'
 export { createPortalObjects } from './portalObjects.js'
 export { recordListChoice, recordListsFrom } from './recordLists.js'
+export { kindsFrom } from './publicSource.js'
+export {
+	holdsReportWidget,
+	isExcludedPath,
+	loadExcludedPaths,
+	reportPageIsCounted,
+} from './reportExclusion.js'
 export {
 	formWidgetFor,
 	inspectorModeFor,

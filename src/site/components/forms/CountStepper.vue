@@ -30,7 +30,7 @@
 				:aria-invalid="invalid ? 'true' : undefined"
 				:aria-labelledby="labelledBy"
 				:aria-describedby="describedBy"
-				@change="set($event.target.value)" />
+				@change="typed($event)" />
 			<button
 				type="button"
 				class="utrecht-button utrecht-button--secondary-action pq-count__step"
@@ -62,7 +62,7 @@ import { countLine, countValue } from './fields.js'
  * The value sent is the whole number, as a typed number would be; the
  * buttons and the line are presentation only.
  *
- * @spec openspec/changes/count-field/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
+ * @spec openspec/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
  */
 export default {
 	name: 'CountStepper',
@@ -133,6 +133,23 @@ export default {
 
 		set(value) {
 			this.$emit('update:modelValue', countValue(value, this.low, this.high))
+		},
+
+		/**
+		 * A typed count, kept between min and max. The box is set to the kept
+		 * count too: when the kept count equals the one before (13 typed again
+		 * after 13 became 12), the model does not change and Vue would leave
+		 * the typed 13 in the box while 12 is sent.
+		 *
+		 * @param {Event} event The input's change event.
+		 * @return {void}
+		 *
+		 * @spec openspec/specs/site-forms/spec.md#requirement-an-action-field-may-ask-for-a-count-with-a-stepper
+		 */
+		typed(event) {
+			const kept = countValue(event.target.value, this.low, this.high)
+			event.target.value = kept
+			this.$emit('update:modelValue', kept)
 		},
 	},
 }

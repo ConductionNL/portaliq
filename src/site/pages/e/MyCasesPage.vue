@@ -31,38 +31,45 @@
 			{{ t('My cases') }}
 		</h1>
 
-		<!-- "Zaken van" (board MijnZakenTabel): whose cases the list shows,
-		     for a resident who acts for someone else (mijn-zaken-chooses-whose-cases). -->
-		<div
+		<!-- Forms the resident saved to finish later (REQ-FSR-003). -->
+		<UnfinishedForms
+			v-if="session"
+			:api="api"
+			:t="t"
+			:locale="locale || 'nl'" />
+
+		<!-- Requests that wait for a co-signer have no case yet (REQ-RIF-003). -->
+		<HeldRequests
+			v-if="session"
+			:api="api"
+			:t="t"
+			:locale="locale || 'nl'" />
+
+		<!-- What the case apps say above the list, as plain text (collection-intro). -->
+		<p
+			v-for="(intro, i) in intros"
+			:key="i"
+			class="utrecht-paragraph"
+			data-testid="my-cases-intro">
+			{{ intro }}
+		</p>
+
+		<!-- For whom the resident acts, with "Wissel naar" (board
+		     huisstijl/NamensBalk, site-mijn-omgeving REQ-SMO-008). -->
+		<ActingForBar
 			v-if="choosesParty"
-			class="pq-cases__parties"
-			data-testid="my-cases-parties">
-			<label for="pq-cases-parties" class="utrecht-form-label">{{
-				mt('Cases of')
-			}}</label>
-			<select
-				id="pq-cases-parties"
-				class="utrecht-select pq-cases__parties-select"
-				:value="choice"
-				data-testid="my-cases-parties-select"
-				@change="chooseParty($event.target.value)">
-				<option
-					v-for="option in parties"
-					:key="option.id"
-					:value="option.id"
-					:selected="option.id === choice"
-					:translate="option.own ? null : 'no'">
-					{{ option.label }}
-				</option>
-			</select>
-			<a
-				v-if="mandatesHref"
-				class="utrecht-link"
-				:href="mandatesHref"
-				data-testid="my-cases-parties-manage">
-				{{ mt('Arrange access to cases') }}
-			</a>
-		</div>
+			:t="t"
+			:locale="barLocale"
+			:mandates="held"
+			:value="choice"
+			:name="residentName"
+			:href="mandatesHref"
+			selectId="pq-cases-parties"
+			@change="chooseParty" />
+
+		<!-- "Namens vestiging": the branch in effect, or the choice of one
+		     and "Hele bedrijf" (portal-branch-scope, REQ-SRP-011). -->
+		<BranchSwitcher v-if="session" :t="t" :api="api" :session="session" />
 
 		<p
 			v-if="data === null"
@@ -155,11 +162,15 @@
 				<!-- Each case a Den Haag case card (site-mijn-omgeving-components
 				     REQ-SMO-002), naming its type (REQ-SMO-030). -->
 				<!-- Or, when the portal says `myCases.display: rows`, one row per
+				     case; with `folders`, one board folder per
 				     case (zuiddrecht-resident-pages-match-the-boards). -->
 				<ul
 					v-else
 					class="pq-cases__list"
-					:class="{ 'pq-cases__list--rows': asRows }"
+					:class="{
+						'pq-cases__list--rows': asRows,
+						'pq-cases__list--folders': asFolders,
+					}"
 					data-testid="my-cases-list">
 					<CaseCard
 						v-for="(item, index) in rows"
@@ -171,10 +182,10 @@
 						data-testid="my-cases-row"
 						:card="item.card"
 						:mandate="item.mandate"
-						:meta="asRows ? '' : item.meta"
+						:meta="boardDisplay ? '' : item.meta"
 						:route="item.route"
 						:button="item.openable && !item.route"
-						:display="asRows ? 'row' : ''"
+						:display="boardDisplay"
 						:dueLabel="t('Due by')"
 						@open="openCase(item.target, item.row)" />
 				</ul>
@@ -184,8 +195,13 @@
 </template>
 
 <script>
+import { defineAsyncComponent } from 'vue'
+import HeldRequests from '../../components/forms/HeldRequests.vue'
+import UnfinishedForms from '../../components/forms/UnfinishedForms.vue'
+import ActingForBar from '../../components/mijn/ActingForBar.vue'
 import CaseCard from '../../components/mijn/CaseCard.vue'
 import LoadError from '../../components/mijn/LoadError.vue'
+import { casesIntros } from '../../../shared/collectionIntro.js'
 import {
 	ACTING_FOR_SELF,
 	caseStatus,
@@ -202,13 +218,23 @@ import {
 } from '../../components/e/actingFor.js'
 import { caseCard } from '../../components/mijn/cases.js'
 import { mijnTranslator } from '../../components/mijn/rows.js'
-import { EVERYONE, mergedAnswer, partyOptions, readsFor } from './caseParties.js'
+import { EVERYONE, mergedAnswer, readsFor } from './caseParties.js'
 import { longDate, readerLocale } from './format.js'
 
 export default {
 	name: 'MyCasesPage',
 
-	components: { CaseCard, LoadError },
+	components: {
+		ActingForBar,
+		BranchSwitcher: defineAsyncComponent(
+			() => import('../../components/BranchSwitcher.vue'),
+		),
+
+		CaseCard,
+		HeldRequests,
+		LoadError,
+		UnfinishedForms,
+	},
 
 	props: {
 		/** The session as `/portal/api/session` returns it. */
@@ -256,10 +282,20 @@ export default {
 
 	computed: {
 		/**
+		 * The intros of the contributed cases collections, once each.
+		 *
+		 * @return {Array<string>}
+		 * @spec openspec/changes/archive/2026-10-30-collection-intro/tasks.md#t2
+		 */
+		intros() {
+			return casesIntros(this.contributions)
+		},
+
+		/**
 		 * The mandate the list is read under: the page's own, else the session's choice.
 		 *
 		 * @return {string} The mandate id, or `self`.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
 		 */
 		actingUnder() {
 			return this.mandateId || actingFor.id
@@ -270,31 +306,41 @@ export default {
 		 * and the page is not fixed to one.
 		 *
 		 * @return {boolean}
-		 * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
 		 */
 		choosesParty() {
 			return this.mandateId === '' && actingFor.mandates.length > 0
 		},
 
 		/**
-		 * The "Zaken van" choices.
-		 *
-		 * @return {Array<{id: string, label: string, own: boolean}>}
-		 * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 * @return {Array<{id: string, label: string}>} The mandates held.
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
 		 */
-		parties() {
-			return partyOptions(
-				actingFor.mandates,
-				this.mt,
-				personOf(this.session)?.name || '',
-			)
+		held() {
+			return actingFor.mandates
+		},
+
+		/**
+		 * @return {string} The resident's name, '' when unknown.
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 */
+		residentName() {
+			return personOf(this.session)?.name || ''
+		},
+
+		/**
+		 * @return {string} The reader's locale.
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 */
+		barLocale() {
+			return readerLocale(this.locale)
 		},
 
 		/**
 		 * The choice on screen: everyone, else the mandate acted under.
 		 *
 		 * @return {string}
-		 * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
 		 */
 		choice() {
 			return this.everyone ? EVERYONE : this.actingUnder
@@ -304,7 +350,7 @@ export default {
 		 * Where a resident arranges who may act for them, when the portal names it.
 		 *
 		 * @return {string}
-		 * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
 		 */
 		mandatesHref() {
 			return String(this.portal?.myCases?.mandatesHref || '')
@@ -312,7 +358,7 @@ export default {
 
 		/**
 		 * @return {(key: string, vars?: object) => string} The translator of the mijn omgeving components.
-		 * @spec openspec/changes/site-mijn-omgeving-components/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
+		 * @spec openspec/specs/site-mijn-omgeving/spec.md#requirement-a-case-card-must-show-what-a-resident-needs-to-decide-whether-to-open-it-req-smo-002
 		 */
 		mt() {
 			return mijnTranslator(this.t, readerLocale(this.locale))
@@ -327,10 +373,29 @@ export default {
 		},
 
 		/**
+		 * @return {boolean} Whether the portal draws the list as board folders.
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+		 */
+		asFolders() {
+			return this.portal?.myCases?.display === 'folders'
+		},
+
+		/**
+		 * @return {string} The case card display the portal asks for: row, folder or '' (the Den Haag card).
+		 * @spec openspec/changes/zuiddrecht-resident-pages-match-the-boards/specs/site-resident-menu/spec.md#requirement-a-portal-may-lay-out-the-resident-menu-and-its-cases-page
+		 */
+		boardDisplay() {
+			if (this.asRows) {
+				return 'row'
+			}
+			return this.asFolders ? 'folder' : ''
+		},
+
+		/**
 		 * The cases, open and closed apart.
 		 *
 		 * @return {{open: Array<object>, closed: Array<object>}} The two lists.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
 		 */
 		split() {
 			return splitCases(this.data?.cases)
@@ -340,7 +405,7 @@ export default {
 		 * The cases of the tab on screen.
 		 *
 		 * @return {Array<object>} The rows.
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
 		 */
 		shown() {
 			return this.closedMarker && this.tab === 'closed'
@@ -353,7 +418,7 @@ export default {
 		 *
 		 * @return {Array<object>} The rows.
 		 *
-		 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-my-cases/spec.md#requirement-a-case-on-my-cases-shows-its-status-in-words-never-a-code
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-a-case-on-my-cases-shows-its-status-in-words-never-a-code
 		 */
 		rows() {
 			const locale = readerLocale(this.locale)
@@ -373,7 +438,7 @@ export default {
 					// folder card stays as it was.
 					card: caseCard(
 						row,
-						this.asRows ? this.collectionOf(row) : null,
+						this.boardDisplay ? this.collectionOf(row) : null,
 						{
 							tr: this.mt,
 							locale,
@@ -403,7 +468,7 @@ export default {
 		 * Another mandate chosen: read the list again.
 		 *
 		 * @return {void}
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
 		 */
 		actingUnder() {
 			this.load()
@@ -413,7 +478,7 @@ export default {
 	/**
 	 * Read the list on arrival, unless a test handed one in.
 	 *
-	 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+	 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
 	 */
 	mounted() {
 		if (this.initialData === null) {
@@ -455,7 +520,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when read.
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
 		 */
 		async load() {
 			const ticket = ++this.request
@@ -506,7 +571,7 @@ export default {
 		 *
 		 * @param {string} id The choice.
 		 * @return {void}
-		 * @spec openspec/changes/mijn-zaken-chooses-whose-cases/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
+		 * @spec openspec/specs/portal-my-cases/spec.md#requirement-mijn-zaken-lets-a-representative-choose-whose-cases-it-lists-req-mzc-001
 		 */
 		chooseParty(id) {
 			const wasEveryone = this.everyone
@@ -531,7 +596,7 @@ export default {
 		 *
 		 * @return {void}
 		 *
-		 * @spec openspec/changes/site-reaches-portal-parity/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
+		 * @spec openspec/specs/site-portal-parity/spec.md#requirement-a-resident-must-see-every-case-in-one-list-req-srp-040
 		 */
 		switchTab() {
 			this.tab = this.tab === 'closed' ? 'open' : 'closed'
@@ -548,21 +613,6 @@ export default {
 
 /* The tab list reads the set's tab roles when it names them
    (thematiq zuiddrecht-website-type-and-controls); else as it was. */
-.pq-cases__parties {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: var(--utrecht-space-block-sm, 0.5rem) var(--utrecht-space-inline-md, 1rem);
-	padding: var(--utrecht-space-block-sm, 0.75rem)
-		var(--utrecht-space-inline-md, 1rem);
-	border-radius: var(--utrecht-border-radius-md, 6px);
-	background-color: var(--utrecht-color-grey-90, #f4f6f9);
-}
-
-.pq-cases__parties-select {
-	min-inline-size: min(100%, 16rem);
-}
-
 .pq-cases__tabs {
 	display: flex;
 	gap: var(--utrecht-space-inline-sm, 0.5rem);
@@ -583,6 +633,12 @@ export default {
 	gap: var(--utrecht-space-block-lg, 1.5rem) var(--utrecht-space-inline-md, 1rem);
 	margin: 0;
 	padding: 0;
+}
+
+/* The folders: as many 16rem columns as fit, 20px apart. */
+.pq-cases__list--folders {
+	grid-template-columns: repeat(auto-fill, minmax(min(100%, 16.25rem), 1fr));
+	gap: 1.25rem;
 }
 
 /* The rows: one under the other, 12px apart. */

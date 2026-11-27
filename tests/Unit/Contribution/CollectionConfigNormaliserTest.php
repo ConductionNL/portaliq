@@ -108,7 +108,7 @@ class CollectionConfigNormaliserTest extends TestCase {
 	/**
 	 * A qr column is a render kind and keeps its trimmed link label.
 	 *
-	 * @spec openspec/changes/link-field-qr-code/tasks.md#t1
+	 * @spec openspec/specs/portal-contribution-contract/spec.md
 	 *
 	 * @return void
 	 */
@@ -125,7 +125,7 @@ class CollectionConfigNormaliserTest extends TestCase {
 	/**
 	 * A link label that is empty, too long, not text or on another kind is dropped.
 	 *
-	 * @spec openspec/changes/link-field-qr-code/tasks.md#t1
+	 * @spec openspec/specs/portal-contribution-contract/spec.md
 	 *
 	 * @return void
 	 */
@@ -143,4 +143,50 @@ class CollectionConfigNormaliserTest extends TestCase {
 
 		$this->assertSame(60, mb_strlen($columns[4]['linkLabel']), 'sixty characters fit');
 	}//end testAMalformedLinkLabelIsDropped()
+
+	/**
+	 * `outcome.labelField` and `outcome.descriptionField` are kept only when
+	 * each names a projected field; an unprojected or absent field is dropped,
+	 * and an outcome with nothing left goes.
+	 *
+	 * @return void
+	 */
+	public function testOutcomeFieldsMustBeProjected(): void {
+		$fields = ['resultLabel', 'resultText'];
+
+		$kept = $this->collection([
+			'kind' => 'cases',
+			'fields' => $fields,
+			'outcome' => ['labelField' => 'resultLabel', 'descriptionField' => 'resultText'],
+		]);
+		$this->assertSame(['labelField' => 'resultLabel', 'descriptionField' => 'resultText'], $kept['outcome']);
+
+		// An unprojected descriptionField is dropped, the projected label stays.
+		$partial = $this->collection([
+			'kind' => 'cases',
+			'fields' => $fields,
+			'outcome' => ['labelField' => 'resultLabel', 'descriptionField' => 'notProjected'],
+		]);
+		$this->assertSame(['labelField' => 'resultLabel'], $partial['outcome']);
+
+		// No projected field survives: the whole outcome key goes.
+		$this->assertArrayNotHasKey('outcome', $this->collection([
+			'kind' => 'cases',
+			'fields' => $fields,
+			'outcome' => ['labelField' => 'nope', 'descriptionField' => 'alsoNope'],
+		]));
+
+		// With no projection, any named field is kept.
+		$unprojected = $this->collection(['kind' => 'cases', 'outcome' => ['labelField' => 'resultLabel']]);
+		$this->assertSame(['labelField' => 'resultLabel'], $unprojected['outcome']);
+
+		// Malformed shapes drop the key.
+		foreach ([['labelField' => 7], ['labelField' => ''], 'resultLabel', ['other' => 'x'], null] as $outcome) {
+			$this->assertArrayNotHasKey(
+				'outcome',
+				$this->collection(['kind' => 'cases', 'fields' => $fields, 'outcome' => $outcome])
+			);
+		}
+	}//end testOutcomeFieldsMustBeProjected()
+
 }//end class

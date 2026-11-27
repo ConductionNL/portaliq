@@ -34,7 +34,7 @@ function message (extra) {
 
 test('a message with a receipt request shows the notice, one without does not', async () => {
 	const asked = await render([message({ readReceiptRequested: true })])
-	assert.match(asked, /data-testid="inbox-row-receipt-notice"[^>]*>\s*The sender sees when you opened this message\./)
+	assert.match(asked, /data-testid="inbox-row-receipt-notice"[^>]*>\s*Read receipt requested/)
 
 	const plain = await render([message({}), message({ id: 'm2', readReceiptRequested: false })])
 	assert.doesNotMatch(plain, /inbox-row-receipt-notice/)
@@ -42,7 +42,7 @@ test('a message with a receipt request shows the notice, one without does not', 
 
 test('the notice is in Dutch for a Dutch page', async () => {
 	const html = await render([message({ readReceiptRequested: true })], 'nl')
-	assert.match(html, /De afzender ziet wanneer u dit bericht hebt geopend\./)
+	assert.match(html, /Leesbevestiging gevraagd/)
 })
 
 test('staff see the recipient, the read state and the read moment in the Portal Messages index', () => {
@@ -69,4 +69,72 @@ test('the register declares the three receipt fields, optional, each with a titl
 		assert.equal((schema.required || []).includes(name), false, `${name} is optional`)
 	}
 	assert.equal(schema.properties.readReceiptRequested.default, false)
+})
+
+test('the message page shows the read moment, the receipt request and the link to the sending', () => {
+	const manifest = JSON.parse(readFileSync('src/manifest.json', 'utf8'))
+	const page = manifest.pages.find((entry) => entry.id === 'PortalMessageDetail')
+	const facts = page.config.widgets.find((widget) => widget.id === 'message-data')
+	assert.equal(facts.type, 'facts')
+	const fields = facts.content.fields
+
+	const asked = fields.find((field) => field.path === 'readAt')
+	assert.equal(asked.label, 'Read')
+	assert.equal(asked.emptyValue, 'not yet')
+	assert.deepEqual(asked.when, { field: 'readReceiptRequested', op: 'eq', value: true })
+
+	const plain = fields.find((field) => field.path === 'read')
+	assert.equal(plain.label, 'Read')
+	assert.deepEqual(plain.map, { true: 'yes', false: 'not yet' })
+	assert.deepEqual(plain.when, { field: 'readReceiptRequested', op: 'neq', value: true })
+
+	const receipt = fields.find((field) => field.key === 'readReceipt')
+	assert.equal(receipt.label, 'Read receipt')
+	assert.deepEqual(receipt.when, asked.when)
+
+	const recipient = fields.findIndex((field) => field.path === 'subjectRef')
+	const sending = fields[recipient + 1]
+	assert.equal(sending.key, 'sending', 'the link to the sending sits under the recipient')
+	assert.deepEqual(sending.when, { field: 'sendingRef', op: 'notEmpty' })
+	assert.deepEqual(sending.route, { name: 'PortalMessages', query: { sendingRef: '@source.sendingRef' } })
+	assert.ok(manifest.pages.some((entry) => entry.id === 'PortalMessages'), 'the link names an existing page')
+
+	const history = page.config.widgets.find((widget) => widget.id === 'message-history')
+	assert.deepEqual(history.content.changeLabels, [{ field: 'readAt', label: 'Read by {object.subjectRef}' }])
+	// OpenRegister logs every view as a "read" entry; beside "Read by {recipient}" that reads as a second,
+	// false receipt, so the history leaves views out (inbox-read-receipt-on-request T08).
+	assert.deepEqual(history.content.excludeActions, ['read'])
+
+	const nl = JSON.parse(readFileSync('l10n/nl.json', 'utf8')).translations
+	assert.equal(nl['not yet'], 'nog niet')
+	assert.equal(nl['Read receipt'], 'Leesbevestiging')
+	assert.equal(nl['asked for'], 'gevraagd')
+	assert.equal(nl['All recipients of this sending'], 'Alle ontvangers van deze verzending')
+	assert.equal(nl['Read by {object.subjectRef}'], 'Gelezen door {object.subjectRef}')
+})
+
+// @spec openspec/changes/inbox-read-receipt-on-request/specs/portal-inbox/spec.md#requirement-staff-see-who-read-one-sending-req-irr-005
+test('the Portal Messages index counts the read messages of a sending it is filtered on', () => {
+	const manifest = JSON.parse(readFileSync('src/manifest.json', 'utf8'))
+	const page = manifest.pages.find((entry) => entry.id === 'PortalMessages')
+	assert.equal(page.type, 'index')
+
+	// The count line only changes while a filter (the sending's ?sendingRef=) narrows the list.
+	assert.equal(page.config.countTextFiltered, '{read} of {total} read')
+	assert.equal(page.config.countText, undefined, 'the unfiltered list keeps its own count line')
+	assert.deepEqual(page.config.countValues, { read: { metric: 'count', filter: { read: true } } })
+
+	// The count line is the header's description, and the library hides the header (visually) unless
+	// the page shows its title: without `showTitle` the line is rendered but never seen (T08).
+	assert.equal(page.config.showTitle, true, 'the header that carries the count line is visible')
+
+	// The address filter is the only way to one sending: nothing may pin or hide it.
+	assert.equal(page.config.fixedFilters, undefined)
+	assert.equal(page.config.filter, undefined)
+	assert.ok(page.config.columns.some((column) => column.key === 'sendingRef'), 'the sending stays a visible column')
+
+	for (const file of ['l10n/en.json', 'l10n/en_US.json']) {
+		assert.equal(JSON.parse(readFileSync(file, 'utf8')).translations['{read} of {total} read'], '{read} of {total} read')
+	}
+	assert.equal(JSON.parse(readFileSync('l10n/nl.json', 'utf8')).translations['{read} of {total} read'], '{read} van {total} gelezen')
 })

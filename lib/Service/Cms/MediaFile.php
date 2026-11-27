@@ -26,6 +26,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Cms;
 
+use OCA\Portaliq\Auth\PortalAuthConfig;
+use OCA\Portaliq\Kernel\Contracts\MediaFileInterface;
 use OCA\Portaliq\Service\PortalFileReader;
 use OCP\AppFramework\Http\StreamResponse;
 
@@ -42,7 +44,7 @@ use OCP\AppFramework\Http\StreamResponse;
  * so this route cannot tell a signed-in visitor from anyone else, and it does
  * not guess.
  */
-class MediaFile {
+class MediaFile implements MediaFileInterface {
 
 	/**
 	 * Constructor.
@@ -93,15 +95,16 @@ class MediaFile {
 	/**
 	 * Whether the portal's content is readable without signing in.
 	 *
-	 * The same reading as the content API: no modes, or `public` among them.
+	 * The same reading as the content API: no modes, `public` among them, or
+	 * a malformed block, which fails closed to public read-only.
 	 *
 	 * @param array<string, mixed> $portal The portal.
 	 *
 	 * @return bool
+	 *
+	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-each-portal-must-declare-its-authentication-failing-closed
 	 */
 	private function isPublic(array $portal): bool {
-		$modes = array_values(array_filter((array)(((array)($portal['authentication'] ?? []))['modes'] ?? []), 'is_string'));
-
-		return ($modes === [] || in_array('public', $modes, true) === true);
+		return PortalAuthConfig::fromPortal(portal: $portal)->readsPublicly();
 	}//end isPublic()
 }//end class

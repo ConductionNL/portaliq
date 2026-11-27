@@ -22,8 +22,8 @@ use PHPUnit\Framework\TestCase;
  * site-accessibility-statement: the measurement and the statement ignore
  * what is malformed instead of recording or showing it.
  *
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-product-measures-its-own-pages-on-this-instance-req-sas-001
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-the-status-never-goes-beyond-the-evidence-req-sas-003
  */
 class AccessibilityEdgesTest extends TestCase {
 	use PortalIdentityStoreTrait;

@@ -25,8 +25,9 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCA\Portaliq\Kernel\Contracts\DestinationLookupInterface;
 use OCA\Portaliq\Service\PortalSchemaReader;
+use OCA\Portaliq\Service\ScopedCollectionReaderInterface;
 
 /**
  * Reads a destination object by reference.
@@ -42,23 +43,28 @@ use OCA\Portaliq\Service\PortalSchemaReader;
  *
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md
  */
-class DestinationLookup {
+class DestinationLookup implements DestinationLookupInterface {
 	/**
 	 * The property the drain copies an earlier reference onto.
 	 */
 	public const EARLIER_REFERENCE = 'externalReference';
 
 	/**
+	 * How many of a subject's own rows the uuid reference is looked for in.
+	 */
+	private const OWN_ROWS = 200;
+
+	/**
 	 * Constructor.
 	 *
 	 * @param PortalFormBindingResolver $bindings The portal's published bindings.
-	 * @param PortalObjectReader        $reader   Reads destination objects.
+	 * @param ScopedCollectionReaderInterface        $reader   Reads destination objects.
 	 * @param PortalSchemaReader        $schemas  Reads a destination's markers.
 	 * @param DestinationMapping        $mapping  Says where a binding submits.
 	 */
 	public function __construct(
 		private readonly PortalFormBindingResolver $bindings,
-		private readonly PortalObjectReader $reader,
+		private readonly ScopedCollectionReaderInterface $reader,
 		private readonly PortalSchemaReader $schemas,
 		private readonly DestinationMapping $mapping,
 	) {
@@ -173,34 +179,112 @@ class DestinationLookup {
 	 * @return array{object: array<string, mixed>, binding: array<string, mixed>, schema: array<string, mixed>}|null
 	 */
 	private function findIn(array $entry, string $reference, string $subjectRef): ?array {
-		$destination = $entry['destination'];
-		$schema      = $entry['schema'];
-		$properties  = (array)($schema['properties'] ?? []);
-
-		if (array_key_exists(self::EARLIER_REFERENCE, $properties) === true) {
-			$row = $this->first(
-				rows: $this->reader->readCollection(
-					register: $destination['register'],
-					schema: $destination['schema'],
-					scopeField: self::EARLIER_REFERENCE,
-					subjectRef: $reference,
-					limit: 2
-				),
-				property: self::EARLIER_REFERENCE,
-				value: $reference
-			);
-			if ($row !== null) {
-				return ['object' => $row, 'binding' => $entry['binding'], 'schema' => $schema];
-			}
+		$found = $this->byEarlierReference(entry: $entry, reference: $reference);
+		if ($found !== null) {
+			return $found;
 		}
 
-		$subjectField = trim((string)($entry['binding']['destination']['subjectField'] ?? ''));
-		$own          = $this->marked(schema: $schema, marker: 'reference');
-		if ($subjectRef === '' || $subjectField === '' || $own === []) {
+		return $this->byOwnReference(entry: $entry, reference: $reference, subjectRef: $subjectRef);
+	}//end findIn()
+
+	/**
+	 * The object in one destination by an earlier reference, when its schema
+	 * carries one.
+	 *
+	 * @param array<string, mixed> $entry     The destination: `destination`, `binding` and `schema`.
+	 * @param string               $reference The reference.
+	 *
+	 * @return array{object: array<string, mixed>, binding: array<string, mixed>, schema: array<string, mixed>}|null
+	 */
+	private function byEarlierReference(array $entry, string $reference): array|null {
+		$schema     = $entry['schema'];
+		$properties = (array)($schema['properties'] ?? []);
+		if (array_key_exists(self::EARLIER_REFERENCE, $properties) === false) {
 			return null;
 		}
 
-		$row = $this->first(
+		$row = $this->earlierRow(destination: $entry['destination'], reference: $reference);
+		if ($row === null) {
+			return null;
+		}
+
+		return ['object' => $row, 'binding' => $entry['binding'], 'schema' => $schema];
+	}//end byEarlierReference()
+
+	/**
+	 * The row of a destination whose earlier reference is exactly the reference.
+	 *
+	 * @param array<string, mixed> $destination The destination's `register` and `schema`.
+	 * @param string               $reference   The reference.
+	 *
+	 * @return array<string, mixed>|null
+	 */
+	private function earlierRow(array $destination, string $reference): array|null {
+		return $this->first(
+			rows: $this->reader->readCollection(
+				register: $destination['register'],
+				schema: $destination['schema'],
+				scopeField: self::EARLIER_REFERENCE,
+				subjectRef: $reference,
+				limit: 2
+			),
+			property: self::EARLIER_REFERENCE,
+			value: $reference
+		);
+	}//end earlierRow()
+
+	/**
+	 * The object in one destination by its own reference, for its owner only.
+	 *
+	 * @param array<string, mixed> $entry      The destination: `destination`, `binding` and `schema`.
+	 * @param string               $reference  The reference.
+	 * @param string               $subjectRef The signed-in subject, or ''.
+	 *
+	 * @return array{object: array<string, mixed>, binding: array<string, mixed>, schema: array<string, mixed>}|null
+	 */
+	private function byOwnReference(array $entry, string $reference, string $subjectRef): array|null {
+		$destination = $entry['destination'];
+		$schema      = $entry['schema'];
+
+		$subjectField = trim((string)($entry['binding']['destination']['subjectField'] ?? ''));
+		if ($subjectRef === '' || $subjectField === '') {
+			return null;
+		}
+
+		$row = $this->byMarkedReference(entry: $entry, subjectField: $subjectField, subjectRef: $subjectRef, reference: $reference)
+			?? $this->byUuidReference(
+				destination: $destination,
+				subjectField: $subjectField,
+				subjectRef: $subjectRef,
+				reference: $reference
+			);
+		if ($this->isNotTheSubjects(row: $row, subjectField: $subjectField, subjectRef: $subjectRef) === true) {
+			return null;
+		}
+
+		return ['object' => $row, 'binding' => $entry['binding'], 'schema' => $schema];
+	}//end byOwnReference()
+
+	/**
+	 * The subject's row whose reference property holds the reference, or null.
+	 *
+	 * @param array<string, mixed> $entry        The destination: `destination`, `binding` and `schema`.
+	 * @param string               $subjectField The binding's subject property.
+	 * @param string               $subjectRef   The signed-in subject.
+	 * @param string               $reference    The reference.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function byMarkedReference(array $entry, string $subjectField, string $subjectRef, string $reference): ?array {
+		$destination = $entry['destination'];
+		$own         = $this->marked(schema: $entry['schema'], marker: 'reference');
+		if ($own === []) {
+			return null;
+		}
+
+		return $this->first(
 			rows: $this->reader->readCollection(
 				register: $destination['register'],
 				schema: $destination['schema'],
@@ -212,12 +296,70 @@ class DestinationLookup {
 			property: $own[0],
 			value: $reference
 		);
-		if ($row === null || (string)($row[$subjectField] ?? '') !== $subjectRef) {
+	}//end byMarkedReference()
+
+	/**
+	 * The subject's row whose uuid is the reference, or null.
+	 *
+	 * OpenRegister's form submit answers the destination's reference property,
+	 * or the object's uuid when that property is empty or absent. A resident
+	 * then holds the uuid, and the reference page has to find the case by it
+	 * (found live, 25 Nov 2026: a registered submit's reference answered 404).
+	 * Only the subject's own rows are read.
+	 *
+	 * @param array<string, string> $destination  The destination register and schema.
+	 * @param string                $subjectField The binding's subject property.
+	 * @param string                $subjectRef   The signed-in subject.
+	 * @param string                $reference    The reference.
+	 *
+	 * @return array<string, mixed>|null
+	 *
+	 * @spec openspec/specs/portal-intake-form/spec.md
+	 */
+	private function byUuidReference(array $destination, string $subjectField, string $subjectRef, string $reference): ?array {
+		if (preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $reference) !== 1) {
 			return null;
 		}
 
-		return ['object' => $row, 'binding' => $entry['binding'], 'schema' => $schema];
-	}//end findIn()
+		$rows = $this->reader->readCollection(
+			register: $destination['register'],
+			schema: $destination['schema'],
+			scopeField: $subjectField,
+			subjectRef: $subjectRef,
+			limit: self::OWN_ROWS
+		);
+		foreach ($rows as $row) {
+			if (is_array($row) === true && strcasecmp($this->uuidOf(row: $row), $reference) === 0) {
+				return $row;
+			}
+		}
+
+		return null;
+	}//end byUuidReference()
+
+	/**
+	 * The uuid of a row as the reader returns it.
+	 *
+	 * @param array<string, mixed> $row The row.
+	 *
+	 * @return string
+	 */
+	private function uuidOf(array $row): string {
+		return (string)($row['id'] ?? $row['uuid'] ?? ($row['@self']['id'] ?? ''));
+	}//end uuidOf()
+
+	/**
+	 * Whether a row read is absent or not the signed-in subject's.
+	 *
+	 * @param array<string, mixed>|null $row          The row, or null.
+	 * @param string                    $subjectField The field naming the subject.
+	 * @param string                    $subjectRef   The signed-in subject.
+	 *
+	 * @return bool
+	 */
+	private function isNotTheSubjects(array|null $row, string $subjectField, string $subjectRef): bool {
+		return $row === null || (string)($row[$subjectField] ?? '') !== $subjectRef;
+	}//end isNotTheSubjects()
 
 	/**
 	 * The first row whose property holds exactly the value: a reader's

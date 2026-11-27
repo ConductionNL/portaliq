@@ -987,6 +987,16 @@ export function coverageByPlacement() {
  */
 export const SITE_COMPOSITIONS = [
 	{
+		key: 'nlInbox',
+		composes: ['Task List', 'Data Badge'],
+		why: 'The signed-in visitor\'s newest messages as action rows, unread first (site-nlds-widget-palette T9).',
+	},
+	{
+		key: 'nlRecordSwitcher',
+		composes: ['Radio Group', 'Avatar'],
+		why: 'For whom a page shows: a radio group over the signed-in visitor\'s own records (site-nlds-widget-palette T9).',
+	},
+	{
 		key: 'nlQuickTasks',
 		composes: ['Link List', 'Card as Link'],
 		why: 'The tasks a portal is visited for, as one card of tiles ("Direct regelen").',
@@ -1015,6 +1025,11 @@ export const SITE_COMPOSITIONS = [
 		key: 'nlLinkColumns',
 		composes: ['Heading', 'Link List'],
 		why: 'A heading over columns of links on a band of its own ("Bestuur en organisatie").',
+	},
+	{
+		key: 'nlLocationMap',
+		composes: ['Heading', 'Link List', 'Button'],
+		why: 'The organisation\'s places as a numbered list beside a sketch map, with chips per kind of place and a route link ("Locaties").',
 	},
 	{
 		key: 'nlLookupForm',

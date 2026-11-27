@@ -26,14 +26,16 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Service\Intake;
 
+use OCA\Portaliq\Kernel\Contracts\DestinationIntakeInterface;
 use OCA\Portaliq\Service\PortalSchemaReader;
+use OCA\Portaliq\Kernel\DestinationRefusal;
 
 /**
  * Submits a bound form into its destination, or checks the binding.
  *
  * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md
  */
-class DestinationIntake {
+class DestinationIntake implements DestinationIntakeInterface {
 	/**
 	 * The finding code for a binding that names no destination.
 	 */
@@ -50,11 +52,13 @@ class DestinationIntake {
 	 * @param DestinationSubmit  $submitter Calls OpenRegister's submit service and validator.
 	 * @param DestinationMapping $mapping   Builds the binding's mapping.
 	 * @param PortalSchemaReader $schemas   Reads the destination schema.
+	 * @param SubmitFailureLog|null $failures Gives a failed submit its error code and log line.
 	 */
 	public function __construct(
 		private readonly DestinationSubmit $submitter,
 		private readonly DestinationMapping $mapping,
 		private readonly PortalSchemaReader $schemas,
+		private readonly ?SubmitFailureLog $failures = null,
 	) {
 	}//end __construct()
 
@@ -68,10 +72,13 @@ class DestinationIntake {
 	 * @param array<string, mixed> $server         Values the server knows, carried where the destination declares them.
 	 * @param string               $idempotencyKey The client's Idempotency-Key, or ''.
 	 *
-	 * @return array{ok: bool, status: int, answer: array<string, mixed>, message: string, errors: array<string, string>}
-	 *         `errors` holds a message per field for a 422.
+	 * @return array{ok: bool, status: int, answer: array<string, mixed>, message: string, errors: array<string, string>, code?: string}
+	 *         `errors` holds a message per field for a 422; `code` names a submit
+	 *         the destination did not answer (REQ-FGV-003).
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-the-case-is-created-in-the-request-and-the-citizen-gets-its-reference-at-once-req-pifo-005
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-each-form-names-where-its-submissions-go-req-fgv-002
 	 */
 	public function submit(
 		array $binding,
@@ -81,9 +88,14 @@ class DestinationIntake {
 		array $server = [],
 		string $idempotencyKey = '',
 	): array {
+		// A rule over the answers may send this submit elsewhere (REQ-FGV-002).
+		$binding     = (new DestinationRules())->routed(binding: $binding, answers: $answers);
 		$destination = $this->mapping->destinationOf(binding: $binding);
 		if ($destination === null) {
-			return ['ok' => false, 'status' => 503, 'answer' => [], 'message' => 'The form names no destination.', 'errors' => []];
+			return $this->failed(
+				binding: $binding,
+				result: ['ok' => false, 'status' => 503, 'answer' => [], 'message' => 'The form names no destination.', 'errors' => []]
+			);
 		}
 
 		$mapping = $this->mapping->mappingFor(
@@ -108,14 +120,39 @@ class DestinationIntake {
 			$errors = $this->mapping->fieldErrors(findings: $result['findings'], mapping: $mapping);
 		}
 
-		return [
-			'ok' => $result['ok'],
-			'status' => $result['status'],
-			'answer' => $result['answer'],
-			'message' => $result['message'],
-			'errors' => $errors,
-		];
+		return $this->failed(
+			binding: $binding,
+			result: [
+				'ok' => $result['ok'],
+				'status' => $result['status'],
+				'answer' => $result['answer'],
+				'message' => $result['message'],
+				'errors' => $errors,
+			]
+		);
 	}//end submit()
+
+	/**
+	 * A submit the destination did not answer gets its error code and log
+	 * line; an accepted submit, a refused answer (422) and a form that cannot
+	 * be sent (403, 404) pass unchanged.
+	 *
+	 * @param array<string, mixed> $binding The binding.
+	 * @param array{ok: bool, status: int, answer: array, message: string, errors: array} $result  What the submit answered.
+	 *
+	 * @return array{ok: bool, status: int, answer: array<string, mixed>, message: string, errors: array<string, string>, code?: string}
+	 *         The answer, with `code` on a failure.
+	 *
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
+	 */
+	private function failed(array $binding, array $result): array {
+		if ($this->failures === null || $result['ok'] === true || in_array($result['status'], [403, 404, 422], true) === true) {
+			return $result;
+		}
+
+		$result['code'] = $this->failures->record(binding: $binding, status: $result['status'], message: $result['message']);
+		return $result;
+	}//end failed()
 
 	/**
 	 * The answer to a submit that did not create the destination object.
@@ -132,16 +169,7 @@ class DestinationIntake {
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-submission-is-validated-against-its-destinations-schema-before-anything-is-stored-req-pifo-004
 	 */
 	public static function refusal(?array $submitted): array {
-		$status = (int)($submitted['status'] ?? 503);
-		if ($status === 422) {
-			return ['body' => ['error' => 'refused_by_destination', 'errors' => (array)($submitted['errors'] ?? [])], 'status' => 422];
-		}
-
-		if ($status === 403 || $status === 404) {
-			return ['body' => ['error' => 'form_not_submittable'], 'status' => $status];
-		}
-
-		return ['body' => ['error' => 'try_again_later'], 'status' => 503];
+		return DestinationRefusal::of(submitted: $submitted);
 	}//end refusal()
 
 	/**
@@ -157,12 +185,34 @@ class DestinationIntake {
 	 * @return array<int, array<string, mixed>> The findings; empty when the binding may be published.
 	 *
 	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
+	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-each-form-names-where-its-submissions-go-req-fgv-002
 	 */
 	public function check(array $binding, array $render): array {
 		if ((string)($render['kind'] ?? '') === PortalFormBindingResolver::KIND_EXTERNAL) {
 			return [];
 		}
 
+		// Every destination a rule may route to must fit too (REQ-FGV-002).
+		$rules    = (new DestinationRules())->alternatives(binding: $binding);
+		$findings = array_merge($this->checkOne(binding: $binding, render: $render), $rules['findings']);
+		foreach ($rules['bindings'] as $routed) {
+			$findings = array_merge($findings, $this->checkOne(binding: $routed, render: $render));
+		}
+
+		return $findings;
+	}//end check()
+
+	/**
+	 * The findings of one destination of the binding: its own, or a rule's.
+	 *
+	 * @param array<string, mixed> $binding The binding, with the destination to check.
+	 * @param array<string, mixed> $render  What the binding renders to.
+	 *
+	 * @return array<int, array<string, mixed>> The findings.
+	 *
+	 * @spec openspec/changes/submit-creates-the-case-directly/specs/portal-intake-form/spec.md#requirement-a-form-binding-names-its-destination-and-is-valid-against-it-req-pifo-007
+	 */
+	private function checkOne(array $binding, array $render): array {
 		$destination = $this->mapping->destinationOf(binding: $binding);
 		if ($destination === null) {
 			return [[
@@ -193,5 +243,5 @@ class DestinationIntake {
 		}
 
 		return $findings;
-	}//end check()
+	}//end checkOne()
 }//end class

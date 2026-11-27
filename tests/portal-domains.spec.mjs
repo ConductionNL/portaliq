@@ -63,6 +63,23 @@ test('a pending domain shows its TXT record and can be checked again', () => {
 	assert.equal(content.row.aside.fallback, 'not checked yet')
 })
 
+test('the TXT record name and value each have their own copy button', () => {
+	const { detail } = widget('portal-domains').content.row
+	assert.deepEqual(detail.copy, [
+		{ path: 'name', label: 'Copy name' },
+		{ path: 'value', label: 'Copy value' },
+	])
+	// The copied values are the fields the domain list answers with, the same
+	// two the record line shows, so the copy is exactly what is to be published.
+	for (const copy of detail.copy) {
+		assert.match(detail.template, new RegExp(`\\{${copy.path}\\}`))
+	}
+	const nl = JSON.parse(readFileSync(new URL('../l10n/nl.json', import.meta.url), 'utf8')).translations
+	for (const text of ['Copy name', 'Copy value', 'Copied', 'Copying did not work. Select the text and copy it yourself.']) {
+		assert.ok(nl[text], `"${text}" is not in the Dutch catalogue`)
+	}
+})
+
 test('an editor needs a user, is not listed twice and shows the user id without a name', () => {
 	const { content } = widget('portal-editors')
 	assert.equal(content.field, 'editors')
@@ -84,4 +101,23 @@ test('initials are the first letters of the first two words', () => {
 	assert.equal(initials('Pieter Jansen'), 'PJ')
 	assert.equal(initials('anouk'), 'A')
 	assert.equal(initials(''), '')
+})
+
+test('a domain is added with how it is served: at the root, and the page its bare address opens', () => {
+	const content = widget('portal-domains').content
+	const fields = Object.fromEntries(content.add.fields.map((field) => [field.key, field]))
+
+	assert.equal(fields.servedAtRoot.type, 'checkbox')
+	assert.equal(content.edit, undefined, 'no edit in place: it would write the entry back unverified')
+	const route = new RegExp(fields.landingRoute.pattern)
+	for (const good of ['/afval', '/mijn/zaken', '/a']) {
+		assert.ok(route.test(good), good)
+	}
+	for (const bad of ['afval', '/', '/afval/', '/a b', '/x?y', '/x#y', 'https://evil.example', '/x\\y']) {
+		assert.ok(!route.test(bad), bad)
+	}
+	assert.deepEqual(content.row.meta, [
+		{ path: 'servedAtRoot', map: { true: 'Site at the root of this domain', false: '' } },
+		'landingRoute',
+	])
 })

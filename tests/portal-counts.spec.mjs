@@ -10,7 +10,7 @@
 // Usage:
 //   node --test tests/portal-counts.spec.mjs
 //
-// @spec openspec/changes/home-and-theme-landing-pages/specs/portal-federated-search/spec.md
+// @spec openspec/specs/portal-federated-search/spec.md
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'

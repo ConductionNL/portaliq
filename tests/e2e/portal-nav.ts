@@ -99,7 +99,9 @@ export async function devLogin(
 	audience: string,
 	organisation: string,
 ): Promise<string> {
-	const waits = [0, 3000, 9000]
+	// dev-login allows 10 sign-ins a minute per address (AnonRateLimit), so the
+	// waits together cover one full window: a busy spec file waits it out.
+	const waits = [0, 5000, 20000, 40000]
 	let last = { status: 0, body: '' }
 	for (const wait of waits) {
 		if (wait > 0) {
@@ -167,6 +169,20 @@ export async function readSiteSession(page: Page): Promise<string | null> {
 export function oneOf(...texts: string[]): RegExp {
 	const escaped = texts.map((text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
 	return new RegExp(`^\\s*(${escaped.join('|')})\\s*$`)
+}
+
+/**
+ * A regular expression that finds one of the given texts anywhere in a
+ * larger text. `oneOf()` matches the WHOLE text, which suits a label or a
+ * cell; a card or a row carries more than the one phrase, so a check on the
+ * card uses this instead.
+ *
+ * @param texts the accepted texts
+ * @return the expression
+ */
+export function someOf(...texts: string[]): RegExp {
+	const escaped = texts.map((text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+	return new RegExp(`(${escaped.join('|')})`)
 }
 
 /**

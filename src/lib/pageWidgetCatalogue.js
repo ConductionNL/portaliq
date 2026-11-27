@@ -27,11 +27,14 @@ import {
 import AssistantBlock from '../site/components/AssistantBlock.vue'
 import ContactForm from '../site/components/ContactForm.vue'
 import FederatedSearchBlock from '../site/components/FederatedSearchBlock.vue'
+import FormBlock from '../site/components/FormBlock.vue'
 import IntakeCatalogueBlock from '../site/components/IntakeCatalogueBlock.vue'
 import IntakeFormBlock from '../site/components/IntakeFormBlock.vue'
 import IntakeStatusBlock from '../site/components/IntakeStatusBlock.vue'
 import PublicationDetailBlock from '../site/components/PublicationDetailBlock.vue'
 import PublicRecordsBlock from '../site/components/PublicRecordsBlock.vue'
+import ReportBlock from '../site/components/ReportBlock.vue'
+import ReportThreadBlock from '../site/components/ReportThreadBlock.vue'
 import SharedBlock from '../site/components/SharedBlock.vue'
 import { publicWidgetFor, publicWidgetKeys } from '../site/components/WidgetGrid.vue'
 import { metas as siteWidgetMetas } from '../site/widgets/index.js'
@@ -76,6 +79,8 @@ const DEFAULT_SIZES = {
 	contactForm: { gridWidth: 8, gridHeight: 6 },
 	assistant: { gridWidth: 8, gridHeight: 6 },
 	publicRecords: { gridWidth: 12, gridHeight: 6 },
+	report: { gridWidth: 12, gridHeight: 8 },
+	reportThread: { gridWidth: 12, gridHeight: 8 },
 	sharedBlock: { gridWidth: 12, gridHeight: 3 },
 	card: { gridWidth: 4, gridHeight: 3 },
 	emptyState: { gridWidth: 6, gridHeight: 3 },
@@ -99,10 +104,14 @@ const HOST_SUPPLIED = {
 	publicationDetail: ['subjectId'],
 	intakeCatalogue: ['portal'],
 	intakeForm: ['portal', 'routeParam', 'portalHelp'],
+	// The host names the portal; the help is the portal's (WidgetGrid.propsFor).
+	form: ['portal', 'portalHelp'],
 	intakeStatus: ['portal'],
 	contactForm: ['portal', 'signedIn', 'ways', 'apiOverride'],
 	assistant: ['portal', 'askOverride'],
 	publicRecords: ['recordParam', 'apiOverride'],
+	report: ['portal', 'apiOverride'],
+	reportThread: ['portal', 'apiOverride'],
 	// The content API fills these; an author chooses only which block.
 	sharedBlock: ['widgets', 'unavailable', 'host'],
 }
@@ -158,6 +167,8 @@ const KIND_OVERRIDES = {
  */
 const LAZY_ON_THE_SITE = {
 	federatedSearch: FederatedSearchBlock,
+	// The form widget's field list is edited in the inspector (site-nlds-widget-palette D4).
+	form: FormBlock,
 	publicationDetail: PublicationDetailBlock,
 	intakeCatalogue: IntakeCatalogueBlock,
 	intakeForm: IntakeFormBlock,
@@ -165,6 +176,8 @@ const LAZY_ON_THE_SITE = {
 	contactForm: ContactForm,
 	assistant: AssistantBlock,
 	publicRecords: PublicRecordsBlock,
+	report: ReportBlock,
+	reportThread: ReportThreadBlock,
 	sharedBlock: SharedBlock,
 }
 

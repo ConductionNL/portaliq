@@ -38,14 +38,20 @@
  * @spec openspec/specs/supplier-portal/spec.md#proof-of-receipt-log-satisfying-the-wmebv-burden-of-proof
  * @spec openspec/specs/supplier-portal/spec.md#a-receipt-or-log-failure-never-loses-the-submission
  * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
+ * @spec openspec/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\Service;
 
+use DateTime;
+use DateTimeZone;
+use OCA\Portaliq\Kernel\Contracts\SubmissionReceiptServiceInterface;
 use OCA\Portaliq\Service\Notifications\PortalNoticeLanguage;
 use OCP\AppFramework\Utility\ITimeFactory;
+use OCP\IDateTimeZone;
+use OCP\IL10N;
 use Psr\Log\LoggerInterface;
 use Throwable;
 
@@ -54,7 +60,9 @@ use Throwable;
  *
  * @spec openspec/specs/supplier-portal/spec.md#automatic-ontvangstbevestiging-on-a-successful-create-action
  */
-class SubmissionReceiptService {
+class SubmissionReceiptService implements SubmissionReceiptServiceInterface {
+	use RowIdOf;
+
 	/**
 	 * The register every portal-owned schema lives in.
 	 */
@@ -69,6 +77,11 @@ class SubmissionReceiptService {
 	 * The append-only burden-of-proof log schema.
 	 */
 	private const SUBMISSION_SCHEMA = 'portalSubmission';
+
+	/**
+	 * The longest action title kept on a proof-log record.
+	 */
+	private const TITLE_MAX_LENGTH = 200;
 
 	/**
 	 * The receipt subject-line translation key. English key text per
@@ -99,6 +112,10 @@ class SubmissionReceiptService {
 	 *                                                          (portal-notifications-dispatch)
 	 *                                                          on a successful receipt write; itself
 	 *                                                          fail-safe, never affects this call.
+	 * @param IDateTimeZone|null $timeZone The instance's time zone, in which the receipt names the moment.
+	 * @param SubmissionReceiptPdf|null $pdfs Reads a receipt back and renders its PDF (REQ-CRG-005).
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
 	 */
 	public function __construct(
 		private readonly PortalObjectWriter $writer,
@@ -106,6 +123,8 @@ class SubmissionReceiptService {
 		private readonly ITimeFactory $timeFactory,
 		private readonly LoggerInterface $logger,
 		private readonly NotificationDispatchService $notificationDispatch,
+		private readonly ?IDateTimeZone $timeZone = null,
+		private readonly ?SubmissionReceiptPdf $pdfs = null,
 	) {
 	}//end __construct()
 
@@ -128,6 +147,9 @@ class SubmissionReceiptService {
 	 *                         dispatch — resolves the app manifest via the
 	 *                         registry; empty is safe, it simply yields no
 	 *                         notification match).
+	 * @param mixed $actionTitle The action's name as the resident read it,
+	 *                           stored on the proof log as text; anything
+	 *                           but a non-blank string records no title.
 	 *
 	 * @return void
 	 *
@@ -135,6 +157,7 @@ class SubmissionReceiptService {
 	 * @spec openspec/specs/supplier-portal/spec.md#proof-of-receipt-log-satisfying-the-wmebv-burden-of-proof
 	 * @spec openspec/specs/supplier-portal/spec.md#a-receipt-or-log-failure-never-loses-the-submission
 	 * @spec openspec/specs/supplier-portal/spec.md#manifest-notification-rule-keys-drive-an-out-of-band-email
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
 	 */
 	public function record(
 		string $subjectRef,
@@ -143,105 +166,250 @@ class SubmissionReceiptService {
 		string $actionId,
 		array $whitelistedData,
 		string $audience = '',
+		mixed $actionTitle = '',
 	): void {
+		$run = new ReceiptRun(subjectRef: $subjectRef, organisation: $organisation);
+		$run->named           = $this->titleFields(actionTitle: $actionTitle);
+		$run->appId           = $appId;
+		$run->actionId        = $actionId;
+		$run->whitelistedData = $whitelistedData;
+		$run->audience        = $audience;
 		try {
-			$this->doRecord(
-				subjectRef: $subjectRef,
-				organisation: $organisation,
-				appId: $appId,
-				actionId: $actionId,
-				whitelistedData: $whitelistedData,
-				audience: $audience
-			);
+			$this->doRecord(run: $run);
 		} catch (Throwable $e) {
-			// Belt-and-braces: doRecord()'s own writes already degrade to null
-			// rather than throw, but nothing here may ever reach the caller —
-			// a submission must never be lost because a compliance side-effect
-			// misbehaved.
-			$this->logger->error(
-				'Portaliq: WMEBV receipt recording failed entirely',
-				['appId' => $appId, 'actionId' => $actionId, 'reason' => $e->getMessage()]
-			);
-			$this->writeFallbackSubmission(subjectRef: $subjectRef, organisation: $organisation, appId: $appId, actionId: $actionId);
+			$this->recordingFailedEntirely(run: $run, error: $e);
 		}
 	}//end record()
 
 	/**
+	 * Write the receipt again for one stored proof-log record whose receipt
+	 * failed or is still pending, and mark the record delivered.
+	 *
+	 * The record is not copied and its proof fields do not move: the receipt
+	 * is written from the record's own `subjectRef`, `organisation` and
+	 * `payloadCopy`, keeps the record's reference when it has one, and names
+	 * the record's `submittedAt` as the moment of submission. Only
+	 * `receiptMessageRef` and `deliveryStatus` are written back. A receipt
+	 * write that fails leaves the record `failed`. Never throws.
+	 *
+	 * @param array<string, mixed> $record The stored `portalSubmission` row, as the caller may read it.
+	 *
+	 * @return bool True when the receipt was written and the record marked delivered.
+	 *
+	 * @spec openspec/changes/submission-row-actions/specs/supplier-portal/spec.md#requirement-an-employee-can-register-a-failed-receipt-again
+	 */
+	public function registerAgain(array $record): bool {
+		$id  = $this->idOf(row: $record);
+		$run = new ReceiptRun(subjectRef: (string)($record['subjectRef'] ?? ''), organisation: (string)($record['organisation'] ?? ''));
+		if ($id === '' || $run->subjectRef === '') {
+			$this->logger->warning('Portaliq: a submission without an id or subject cannot be registered again', ['id' => $id]);
+			return false;
+		}
+
+		$run->appId           = (string)($record['appId'] ?? '');
+		$run->actionId        = (string)($record['actionId'] ?? '');
+		$run->whitelistedData = (array)($record['payloadCopy'] ?? []);
+		$run->referenceId     = (string)($record['receiptMessageRef'] ?? '');
+		if ($run->referenceId === '') {
+			$run->referenceId = $this->generateReferenceId();
+		}
+
+		$run->submittedAt = (string)($record['submittedAt'] ?? '');
+		if ($run->submittedAt === '') {
+			$run->submittedAt = $this->now();
+		}
+
+		try {
+			$message = $this->writeReceiptMessage(run: $run, data: (['receivedAt' => $this->now()] + $this->receiptMessageData(run: $run)));
+		} catch (Throwable $e) {
+			$this->logger->warning('Portaliq: registering a receipt again failed', ['id' => $id, 'reason' => $e->getMessage()]);
+			$message = null;
+		}
+
+		if ($message === null) {
+			$this->markSubmission(run: $run, id: $id, values: ['deliveryStatus' => 'failed']);
+			return false;
+		}
+
+		return $this->markSubmission(run: $run, id: $id, values: ['receiptMessageRef' => $run->referenceId, 'deliveryStatus' => 'delivered']);
+	}//end registerAgain()
+
+	/**
+	 * Write the service's own fields back onto a stored proof-log record.
+	 *
+	 * @param ReceiptRun           $run    The receipt, for the record's subject and tenant.
+	 * @param string               $id     The record.
+	 * @param array<string, mixed> $values Only `receiptMessageRef` and `deliveryStatus`.
+	 *
+	 * @return bool True when the record was written.
+	 */
+	private function markSubmission(ReceiptRun $run, string $id, array $values): bool {
+		try {
+			$saved = $this->writer->updateObject(
+				register: self::REGISTER,
+				schema: self::SUBMISSION_SCHEMA,
+				scopeField: 'subjectRef',
+				subjectRef: $run->subjectRef,
+				organisation: $run->organisation,
+				id: $id,
+				data: $values
+			);
+		} catch (Throwable $e) {
+			$saved = null;
+		}
+
+		if ($saved === null) {
+			$this->logger->warning('Portaliq: a submission could not be marked after registering its receipt again', ['id' => $id]);
+			return false;
+		}
+
+		return true;
+	}//end markSubmission()
+
+	/**
+	 * Belt-and-braces: doRecord()'s own writes already degrade to null rather
+	 * than throw, but nothing here may ever reach the caller — a submission
+	 * must never be lost because a compliance side-effect misbehaved.
+	 *
+	 * @param ReceiptRun $run   The receipt.
+	 * @param Throwable  $error What went wrong.
+	 *
+	 * @return void
+	 */
+	private function recordingFailedEntirely(ReceiptRun $run, Throwable $error): void {
+		$this->logger->error(
+			'Portaliq: WMEBV receipt recording failed entirely',
+			['appId' => $run->appId, 'actionId' => $run->actionId, 'reason' => $error->getMessage()]
+		);
+		$this->writeFallbackSubmission(run: $run);
+	}//end recordingFailedEntirely()
+
+	/**
+	 * The proof-log fields that name the action: `actionTitle`, trimmed and
+	 * kept to TITLE_MAX_LENGTH characters, or nothing for a title that is no
+	 * string or is blank.
+	 *
+	 * @param mixed $actionTitle The title the caller passed.
+	 *
+	 * @return array<string, string> Either `['actionTitle' => ...]` or empty.
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	private function titleFields(mixed $actionTitle): array {
+		if (is_string($actionTitle) === false) {
+			return [];
+		}
+
+		$title = mb_substr(trim($actionTitle), 0, self::TITLE_MAX_LENGTH);
+		if ($title === '') {
+			return [];
+		}
+
+		return ['actionTitle' => $title];
+	}//end titleFields()
+
+	/**
 	 * Write the receipt message, then the linked proof-log record.
 	 *
-	 * @param string $subjectRef The submitting subject.
-	 * @param string $organisation The subject's tenant.
-	 * @param string $appId The contributing app.
-	 * @param string $actionId The declared action id.
-	 * @param array<string, mixed> $whitelistedData The whitelisted submitted data.
-	 * @param string $audience The subject's audience (notification dispatch).
+	 * @param ReceiptRun $run The receipt.
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/resident-sees-words-not-codes/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-a-notification-mail-and-a-task-notice-are-written-in-the-portals-language-only
 	 */
-	private function doRecord(
-		string $subjectRef,
-		string $organisation,
-		string $appId,
-		string $actionId,
-		array $whitelistedData,
-		string $audience = '',
-	): void {
-		$referenceId = $this->generateReferenceId();
-		$submittedAt = $this->now();
-		// One language, the portal's, as change notices are (REQ-NAP-010).
-		$l10n = $this->language->forOrganisation(organisation: $organisation);
+	private function doRecord(ReceiptRun $run): void {
+		$run->referenceId = $this->generateReferenceId();
+		$run->submittedAt = $this->now();
 
-		$message = $this->writer->createObject(
-			register: self::REGISTER,
-			schema: self::MESSAGE_SCHEMA,
-			scopeField: 'subjectRef',
-			subjectRef: $subjectRef,
-			organisation: $organisation,
-			data: [
-				'subject' => $l10n->t(self::SUBJECT_KEY, [$referenceId]),
-				'body' => $l10n->t(self::BODY_KEY, [$referenceId, $submittedAt]),
-				'referenceId' => $referenceId,
-				'dataCopy' => $whitelistedData,
-				'read' => false,
-				'receivedAt' => $submittedAt,
-			]
-		);
-
-		$deliveryStatus = $this->announceReceipt(
-			message: $message,
-			subjectRef: $subjectRef,
-			organisation: $organisation,
-			appId: $appId,
-			actionId: $actionId,
-			audience: $audience
-		);
-
-		$submission = $this->writer->createObject(
-			register: self::REGISTER,
-			schema: self::SUBMISSION_SCHEMA,
-			scopeField: 'subjectRef',
-			subjectRef: $subjectRef,
-			organisation: $organisation,
-			data: [
-				'appId' => $appId,
-				'actionId' => $actionId,
-				'payloadCopy' => $whitelistedData,
-				'receiptMessageRef' => $referenceId,
-				'submittedAt' => $submittedAt,
-				'deliveryStatus' => $deliveryStatus,
-			]
-		);
+		$message        = $this->writeReceiptMessage(run: $run, data: $this->receiptMessageData(run: $run));
+		$deliveryStatus = $this->announceReceipt(message: $message, run: $run);
+		$submission     = $this->writeProofLog(run: $run, data: $this->proofLogData(run: $run, deliveryStatus: $deliveryStatus));
 
 		if ($submission === null) {
 			$this->logger->warning(
 				'Portaliq: WMEBV proof-log write failed — retrying with a minimal fallback record',
-				['appId' => $appId, 'actionId' => $actionId, 'subjectRef' => $subjectRef]
+				['appId' => $run->appId, 'actionId' => $run->actionId, 'subjectRef' => $run->subjectRef]
 			);
-			$this->writeFallbackSubmission(subjectRef: $subjectRef, organisation: $organisation, appId: $appId, actionId: $actionId);
+			$this->writeFallbackSubmission(run: $run);
 		}
 	}//end doRecord()
+
+	/**
+	 * The receipt message, in the portal's language only, as change notices
+	 * are (REQ-NAP-010).
+	 *
+	 * @param ReceiptRun $run The receipt, with its reference and moment.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function receiptMessageData(ReceiptRun $run): array {
+		$l10n = $this->language->forOrganisation(organisation: $run->organisation);
+		return [
+			'subject' => $l10n->t(self::SUBJECT_KEY, [$run->referenceId]),
+			'body' => $l10n->t(self::BODY_KEY, [$run->referenceId, $this->readable(l10n: $l10n, moment: $run->submittedAt)]),
+			'referenceId' => $run->referenceId,
+			'dataCopy' => $run->whitelistedData,
+			'read' => false,
+			'receivedAt' => $run->submittedAt,
+		];
+	}//end receiptMessageData()
+
+	/**
+	 * The proof-log record linked to the receipt.
+	 *
+	 * @param ReceiptRun $run            The receipt, with its reference and moment.
+	 * @param string     $deliveryStatus Whether the receipt message landed.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function proofLogData(ReceiptRun $run, string $deliveryStatus): array {
+		return [
+			'appId' => $run->appId,
+			'actionId' => $run->actionId,
+			'payloadCopy' => $run->whitelistedData,
+			'receiptMessageRef' => $run->referenceId,
+			'submittedAt' => $run->submittedAt,
+			'deliveryStatus' => $deliveryStatus,
+		] + $run->named;
+	}//end proofLogData()
+
+	/**
+	 * Write the receipt message in the subject's inbox.
+	 *
+	 * @param ReceiptRun           $run  The receipt.
+	 * @param array<string, mixed> $data The message.
+	 *
+	 * @return array<string, mixed>|null The written message, or null when the write failed.
+	 */
+	private function writeReceiptMessage(ReceiptRun $run, array $data): ?array {
+		return $this->writer->createObject(
+			register: self::REGISTER,
+			schema: self::MESSAGE_SCHEMA,
+			scopeField: 'subjectRef',
+			subjectRef: $run->subjectRef,
+			organisation: $run->organisation,
+			data: $data
+		);
+	}//end writeReceiptMessage()
+
+	/**
+	 * Write a proof-log record for the subject.
+	 *
+	 * @param ReceiptRun           $run  The receipt.
+	 * @param array<string, mixed> $data The record.
+	 *
+	 * @return array<string, mixed>|null The written record, or null when the write failed.
+	 */
+	private function writeProofLog(ReceiptRun $run, array $data): ?array {
+		return $this->writer->createObject(
+			register: self::REGISTER,
+			schema: self::SUBMISSION_SCHEMA,
+			scopeField: 'subjectRef',
+			subjectRef: $run->subjectRef,
+			organisation: $run->organisation,
+			data: $data
+		);
+	}//end writeProofLog()
 
 	/**
 	 * Resolve the proof-log `deliveryStatus` for a receipt-message write, and
@@ -254,43 +422,43 @@ class SubmissionReceiptService {
 	 * logged — the submission itself remains authoritative either way.
 	 *
 	 * @param array<string, mixed>|null $message The written receipt message, or null when the write failed.
-	 * @param string $subjectRef The submitting subject.
-	 * @param string $organisation The subject's tenant.
-	 * @param string $appId The contributing app.
-	 * @param string $actionId The declared action id.
-	 * @param string $audience The subject's audience (notification dispatch).
+	 * @param ReceiptRun                $run     The receipt.
 	 *
 	 * @return string Either `delivered` or `failed`.
 	 */
-	private function announceReceipt(
-		?array $message,
-		string $subjectRef,
-		string $organisation,
-		string $appId,
-		string $actionId,
-		string $audience,
-	): string {
+	private function announceReceipt(?array $message, ReceiptRun $run): string {
 		if ($message === null) {
 			$this->logger->warning(
 				'Portaliq: WMEBV receipt message write failed — submission remains authoritative',
-				['appId' => $appId, 'actionId' => $actionId, 'subjectRef' => $subjectRef]
+				['appId' => $run->appId, 'actionId' => $run->actionId, 'subjectRef' => $run->subjectRef]
 			);
 
 			return 'failed';
 		}
 
-		$this->notificationDispatch->dispatch(
-			ruleKey: NotificationDispatchService::RULE_MESSAGE_CREATED,
-			appId: $appId,
-			subject: [
-				'subjectRef' => $subjectRef,
-				'organisation' => $organisation,
-				'audience' => $audience,
-			]
-		);
+		$this->dispatchMessageCreated(run: $run);
 
 		return 'delivered';
 	}//end announceReceipt()
+
+	/**
+	 * Fire the `message.created` notification trigger for the subject.
+	 *
+	 * @param ReceiptRun $run The receipt.
+	 *
+	 * @return void
+	 */
+	private function dispatchMessageCreated(ReceiptRun $run): void {
+		$this->notificationDispatch->dispatch(
+			ruleKey: NotificationDispatchService::RULE_MESSAGE_CREATED,
+			appId: $run->appId,
+			subject: [
+				'subjectRef' => $run->subjectRef,
+				'organisation' => $run->organisation,
+				'audience' => $run->audience,
+			]
+		);
+	}//end dispatchMessageCreated()
 
 	/**
 	 * Best-effort minimal `portalSubmission` row when the full write failed —
@@ -298,37 +466,38 @@ class SubmissionReceiptService {
 	 * silent gap. Itself guarded: a failure here is logged and swallowed, it
 	 * can never propagate (the domain create already succeeded long ago).
 	 *
-	 * @param string $subjectRef The submitting subject.
-	 * @param string $organisation The subject's tenant.
-	 * @param string $appId The contributing app.
-	 * @param string $actionId The declared action id.
+	 * @param ReceiptRun $run The receipt.
 	 *
 	 * @return void
 	 *
 	 * @spec openspec/specs/supplier-portal/spec.md#a-receipt-or-log-failure-never-loses-the-submission
 	 */
-	private function writeFallbackSubmission(string $subjectRef, string $organisation, string $appId, string $actionId): void {
+	private function writeFallbackSubmission(ReceiptRun $run): void {
 		try {
-			$this->writer->createObject(
-				register: self::REGISTER,
-				schema: self::SUBMISSION_SCHEMA,
-				scopeField: 'subjectRef',
-				subjectRef: $subjectRef,
-				organisation: $organisation,
-				data: [
-					'appId' => $appId,
-					'actionId' => $actionId,
-					'submittedAt' => $this->now(),
-					'deliveryStatus' => 'failed',
-				]
-			);
+			$this->writeProofLog(run: $run, data: $this->fallbackProofLogData(run: $run));
 		} catch (Throwable $e) {
 			$this->logger->error(
 				'Portaliq: WMEBV fallback proof-log write also failed',
-				['appId' => $appId, 'actionId' => $actionId, 'reason' => $e->getMessage()]
+				['appId' => $run->appId, 'actionId' => $run->actionId, 'reason' => $e->getMessage()]
 			);
 		}
 	}//end writeFallbackSubmission()
+
+	/**
+	 * The minimal proof-log record: who, what, now, and that it failed.
+	 *
+	 * @param ReceiptRun $run The receipt.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function fallbackProofLogData(ReceiptRun $run): array {
+		return [
+			'appId' => $run->appId,
+			'actionId' => $run->actionId,
+			'submittedAt' => $this->now(),
+			'deliveryStatus' => 'failed',
+		] + $run->named;
+	}//end fallbackProofLogData()
 
 	/**
 	 * A short, unique receipt reference id (not a secret — merely an
@@ -349,6 +518,36 @@ class SubmissionReceiptService {
 
 		return 'WMEBV-' . strtoupper($random);
 	}//end generateReferenceId()
+
+	/**
+	 * A moment as the reader reads it: the day in words and the time to the
+	 * minute, in the portal's language and the instance's time zone
+	 * ("16 oktober 2026 09:41"). The stored value stays ISO.
+	 *
+	 * @param IL10N  $l10n   The portal's language.
+	 * @param string $moment An ISO 8601 moment.
+	 *
+	 * @return string The readable moment, or the moment as given when it cannot be read.
+	 *
+	 * @spec openspec/specs/portal-notifications-and-preferences/spec.md#requirement-a-receipt-names-the-moment-in-words-of-the-portals-language
+	 */
+	private function readable(IL10N $l10n, string $moment): string {
+		try {
+			$zone = ($this->timeZone?->getTimeZone() ?? new DateTimeZone('UTC'));
+			// IL10N::l() reads only a mutable \DateTime as a moment; anything
+			// else is cast to an integer, and a DateTimeImmutable became
+			// 1 January 1970 (seen live 25 Nov 2026).
+			$text = $l10n->l('datetime', (new DateTime($moment))->setTimezone($zone), ['width' => 'long|short']);
+		} catch (Throwable) {
+			return $moment;
+		}
+
+		if (is_string($text) === false || $text === '') {
+			return $moment;
+		}
+
+		return $text;
+	}//end readable()
 
 	/**
 	 * The current time as an ISO-8601 string (testable via ITimeFactory).
@@ -399,30 +598,9 @@ class SubmissionReceiptService {
 		// proof log naming an upload the authority never received would be a
 		// false art. 2:10 statement (review of #501). The request is only the
 		// fallback for a seam row that predates those keys.
-		$recordedFiles = $files;
-		if (array_key_exists('evidence', $task) === true) {
-			$recordedFiles = (array)$task['evidence'];
-		}
-
-		$names = [];
-		foreach ($recordedFiles as $stored) {
-			$name = 'upload';
-			if (is_array($stored) === true) {
-				$name = (string)($stored['name'] ?? 'upload');
-			}
-
-			$names[] = $name;
-		}
-
-		$recordedAnswers = $answers;
-		if (is_array($task['responses'] ?? null) === true) {
-			$recordedAnswers = $task['responses'];
-		}
-
-		$recorded = (string)($task['outcome'] ?? '');
-		if ($recorded === '') {
-			$recorded = $outcome;
-		}
+		$names           = $this->recordedFileNames(task: $task, files: $files);
+		$recordedAnswers = $this->recordedAnswers(task: $task, answers: $answers);
+		$recorded        = $this->recordedOutcome(task: $task, outcome: $outcome);
 
 		return [
 			'taskUuid' => $taskUuid,
@@ -436,5 +614,107 @@ class SubmissionReceiptService {
 		];
 	}//end taskCompletionCopy()
 
+	/**
+	 * The names of the files the seam recorded as `evidence`, or of the
+	 * relayed uploads for a seam row that predates that key; an unnamed one
+	 * is labelled `upload` rather than dropped.
+	 *
+	 * @param array<string, mixed>             $task  The seam's completed task row.
+	 * @param array<int, array<string, mixed>> $files The relayed uploads.
+	 *
+	 * @return array<int, string>
+	 */
+	private function recordedFileNames(array $task, array $files): array {
+		$recordedFiles = $files;
+		if (array_key_exists('evidence', $task) === true) {
+			$recordedFiles = (array)$task['evidence'];
+		}
 
+		$names = [];
+		foreach ($recordedFiles as $stored) {
+			$names[] = $this->storedFileName(stored: $stored);
+		}
+
+		return $names;
+	}//end recordedFileNames()
+
+	/**
+	 * The name of one recorded file, or `upload` when it carries none.
+	 *
+	 * @param mixed $stored One recorded file.
+	 *
+	 * @return string
+	 */
+	private function storedFileName(mixed $stored): string {
+		if (is_array($stored) === true) {
+			return (string)($stored['name'] ?? 'upload');
+		}
+
+		return 'upload';
+	}//end storedFileName()
+
+	/**
+	 * The answers map the seam stored, or the submitted answers when it
+	 * stored none.
+	 *
+	 * @param array<string, mixed> $task    The seam's completed task row.
+	 * @param array<string, mixed> $answers The submitted answers.
+	 *
+	 * @return array<string, mixed>
+	 */
+	private function recordedAnswers(array $task, array $answers): array {
+		if (is_array($task['responses'] ?? null) === true) {
+			return $task['responses'];
+		}
+
+		return $answers;
+	}//end recordedAnswers()
+
+	/**
+	 * The outcome the seam stored, or the requested one when it stored none.
+	 *
+	 * @param array<string, mixed> $task    The seam's completed task row.
+	 * @param string               $outcome The requested outcome.
+	 *
+	 * @return string
+	 */
+	private function recordedOutcome(array $task, string $outcome): string {
+		$recorded = (string)($task['outcome'] ?? '');
+		if ($recorded === '') {
+			return $outcome;
+		}
+
+		return $recorded;
+	}//end recordedOutcome()
+
+	/**
+	 * The PDF of one of the subject's own receipts: the reference, the moment
+	 * of receipt and the submitted answers from its data copy, rendered
+	 * through OpenRegister. Someone else's receipt, an unknown id and a
+	 * message that is no receipt all answer RECEIPT_NOT_FOUND, read before
+	 * anything is rendered.
+	 *
+	 * @param array<string, mixed> $subject The resolved session subject.
+	 * @param string $id The receipt message's id, as the client sent it.
+	 *
+	 * @return array{status: string, bytes?: string, name?: string} `status` is
+	 *         RECEIPT_PDF, RECEIPT_NOT_FOUND, RECEIPT_PDF_UNAVAILABLE or RECEIPT_PDF_FAILED.
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-submission-receipt-offers-the-answers-as-a-pdf-req-crg-005
+	 */
+	public function receiptPdf(array $subject, string $id): array {
+		if ($this->pdfs === null) {
+			return ['status' => self::RECEIPT_NOT_FOUND];
+		}
+
+		$l10n = $this->language->forOrganisation(organisation: (string)($subject['organisation'] ?? ''));
+
+		return $this->pdfs->pdfFor(
+			subject: $subject,
+			id: $id,
+			l10n: $l10n,
+			subjectKey: self::SUBJECT_KEY,
+			readable: fn (string $moment): string => $this->readable(l10n: $l10n, moment: $moment)
+		);
+	}//end receiptPdf()
 }//end class

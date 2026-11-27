@@ -30,7 +30,7 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md
+ * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md
  */
 
 declare(strict_types=1);
@@ -40,7 +40,9 @@ namespace OCA\Portaliq\Contribution;
 /**
  * Normalises and applies the input and availability keys of an endpoint row action.
  *
- * @spec openspec/changes/case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md
+ * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/specs/portal-row-action-inputs/spec.md
+ *
+ * @SuppressWarnings(PHPMD.ExcessiveClassComplexity) -- The total is the sum of small private steps; each method stays under the method thresholds.
  */
 class RowActionInputs {
 	private const FIELD_NAME = '/^[a-zA-Z][a-zA-Z0-9_]*$/';
@@ -62,7 +64,7 @@ class RowActionInputs {
 	 *
 	 * @return array<string, mixed>
 	 *
-	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t01
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t01
 	 */
 	public function normaliseAction(array $action): array {
 		$isEndpoint = ((new RowActionResolver())->isEndpointRowAction(action: $action) === true);
@@ -77,17 +79,43 @@ class RowActionInputs {
 		$action = $this->availabilityKeys(action: $action);
 		// The files the resident may add (row-action-carries-files REQ-RAF-001).
 		$action = (new RowActionFiles())->normalise(action: $action, whitelist: $whitelist);
+
+		return $this->withValidTexts(action: $action);
+	}//end normaliseAction()
+
+	/**
+	 * The action without a confirm or success text that is not a short, non-blank string.
+	 *
+	 * @param array<string, mixed> $action The action.
+	 *
+	 * @return array<string, mixed>
+	 *
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t01
+	 */
+	private function withValidTexts(array $action): array {
 		foreach (['confirmText', 'successText'] as $textKey) {
 			if (array_key_exists($textKey, $action) === true) {
-				$text = $action[$textKey];
-				if (is_string($text) === false || trim($text) === '' || mb_strlen($text) > self::MAX_TEXT) {
+				if ($this->isInvalidText(text: $action[$textKey]) === true) {
 					unset($action[$textKey]);
 				}
 			}
 		}
 
 		return $action;
-	}//end normaliseAction()
+	}//end withValidTexts()
+
+	/**
+	 * Whether a text is not a non-blank string within the length limit.
+	 *
+	 * @param mixed $text The text.
+	 *
+	 * @return bool
+	 *
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t01
+	 */
+	private function isInvalidText(mixed $text): bool {
+		return is_string($text) === false || trim($text) === '' || mb_strlen($text) > self::MAX_TEXT;
+	}//end isInvalidText()
 
 	/**
 	 * Whether the action is available on this row. An action without
@@ -98,7 +126,7 @@ class RowActionInputs {
 	 *
 	 * @return array{available: bool, reason: string}
 	 *
-	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t02
 	 */
 	public function availability(array $action, array $row = []): array {
 		$when = ($action['availableWhen'] ?? null);
@@ -128,7 +156,7 @@ class RowActionInputs {
 	 *
 	 * @return array<int, array{name: string, label: string, required: bool, type: string}>
 	 *
-	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t02
 	 */
 	public function declaredInputs(array $action, array $row): array {
 		$config = ($action['rowInputs'] ?? null);
@@ -139,32 +167,62 @@ class RowActionInputs {
 		$out  = [];
 		$seen = [];
 		foreach (array_slice(array_values((array)($row[$config['from']] ?? [])), 0, self::MAX_INPUTS) as $descriptor) {
-			$name = null;
-			if (is_array($descriptor) === true) {
-				$name = ($descriptor['name'] ?? null);
-			}
-
-			if (is_string($name) === false || preg_match(self::FIELD_NAME, $name) !== 1 || isset($seen[$name]) === true) {
+			$name = $this->inputName(descriptor: $descriptor);
+			if ($name === null || isset($seen[$name]) === true) {
 				continue;
 			}
 
 			$seen[$name] = true;
-			$type        = ($descriptor['type'] ?? 'text');
-			$label       = $name;
-			if (is_string($descriptor['label'] ?? null) === true) {
-				$label = mb_substr((string)$descriptor['label'], 0, 120);
-			}
-
-			if (in_array($type, self::TYPES, true) === false) {
-				$type = 'text';
-			}
-
-
-			$out[]       = ['name' => $name, 'label' => $label, 'required' => (($descriptor['required'] ?? false) === true), 'type' => $type];
+			$out[]       = $this->input(descriptor: $descriptor, name: $name);
 		}
 
 		return $out;
 	}//end declaredInputs()
+
+	/**
+	 * The field name a descriptor declares, or null when it is not a map or
+	 * the name is not a field name.
+	 *
+	 * @param mixed $descriptor One declared input.
+	 *
+	 * @return string|null
+	 */
+	private function inputName(mixed $descriptor): ?string {
+		$name = null;
+		if (is_array($descriptor) === true) {
+			$name = ($descriptor['name'] ?? null);
+		}
+
+		if (is_string($name) === false || preg_match(self::FIELD_NAME, $name) !== 1) {
+			return null;
+		}
+
+		return $name;
+	}//end inputName()
+
+	/**
+	 * One input as the site asks for it: its label (the name without one, at
+	 * most 120 characters), whether it is required, and its type (text
+	 * unless it says date).
+	 *
+	 * @param array<string, mixed> $descriptor One declared input.
+	 * @param string               $name       Its field name.
+	 *
+	 * @return array{name: string, label: string, required: bool, type: string}
+	 */
+	private function input(array $descriptor, string $name): array {
+		$label = $name;
+		if (is_string($descriptor['label'] ?? null) === true) {
+			$label = mb_substr((string)$descriptor['label'], 0, 120);
+		}
+
+		$type = ($descriptor['type'] ?? 'text');
+		if (in_array($type, self::TYPES, true) === false) {
+			$type = 'text';
+		}
+
+		return ['name' => $name, 'label' => $label, 'required' => (($descriptor['required'] ?? false) === true), 'type' => $type];
+	}//end input()
 
 	/**
 	 * The body value for `into`: the submitted values for exactly the names
@@ -177,7 +235,7 @@ class RowActionInputs {
 	 *
 	 * @return array{values: array<string, string>, errors: array<string, string>}
 	 *
-	 * @spec openspec/changes/case-actions-row-inputs-and-conditions/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t02
 	 */
 	public function collect(array $action, array $row, mixed $submitted): array {
 		$asked = [];
@@ -188,12 +246,7 @@ class RowActionInputs {
 		$values = [];
 		$errors = [];
 		foreach ($this->declaredInputs(action: $action, row: $row) as $input) {
-			$value = $asked[$input['name']] ?? null;
-			$text  = '';
-			if (is_scalar($value) === true) {
-				$text = mb_substr(trim((string)$value), 0, self::MAX_VALUE);
-			}
-
+			$text = $this->inputText(value: $asked[$input['name']] ?? null);
 			if ($text === '') {
 				if ($input['required'] === true) {
 					$errors[$input['name']] = 'required';
@@ -207,6 +260,24 @@ class RowActionInputs {
 
 		return ['values' => $values, 'errors' => $errors];
 	}//end collect()
+
+	/**
+	 * A submitted value as trimmed, capped text; '' for anything not scalar.
+	 *
+	 * @param mixed $value The submitted value.
+	 *
+	 * @return string
+	 *
+	 * @spec openspec/changes/archive/2026-11-24-case-actions-row-inputs-and-conditions/tasks.md#t02
+	 */
+	private function inputText(mixed $value): string {
+		$text = '';
+		if (is_scalar($value) === true) {
+			$text = mb_substr(trim((string)$value), 0, self::MAX_VALUE);
+		}
+
+		return $text;
+	}//end inputText()
 
 	/**
 	 * Keep `rowInputs` only as `{from, into}`: both plain names, `into` not

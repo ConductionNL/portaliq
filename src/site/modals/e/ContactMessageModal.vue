@@ -70,6 +70,7 @@
 
 <script>
 import { contactsApi } from '../../../shared/areaApi.js'
+import { closeDialog, openDialog } from '../forms/draftDialog.js'
 
 export default {
 	name: 'ContactMessageModal',
@@ -94,16 +95,10 @@ export default {
 	 *
 	 * @return {void}
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	mounted() {
-		const dialog = this.$refs.dialog
-		if (typeof dialog?.showModal === 'function') {
-			dialog.showModal()
-		} else {
-			dialog?.setAttribute('open', '')
-		}
-		this.$refs.heading?.focus()
+		openDialog(this.$refs.dialog, this.$refs.heading)
 	},
 
 	/**
@@ -111,15 +106,10 @@ export default {
 	 *
 	 * @return {void}
 	 *
-	 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 	 */
 	beforeUnmount() {
-		if (
-			this.$refs.dialog?.open
-			&& typeof this.$refs.dialog.close === 'function'
-		) {
-			this.$refs.dialog.close()
-		}
+		closeDialog(this.$refs.dialog)
 	},
 
 	methods: {
@@ -128,7 +118,7 @@ export default {
 		 *
 		 * @return {Promise<void>} Resolves when answered.
 		 *
-		 * @spec openspec/changes/own-contacts-and-invitations/tasks.md#t07
+		 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t07
 		 */
 		async submit() {
 			this.problem = ''

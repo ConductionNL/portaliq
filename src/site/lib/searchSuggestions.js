@@ -10,7 +10,7 @@
 // question goes to the federation endpoint the search block already uses, so
 // the suggestions honour the same publication visibility as the search.
 //
-// @spec openspec/changes/search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
+// @spec openspec/changes/archive/2026-11-24-search-suggestions-while-typing/specs/portal-federated-search/spec.md#requirement-the-search-box-suggests-publications-while-you-type-req-sst-001
 
 import { resultKind } from './federatedSearch.js'
 
@@ -57,17 +57,28 @@ export function toSuggestions(body) {
 	const rows = Array.isArray(body?.results) ? body.results : []
 	const out = []
 	for (const row of rows) {
-		const self = row?.['@self'] || {}
-		const id = String(self.id || row?.id || '')
-		const title = String(row?.name || row?.title || self.name || '').trim()
-		if (id !== '' && title !== '') {
-			out.push({ id, title, kind: resultKind(row) })
+		const suggestion = suggestionOf(row)
+		if (suggestion !== null) {
+			out.push(suggestion)
 		}
 		if (out.length === LIMIT) {
 			break
 		}
 	}
 	return out
+}
+
+/**
+ * One row as a suggestion, or null for a row with no title or no id.
+ *
+ * @param {object|null} row One row of the answer.
+ * @return {{id: string, title: string, kind: string}|null} The suggestion.
+ */
+function suggestionOf(row) {
+	const self = row?.['@self'] || {}
+	const id = String(self.id || row?.id || '')
+	const title = String(row?.name || row?.title || self.name || '').trim()
+	return id !== '' && title !== '' ? { id, title, kind: resultKind(row) } : null
 }
 
 /**

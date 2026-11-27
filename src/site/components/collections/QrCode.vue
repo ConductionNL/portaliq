@@ -27,10 +27,10 @@
 </template>
 
 <script>
-import { encodeQr } from '../../lib/qr.js'
+import { encodeQr } from '@conduction/nextcloud-vue/src/utils/qr.js'
 
 /**
- * @spec openspec/changes/link-field-qr-code/tasks.md#t4
+ * @spec openspec/specs/portal-contribution-contract/spec.md
  */
 export default {
 	name: 'QrCode',
@@ -49,7 +49,7 @@ export default {
 	computed: {
 		/**
 		 * @return {{size: number, modules: Array<Array<boolean>>}|null} The symbol, or null when the value does not encode.
-		 * @spec openspec/changes/link-field-qr-code/tasks.md#t4
+		 * @spec openspec/specs/portal-contribution-contract/spec.md
 		 */
 		symbol() {
 			return encodeQr(this.value)
@@ -57,7 +57,7 @@ export default {
 
 		/**
 		 * @return {string} The accessible name.
-		 * @spec openspec/changes/link-field-qr-code/tasks.md#t4
+		 * @spec openspec/specs/portal-contribution-contract/spec.md
 		 */
 		name() {
 			return this.nameTemplate.replace('{label}', this.label)
@@ -65,7 +65,7 @@ export default {
 
 		/**
 		 * @return {string} One path for all dark modules, a run of modules per segment.
-		 * @spec openspec/changes/link-field-qr-code/tasks.md#t4
+		 * @spec openspec/specs/portal-contribution-contract/spec.md
 		 */
 		path() {
 			const parts = []

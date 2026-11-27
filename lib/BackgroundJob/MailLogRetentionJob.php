@@ -17,21 +17,21 @@
  *
  * @link https://conduction.nl
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t05
  */
 
 declare(strict_types=1);
 
 namespace OCA\Portaliq\BackgroundJob;
 
-use OCA\Portaliq\Service\Mail\MailLog;
+use OCA\Portaliq\Kernel\Contracts\MailLogInterface;
 use OCP\AppFramework\Utility\ITimeFactory;
 use OCP\BackgroundJob\TimedJob;
 
 /**
  * Removes expired mail log rows.
  *
- * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t05
+ * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t05
  */
 class MailLogRetentionJob extends TimedJob {
 	private const INTERVAL = 86400;
@@ -40,11 +40,11 @@ class MailLogRetentionJob extends TimedJob {
 	 * Constructor.
 	 *
 	 * @param ITimeFactory $time The clock the scheduler uses.
-	 * @param MailLog      $log  The log to clean.
+	 * @param MailLogInterface      $log  The log to clean.
 	 */
 	public function __construct(
 		ITimeFactory $time,
-		private readonly MailLog $log,
+		private readonly MailLogInterface $log,
 	) {
 		parent::__construct(time: $time);
 		$this->setInterval(seconds: self::INTERVAL);
@@ -57,7 +57,7 @@ class MailLogRetentionJob extends TimedJob {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/mail-templates-admin-screen/tasks.md#t05
+	 * @spec openspec/changes/archive/2026-11-25-mail-templates-admin-screen/tasks.md#t05
 	 *
 	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
 	 * the signature; dropping the parameter breaks the override.

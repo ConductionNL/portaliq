@@ -14,7 +14,10 @@ import { test } from 'node:test'
 import { VALUE_LISTS } from '../src/site/config/valueLists.js'
 import { labelBuckets, valueLabel } from '../src/site/lib/facetLabels.js'
 import {
+	allDetailRows,
+	downloadAllLink,
 	humanSize,
+	propertyLabel,
 	publicationSummary,
 	themeIdsOf,
 	toDocuments,
@@ -65,6 +68,9 @@ test('documents from the envelope', () => {
 			type: 'PDF',
 			size: '120 kB',
 			href: 'https://gemeente.example/s/abc/download',
+			view: 'https://gemeente.example/s/abc',
+			metadataUrl: '',
+			diwooUrl: '',
 		},
 		{
 			id: '12',
@@ -72,6 +78,9 @@ test('documents from the envelope', () => {
 			type: 'XLSX',
 			size: '2,4 MB',
 			href: '/index.php/s/def',
+			view: '',
+			metadataUrl: '',
+			diwooUrl: '',
 		},
 	])
 })
@@ -86,6 +95,118 @@ test('unsafe link', () => {
 		results: [{ id: 2, title: 'y.pdf', downloadUrl: '//evil.example/y.pdf' }],
 	})
 	assert.equal(protocolRelative.href, '')
+})
+
+// The attachment shape of opencatalogi's publication-detail-for-the-portal
+// (REQ-PDP-002, openspec/changes/publication-detail-for-the-portal/specs/
+// publications/spec.md on opencatalogi development): documentId, title,
+// format, size, published, downloadUrl, metadataUrl and diwooUrl.
+const READ = {
+	results: [
+		{
+			documentId: '301',
+			id: 301,
+			title: 'besluit.pdf',
+			format: 'application/pdf',
+			extension: 'pdf',
+			size: 120000,
+			downloadUrl: '/index.php/s/abc/download',
+			accessUrl: '/index.php/s/abc',
+			metadataUrl: '/index.php/apps/opencatalogi/api/woo/p-1/documents/301',
+			diwooUrl: '/index.php/apps/opencatalogi/api/woo/p-1/documents/301/diwoo',
+		},
+		{
+			documentId: '302',
+			id: 302,
+			title: 'inventaris.csv',
+			format: 'text/csv',
+			extension: 'csv',
+			size: 2400,
+			downloadUrl: '/index.php/s/def/download',
+			accessUrl: '/index.php/s/def',
+			metadataUrl: '/index.php/apps/opencatalogi/api/woo/p-1/documents/302',
+		},
+	],
+	total: 2,
+}
+
+test('a pdf opens rather than downloads', () => {
+	const [pdf] = toDocuments(READ)
+	assert.equal(pdf.view, '/index.php/s/abc')
+	assert.equal(pdf.href, '/index.php/s/abc/download')
+	assert.equal(pdf.id, '301')
+})
+
+test('a data file goes to the preview when the library has it', () => {
+	assert.equal(toDocuments(READ)[1].view, '')
+	assert.equal(toDocuments(READ, { preview: true })[1].view, '/index.php/s/def')
+	// An office file is never previewed, with or without the library.
+	const [office] = toDocuments(
+		{ results: [{ id: 5, title: 'brief.docx', accessUrl: '/index.php/s/ghi' }] },
+		{ preview: true },
+	)
+	assert.equal(office.view, '')
+})
+
+test('a foreign url is not opened', () => {
+	const [foreign, script, nested] = toDocuments({
+		results: [
+			{ id: 1, title: 'a.pdf', accessUrl: 'https://evil.example/a.pdf' },
+			{ id: 2, title: 'b.pdf', accessUrl: 'javascript:alert(1)' },
+			{ id: 3, title: 'c.pdf', accessUrl: '/index.php/apps/other/s/abc' },
+		],
+	})
+	assert.equal(foreign.view, '')
+	assert.equal(script.view, '')
+	assert.equal(nested.view, '')
+})
+
+test('metadata json links the url the read carries', () => {
+	const [pdf, csv] = toDocuments(READ)
+	assert.equal(
+		pdf.metadataUrl,
+		'/index.php/apps/opencatalogi/api/woo/p-1/documents/301',
+	)
+	assert.equal(
+		csv.metadataUrl,
+		'/index.php/apps/opencatalogi/api/woo/p-1/documents/302',
+	)
+	const [bare] = toDocuments({ results: [{ id: 9, title: 'x.pdf' }] })
+	assert.equal(bare.metadataUrl, '')
+})
+
+test('a document without a diwoo url has no diwoo link', () => {
+	const [pdf, csv] = toDocuments(READ)
+	assert.equal(
+		pdf.diwooUrl,
+		'/index.php/apps/opencatalogi/api/woo/p-1/documents/301/diwoo',
+	)
+	assert.equal(csv.diwooUrl, '')
+})
+
+test('download alles links the zip route with the count', () => {
+	assert.deepEqual(downloadAllLink({ id: 'p-1', count: 3, catalogSlug: 'woo' }), {
+		href: '/index.php/apps/opencatalogi/api/woo/p-1/download',
+		count: 3,
+	})
+	// Without a catalogue slug: the zip route of the read the page used.
+	assert.deepEqual(
+		downloadAllLink({
+			id: 'p 1',
+			count: 2,
+			endpoint: '/index.php/apps/opencatalogi/api/federation/publications/',
+		}),
+		{
+			href: '/index.php/apps/opencatalogi/api/federation/publications/p%201/download',
+			count: 2,
+		},
+	)
+})
+
+test('no documents, no download alles', () => {
+	assert.equal(downloadAllLink({ id: 'p-1', count: 0, catalogSlug: 'woo' }), null)
+	assert.equal(downloadAllLink({ id: '', count: 3, catalogSlug: 'woo' }), null)
+	assert.equal(downloadAllLink({ id: 'p-1', count: 3, catalogSlug: '../x' }), null)
 })
 
 test('an envelope that is not one lists nothing', () => {
@@ -124,6 +245,7 @@ const PUBLICATION = {
 	retentionAction: null,
 	retentionCategory: null,
 	retentionTermMonths: null,
+	sourceUrl: 'https://example.org/besluit.pdf',
 	status: 'published',
 	themes: [THEME, 'unknown-theme'],
 	wooCategory: 'infocat014',
@@ -188,6 +310,34 @@ test('the category filter shows names, other filters keep their labels', () => {
 	)
 })
 
+// woo-search-names-the-organisation: the organisation filter read
+// "bacda7a4-b1ae-4a51-9c3e-c1b00c0bc596 (13)" on the Zuiddrecht rehearsal.
+test('the organisation filter reads the name the host knows, and keeps any other label', () => {
+	const buckets = [
+		{ value: 'bacda7a4', label: 'bacda7a4', count: 13 },
+		{ value: 'other-org', label: 'other-org', count: 1 },
+	]
+	assert.deepEqual(
+		labelBuckets(buckets, 'organization', 'nl', {
+			bacda7a4: 'Gemeente Zuiddrecht',
+		}).map((bucket) => [bucket.value, bucket.label, bucket.count]),
+		[
+			['bacda7a4', 'Gemeente Zuiddrecht', 13],
+			['other-org', 'other-org', 1],
+		],
+	)
+	assert.deepEqual(
+		labelBuckets(
+			[{ value: 'infocat014', label: 'infocat014', count: 1 }],
+			'wooCategory',
+			'nl',
+			{},
+		).map((bucket) => bucket.label),
+		['Woo-verzoeken en -besluiten'],
+		'a configured list still names its codes',
+	)
+})
+
 test('the page shows date, category and named themes only, never internal fields', () => {
 	const t = createTranslator('nl')
 	const rows = visitorRows(PUBLICATION, {
@@ -198,7 +348,7 @@ test('the page shows date, category and named themes only, never internal fields
 	assert.deepEqual(
 		rows.map((row) => [row.label, row.value]),
 		[
-			['Publicatiedatum', '2-9-2026'],
+			['Publicatiedatum', '2 september 2026'],
 			['Informatiecategorie', 'Woo-verzoeken en -besluiten'],
 			["Thema's", ['Verkeer en parkeren']],
 		],
@@ -264,7 +414,139 @@ test('the publication page renders the summary and the visitor rows, no internal
 	assert.match(html, /Besluit op een verzoek om informatie/)
 	assert.match(html, /Woo-verzoeken en -besluiten/)
 	assert.match(html, /Verkeer en parkeren/)
-	assert.doesNotMatch(html, /Plooi|Retention|infocat014|f75bc1d0/)
+
+	// The worded part (everything before the "All details" table) carries
+	// no stored code; the table at the end does.
+	const tableAt = html.indexOf('data-testid="publication-all-details"')
+	assert.ok(tableAt > 0, 'the page ends with the All details table')
+	const worded = html.slice(0, tableAt)
+	const table = html.slice(tableAt)
+	assert.doesNotMatch(worded, /Plooi|Retention|infocat014|f75bc1d0|woo-besluit/)
+	assert.match(table, /Alle gegevens/)
+	const cell = (label) => table.match(new RegExp(`<th[^>]*>\\s*${label}\\s*</th>\\s*<td[^>]*>(.*?)</td>`))?.[1] ?? ''
+	assert.match(cell('Woo category'), /<span>infocat014<\/span>/)
+	assert.match(cell('Source URL'), /<a[^>]*href="https:\/\/example\.org\/besluit\.pdf"/)
+	assert.doesNotMatch(table, /data-property="(@self|id|depublicationDate|plooiStatus)"/)
+	assert.equal(html.indexOf('data-testid="publication-documents"') < tableAt, true, 'the table comes after the documents')
+})
+
+// ALL DETAILS (publication-page-all-details): every stored property below
+// the worded part, labelled from its name, URLs as links, empties left out.
+// @spec openspec/changes/publication-page-all-details/specs/portal-federated-search/spec.md#requirement-the-publication-page-must-end-with-an-all-details-table-of-every-stored-property
+
+test('the All details table lists every stored property except metadata and empty values', () => {
+	const rows = allDetailRows(PUBLICATION)
+	assert.deepEqual(
+		rows.map((row) => [row.name, row.label, row.items]),
+		[
+			['title', 'Title', [{ text: PUBLICATION.title, href: '' }]],
+			['summary', 'Summary', [{ text: PUBLICATION.summary, href: '' }]],
+			['organization', 'Organization', [{ text: PUBLICATION.organization, href: '' }]],
+			['publicationDate', 'Publication date', [{ text: '2026-09-02T09:00:00+00:00', href: '' }]],
+			['publicationKind', 'Publication kind', [{ text: 'woo-besluit', href: '' }]],
+			['sourceUrl', 'Source URL', [{ text: 'https://example.org/besluit.pdf', href: 'https://example.org/besluit.pdf' }]],
+			['status', 'Status', [{ text: 'published', href: '' }]],
+			['themes', 'Themes', [{ text: THEME, href: '' }, { text: 'unknown-theme', href: '' }]],
+			['wooCategory', 'Woo category', [{ text: 'infocat014', href: '' }]],
+		],
+	)
+	for (const left of ['@self', 'id', 'description', 'depublicationDate', 'plooiStatus', 'retentionCategory', 'period']) {
+		assert.ok(!rows.some((row) => row.name === left), left)
+	}
+})
+
+test('a value is a link only when it is a web address, and nested values read as text', () => {
+	const rows = allDetailRows({
+		id: 'p-2',
+		homepage: ' https://example.org/a ',
+		path: '/index.php/apps/x',
+		script: 'javascript:alert(1)',
+		mixed: ['https://example.org/one', '', null, 'plain'],
+		count: 0,
+		open: false,
+		nested: { a: 1 },
+		emptyNested: {},
+	})
+	assert.deepEqual(
+		rows.map((row) => [row.name, row.items]),
+		[
+			['homepage', [{ text: ' https://example.org/a ', href: 'https://example.org/a' }]],
+			['path', [{ text: '/index.php/apps/x', href: '' }]],
+			['script', [{ text: 'javascript:alert(1)', href: '' }]],
+			['mixed', [{ text: 'https://example.org/one', href: 'https://example.org/one' }, { text: 'plain', href: '' }]],
+			['count', [{ text: '0', href: '' }]],
+			['open', [{ text: 'false', href: '' }]],
+			['nested', [{ text: '{"a":1}', href: '' }]],
+		],
+	)
+	assert.deepEqual(allDetailRows(null), [])
+	assert.deepEqual(allDetailRows(['not', 'an', 'object']), [])
+})
+
+test('a property name reads as a label', () => {
+	assert.equal(propertyLabel('wooCategory'), 'Woo category')
+	assert.equal(propertyLabel('sourceUrl'), 'Source URL')
+	assert.equal(propertyLabel('organisationId'), 'Organisation ID')
+	assert.equal(propertyLabel('retention_term_months'), 'Retention term months')
+	assert.equal(propertyLabel('HTMLBody'), 'HTML body')
+	assert.equal(propertyLabel('_'), '')
+})
+
+test('the publication page offers view, metadata, download alles and the reaction period', async () => {
+	const nl = JSON.stringify(bundle('nl'))
+	const component = await loadSfc(
+		'src/site/components/PublicationDetailBlock.vue',
+		{
+			'../../shared/i18n/index.js': `const nl = ${nl}\nexport function createTranslator() { return (key, vars = {}) => Object.entries(vars).reduce((text, [name, value]) => text.replace('{' + name + '}', String(value)), nl[key] || key) }\n`,
+		},
+	)
+	const data = component.data
+	const render = (publication, documents) =>
+		renderComponent(
+			{
+				...component,
+				mounted() {},
+				data() {
+					return {
+						...data.call(this),
+						loading: false,
+						publication,
+						documents,
+					}
+				},
+			},
+			{ subjectId: 'p-1', catalogSlug: 'woo' },
+		)
+
+	const html = await render(
+		{
+			...PUBLICATION,
+			commentPeriod: {
+				state: 'open',
+				endDate: '2026-11-16',
+				reactionFormUrl: 'https://gemeente.example/zienswijze',
+			},
+		},
+		toDocuments(READ),
+	)
+	assert.match(html, /Download alles \(2 documenten\)/)
+	assert.match(
+		html,
+		/href="\/index.php\/apps\/opencatalogi\/api\/woo\/p-1\/download"/,
+	)
+	assert.match(html, /Reageren kan tot en met 16 november 2026/)
+	assert.match(html, /href="https:\/\/gemeente.example\/zienswijze"/)
+	// The pdf opens in a new tab, the csv (no public preview yet) does not.
+	assert.equal(html.match(/data-testid="publication-document-view"/g).length, 1)
+	assert.match(html, /href="\/index.php\/s\/abc" target="_blank"/)
+	assert.equal(
+		html.match(/data-testid="publication-document-metadata"/g).length,
+		2,
+	)
+	assert.equal(html.match(/data-testid="publication-document-diwoo"/g).length, 1)
+
+	const empty = await render({ ...PUBLICATION }, [])
+	assert.doesNotMatch(empty, /publication-download-all|publication-comment-period/)
 })
 
 test('the publication tells the page its title for the breadcrumb, and nothing when it is not found (REQ-RR3-004)', async () => {
@@ -304,4 +586,26 @@ test('the publication tells the page its title for the breadcrumb, and nothing w
 		globalThis.fetch = savedFetch
 		globalThis.window = savedWindow
 	}
+})
+
+test('the host hands the search block its organisation by name, after the authored props', () => {
+	const read = (file) =>
+		readFileSync(new URL(`../${file}`, import.meta.url), 'utf8')
+	const grid = read('src/site/components/WidgetGrid.vue')
+	const branch = grid.slice(grid.indexOf("widget.widgetKey === 'federatedSearch'"))
+	const body = branch.slice(0, branch.indexOf('}\n\t\t\t}'))
+	assert.match(body, /\.\.\.props,[\s\S]*facetNames: this\.organisation\?\.id/)
+	assert.match(
+		body,
+		/organization:\s*\{\s*\[this\.organisation\.id\]: this\.organisation\.name,?\s*\}/,
+	)
+	assert.match(
+		read('src/site/App.vue'),
+		/organisation: this\.site\.organisation \|\| null,/,
+		'the site record reaches every grid',
+	)
+	assert.match(
+		read('src/site/components/FederatedSearchBlock.vue'),
+		/pageLocale\(\),\s*this\.facetNames\[field\],/,
+	)
 })

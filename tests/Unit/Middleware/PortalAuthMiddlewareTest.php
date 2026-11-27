@@ -10,9 +10,10 @@ use OCA\Portaliq\Auth\PortalUnauthorizedException;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Controller\PortalAccountSelfController;
 use OCA\Portaliq\Controller\PortalIdentityController;
+use OCA\Portaliq\Controller\PortalIntakeController;
 use OCA\Portaliq\Middleware\PortalAuthMiddleware;
 use OCA\Portaliq\Service\PortalRateLimit;
-use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\BearerSessionResolver;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\JSONResponse;
 use OCP\AppFramework\OCS\OCSForbiddenException;
@@ -106,7 +107,7 @@ class PortalAuthMiddlewareTest extends TestCase {
 	 * @return void
 	 */
 	public function testAReferenceSessionIsRefusedOnEveryProtectedRoute(): void {
-		$session = $this->createMock(PortalSessionService::class);
+		$session = $this->createMock(BearerSessionResolver::class);
 		$session->method('resolveFromBearer')->willReturn(null);
 		$session->method('resolveReferenceFromBearer')->willReturn(['caseReference' => 'Z-2026-0042']);
 		$mw = $this->middleware($session, $this->registry([]));
@@ -237,6 +238,35 @@ class PortalAuthMiddlewareTest extends TestCase {
 	}//end testNoBearerCreateToAnonymousDeclaredRoutePassesThrough()
 
 	/**
+	 * Only a `type: create` action with `anonymous` exactly true and the
+	 * request's exact register and schema lets a no-bearer create through,
+	 * wherever in the aggregate it is; a missing route parameter never does.
+	 */
+	public function testEveryAnonymousCreateMatchIsAsRecorded(): void {
+		$open  = ['id' => 'openIntake', 'type' => 'create', 'register' => 'openbuild', 'schema' => 'melding', 'anonymous' => true];
+		$cases = [
+			'a match after junk'   => [[['actions' => 'none'], ['actions' => [['type' => 'create'], $open]]], ['register' => 'openbuild', 'schema' => 'melding'], true],
+			'anonymous not true'   => [[['actions' => [['anonymous' => 'yes'] + $open]]], ['register' => 'openbuild', 'schema' => 'melding'], false],
+			'another register'     => [[['actions' => [$open]]], ['register' => 'other', 'schema' => 'melding'], false],
+			'no schema parameter'  => [[['actions' => [['schema' => ''] + $open]]], ['register' => 'openbuild'], false],
+			'no register parameter' => [[['actions' => [['register' => ''] + $open]]], ['schema' => 'melding'], false],
+		];
+
+		$passed = [];
+		foreach ($cases as $name => [$contributions, $params, $expected]) {
+			$mw = $this->middleware($this->session(null), $this->registry(['contributions' => $contributions]), $params);
+			try {
+				$mw->beforeController($this->protectedController(), 'create');
+				$passed[$name] = true;
+			} catch (PortalUnauthorizedException $e) {
+				$passed[$name] = false;
+			}
+
+			$this->assertSame($expected, $passed[$name], $name);
+		}
+	}//end testEveryAnonymousCreateMatchIsAsRecorded()
+
+	/**
 	 * A `type: update` action flagged `anonymous: true` is NOT part of the
 	 * anonymous surface for `create()` — only an exact `type: create` match
 	 * counts (design.md Non-Goals).
@@ -316,7 +346,64 @@ class PortalAuthMiddlewareTest extends TestCase {
 
 	}//end testNoBearerNonEligibleMethodAlwaysThrows()
 
-	private function middleware(PortalSessionService $session, PortalContributionRegistry $registry, array $params = []): PortalAuthMiddleware {
+	/**
+	 * A signed-out visitor reads the intake catalogue and looks up an address
+	 * (decision 25 Nov 2026 21:50 CET); both are rate limited by their own
+	 * AnonRateLimit.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-catalogue-and-address-without-sign-in/specs/portal-intake-form/spec.md
+	 */
+	public function testTheIntakeCatalogueAndAddressLookupAnswerWithoutASession(): void {
+		$mw = $this->middleware(session: $this->session(subject: null), registry: $this->registry(aggregate: []));
+
+		foreach (['catalogue', 'address'] as $method) {
+			$mw->beforeController($this->intakeController(), $method);
+		}
+
+		$this->addToAssertionCount(count: 2);
+
+	}//end testTheIntakeCatalogueAndAddressLookupAnswerWithoutASession()
+
+	/**
+	 * Every other intake method keeps the bearer gate.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-catalogue-and-address-without-sign-in/specs/portal-intake-form/spec.md
+	 */
+	public function testTheOtherIntakeMethodsStillNeedASession(): void {
+		$mw = $this->middleware(session: $this->session(subject: null), registry: $this->registry(aggregate: []));
+
+		foreach (['form', 'submit', 'family', 'pay', 'status', 'onBehalf'] as $method) {
+			try {
+				$mw->beforeController($this->intakeController(), $method);
+				$this->fail(message: $method . ' answered without a session');
+			} catch (PortalUnauthorizedException) {
+				$this->addToAssertionCount(count: 1);
+			}
+		}
+
+	}//end testTheOtherIntakeMethodsStillNeedASession()
+
+	/**
+	 * The public reads belong to the intake controller only: another guarded
+	 * controller's `catalogue` or `address` keeps the gate.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/intake-catalogue-and-address-without-sign-in/specs/portal-intake-form/spec.md
+	 */
+	public function testAnotherControllersMethodOfTheSameNameStillNeedsASession(): void {
+		$mw = $this->middleware(session: $this->session(subject: null), registry: $this->registry(aggregate: []));
+
+		$this->expectException(exception: PortalUnauthorizedException::class);
+		$mw->beforeController($this->protectedController(), 'catalogue');
+
+	}//end testAnotherControllersMethodOfTheSameNameStillNeedsASession()
+
+	private function middleware(BearerSessionResolver $session, PortalContributionRegistry $registry, array $params = []): PortalAuthMiddleware {
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturn('');
 		$request->method('getParam')->willReturnCallback(
@@ -327,8 +414,8 @@ class PortalAuthMiddlewareTest extends TestCase {
 		return new PortalAuthMiddleware($request, $session, $registry, $l10n);
 	}//end middleware()
 
-	private function session(?array $subject): PortalSessionService {
-		$mock = $this->createMock(PortalSessionService::class);
+	private function session(?array $subject): BearerSessionResolver {
+		$mock = $this->createMock(BearerSessionResolver::class);
 		$mock->method('resolveFromBearer')->willReturn($subject);
 		return $mock;
 	}//end session()
@@ -338,6 +425,16 @@ class PortalAuthMiddlewareTest extends TestCase {
 		$mock->method('aggregateAnonymous')->willReturn($aggregate);
 		return $mock;
 	}//end registry()
+
+	/**
+	 * The intake controller, without its dependencies.
+	 *
+	 * @return PortalIntakeController
+	 */
+	private function intakeController(): PortalIntakeController {
+		return $this->getMockBuilder(className: PortalIntakeController::class)->disableOriginalConstructor()->getMock();
+
+	}//end intakeController()
 
 	private function protectedController(): object {
 		return new class implements PortalProtected {

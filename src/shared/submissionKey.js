@@ -24,7 +24,7 @@ const KEY = /^[A-Za-z0-9_-]{16,128}$/
  *
  * @param {Crypto|undefined} [cryptoImpl] The Web Crypto object (test seam).
  * @return {string} The key.
- * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
  */
 export function newSubmissionKey(cryptoImpl = globalThis.crypto) {
 	if (cryptoImpl && typeof cryptoImpl.randomUUID === 'function') {
@@ -46,7 +46,7 @@ export function newSubmissionKey(cryptoImpl = globalThis.crypto) {
  *
  * @param {{submissionKey?: string}|undefined} options The send's options.
  * @return {Record<string, string>} The header to add.
- * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-repeated-submission-carries-the-same-key-req-afs-001
  */
 export function submissionHeaders(options) {
 	const key = options && options.submissionKey
@@ -61,7 +61,7 @@ export function submissionHeaders(options) {
  *
  * @param {{status?: number, object?: object, body?: object}} result The send's result.
  * @return {boolean} True when the page should say "may still be processing".
- * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+ * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
  */
 export function mayStillBeProcessing(result) {
 	const body = (result && (result.object || result.body)) || {}

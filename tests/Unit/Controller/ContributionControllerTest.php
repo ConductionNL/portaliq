@@ -21,6 +21,7 @@ use OCA\Portaliq\Service\PortalObjectWriter;
 use OCA\Portaliq\Service\PortalResolver;
 use OCA\Portaliq\Service\PortalSchemaReader;
 use OCA\Portaliq\Service\PortalSessionService;
+use OCA\Portaliq\Kernel\Support\SubjectAssertionIssuer;
 use OCA\Portaliq\Service\SubmissionReceiptService;
 use OCP\AppFramework\Http;
 use OCP\AppFramework\Http\StreamResponse;
@@ -32,6 +33,17 @@ use OCP\IURLGenerator;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use OCA\Portaliq\Service\CaseRowMarker;
+use OCA\Portaliq\Contribution\CreateActionMatcher;
+use OCA\Portaliq\Contribution\CreateBody;
+use OCA\Portaliq\Contribution\InboxMessageFields;
+use OCA\Portaliq\Contribution\PageChoice;
+use OCA\Portaliq\Service\RequestedPortal;
+use OCA\Portaliq\Service\RequiredFieldsGuard;
+use OCA\Portaliq\Contribution\RowIdentifier;
+use OCA\Portaliq\Contribution\ThemeChoice;
+use OCA\Portaliq\Service\VisibleFromGate;
+use OCA\Portaliq\Service\WriteRefusal;
 
 /**
  * Contract v2 controller tests: the fail-closed minTrust re-checks on the
@@ -138,6 +150,69 @@ class ContributionControllerTest extends TestCase {
 
 		$this->assertSame(['cases', 'invoices'], array_column($data['contributions'][0]['pages'], 'id'));
 	}//end testPortalNavigationHidesAndOrdersPages()
+
+	/**
+	 * A resolver that answers only for the portal named `zuid`.
+	 *
+	 * @param array<string, mixed> $portal The portal it answers with.
+	 *
+	 * @return PortalResolver
+	 */
+	private function portalsOnlyForZuid(array $portal): PortalResolver {
+		$portals = $this->createMock(PortalResolver::class);
+		$portals->method('resolve')->willReturnCallback(
+			static fn (IRequest $request, ?string $portalSlug = null): ?array => ($portalSlug === 'zuid' ? $portal : null)
+		);
+
+		return $portals;
+	}//end portalsOnlyForZuid()
+
+	/**
+	 * The portal the site names in its header alone decides the navigation.
+	 *
+	 * @spec openspec/changes/operate-pages-per-portal-and-client/specs/portal-page-choice/spec.md#requirement-a-portal-shows-the-pages-its-administrator-chose-in-the-chosen-order-req-pgc-001
+	 */
+	public function testTheSiteHeaderNamesThePortalForTheNavigation(): void {
+		$aggregate = [
+			'audience' => 'client',
+			'contributions' => [['app' => 'pipelinq', 'pages' => [['id' => 'quotes'], ['id' => 'cases']], 'collections' => []]],
+		];
+		$portals   = $this->portalsOnlyForZuid(portal: ['slug' => 'zuid', 'navigation' => ['client' => [['page' => 'pipelinq:quotes', 'hidden' => true]]]]);
+
+		$data = $this->controller(aggregate: $aggregate, portals: $portals, portalHeader: 'zuid')->index()->getData();
+
+		$this->assertSame(expected: ['cases'], actual: array_column($data['contributions'][0]['pages'], 'id'));
+	}//end testTheSiteHeaderNamesThePortalForTheNavigation()
+
+	/**
+	 * The portal the site names in its header alone decides the themes.
+	 *
+	 * @spec openspec/changes/life-domain-theme-pages/tasks.md#t02
+	 */
+	public function testTheSiteHeaderNamesThePortalForTheThemes(): void {
+		$aggregate = [
+			'audience' => 'client',
+			'contributions' => [['app' => 'pipelinq', 'pages' => [], 'collections' => [['id' => 'c', 'theme' => 'wonen']]]],
+		];
+		$portals   = $this->portalsOnlyForZuid(portal: ['slug' => 'zuid', 'themes' => [['slug' => 'wonen', 'title' => 'Wonen']]]);
+
+		$data = $this->controller(aggregate: $aggregate, portals: $portals, portalHeader: 'zuid')->index()->getData();
+
+		$this->assertSame(expected: ['wonen'], actual: array_column($data['themes'], 'slug'));
+	}//end testTheSiteHeaderNamesThePortalForTheThemes()
+
+	/**
+	 * The portal the site names in its header alone decides the own-area pages.
+	 *
+	 * @spec openspec/changes/archive/2026-11-25-own-contacts-and-invitations/tasks.md#t06
+	 */
+	public function testTheSiteHeaderNamesThePortalForTheAreaPages(): void {
+		$portals = $this->portalsOnlyForZuid(portal: ['slug' => 'zuid', 'contactsEnabled' => true]);
+
+		$data = $this->controller(aggregate: ['contributions' => []], portals: $portals, portalHeader: 'zuid')->index()->getData();
+
+		$this->assertSame(expected: ['contacts'], actual: array_column($data['areaPages'], 'special'));
+	}//end testTheSiteHeaderNamesThePortalForTheAreaPages()
 
 	/**
 	 * @spec openspec/changes/operate-pages-per-portal-and-client/tasks.md#t02
@@ -564,6 +639,34 @@ class ContributionControllerTest extends TestCase {
 	}//end testCollectionPassesV2ScopeParametersToReader()
 
 	/**
+	 * anonymous-collection-reads-what-the-public-may: decidiq's council
+	 * calendar is declared `anonymous`; it read "Geen items" because it was
+	 * scoped to the resident like their own records.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-an-anonymous-collection-shows-what-the-public-may-read
+	 */
+	public function testAnAnonymousCollectionIsReadAsThePublicMayReadIt(): void {
+		$aggregate = $this->aggregate(
+			collections: [
+				['id' => 'publicCalendar', 'register' => 'decidiq', 'schema' => 'publication-payload', 'anonymous' => true, 'fields' => ['title'], 'filter' => ['oriType' => 'Vergadering']],
+			]
+		);
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->expects($this->never())->method('readCollection');
+		$reader->expects($this->once())->method('readPublicCollection')
+			->with('decidiq', 'publication-payload', 'org-1', 200, ['title'], ['oriType' => 'Vergadering'])
+			->willReturn([['title' => 'Raadsvergadering']]);
+
+		$response = $this->controller(aggregate: $aggregate, reader: $reader)->collection('decidiq', 'publication-payload');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame([['title' => 'Raadsvergadering']], $response->getData()['objects']);
+
+	}//end testAnAnonymousCollectionIsReadAsThePublicMayReadIt()
+
+	/**
 	 * A row whose `visibleFromField` lies ahead is not in the list and its
 	 * read by id is the shared 404 (site-school-blocks).
 	 *
@@ -854,7 +957,7 @@ class ContributionControllerTest extends TestCase {
 	 * contact-page-question-form-and-not-found T02: after a stored create the
 	 * confirmation follow-on runs with the matched action and the stored values.
 	 *
-	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t02
 	 */
 	public function testACreateHandsTheStoredValuesToTheConfirmationMail(): void {
 		$action = ['id' => 'ask', 'type' => 'create', 'register' => 'r1', 'schema' => 'ticket', 'fields' => ['title'], 'confirmationMail' => 'contact-confirmation'];
@@ -875,7 +978,7 @@ class ContributionControllerTest extends TestCase {
 	/**
 	 * A create that was not stored sends no confirmation.
 	 *
-	 * @spec openspec/changes/contact-page-question-form-and-not-found/tasks.md#t02
+	 * @spec openspec/changes/archive/2026-11-25-contact-page-question-form-and-not-found/tasks.md#t02
 	 */
 	public function testAFailedCreateSendsNoConfirmation(): void {
 		$action = ['id' => 'ask', 'type' => 'create', 'register' => 'r1', 'schema' => 'ticket', 'fields' => ['title'], 'confirmationMail' => 'contact-confirmation'];
@@ -975,6 +1078,36 @@ class ContributionControllerTest extends TestCase {
 		$this->assertSame(['title' => 'X'], $received['whitelistedData']);
 
 	}//end testSuccessfulCreateTriggersReceiptRecordWithWhitelistedMap()
+
+	/**
+	 * A successful create passes the matched action's declared `label` as the
+	 * title the proof log names the submission by.
+	 *
+	 * @spec openspec/specs/supplier-portal/spec.md#requirement-a-proof-log-record-names-the-submitted-action-as-the-resident-read-it
+	 */
+	public function testSuccessfulCreatePassesTheActionsLabelAsItsTitle(): void {
+		$aggregate = $this->aggregate(
+			actions: [
+				['id' => 'c1', 'type' => 'create', 'label' => 'Melding openbare ruimte', 'register' => 'r1', 'schema' => 'a', 'fields' => ['title']],
+			]
+		);
+
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->method('createObject')->willReturn(['id' => 'new']);
+
+		$title = null;
+		$receiptService = $this->createMock(SubmissionReceiptService::class);
+		$receiptService->expects($this->once())->method('record')->willReturnCallback(
+			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData, string $audience = '', mixed $actionTitle = '') use (&$title) {
+				$title = $actionTitle;
+			}
+		);
+
+		$response = $this->controller(aggregate: $aggregate, writer: $writer, receiptService: $receiptService)->create('r1', 'a');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame('Melding openbare ruimte', $title);
+	}//end testSuccessfulCreatePassesTheActionsLabelAsItsTitle()
 
 	/**
 	 * WMEBV: a create that never reaches the domain write (403 IDOR, 403
@@ -1126,6 +1259,53 @@ class ContributionControllerTest extends TestCase {
 
 	}//end testActionWithDeclaredFieldsForwardsOnlyThoseFieldsIgnoringSmuggledOnes()
 
+	/**
+	 * An action opened from a task takes the task's uuid in its `taskField`;
+	 * the declared whitelist keeps that field, so the app receives it.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/a-task-opens-the-app-action-that-completes-it/specs/site-portal-parity/spec.md#requirement-a-task-that-names-its-app-action-must-open-that-action
+	 */
+	public function testActionWithDeclaredFieldsAlsoForwardsItsTaskField(): void {
+		$aggregate = $this->aggregate(
+			actions: [
+				[
+					'id' => 'completeChecklistTask',
+					'endpoint' => '/apps/demo/api/portal/checklist',
+					'method' => 'POST',
+					'fields' => ['reason'],
+					'taskField' => 'title',
+				],
+			]
+		);
+
+		$captured = [];
+		$response = $this->createMock(originalClassName: IResponse::class);
+		$response->method('getBody')->willReturn(value: '{}');
+		$response->method('getStatusCode')->willReturn(value: 200);
+
+		$client = $this->createMock(originalClassName: IClient::class);
+		$client->method('post')->willReturnCallback(
+			function (string $uri, array $options) use (&$captured, $response) {
+				$captured = $options;
+				return $response;
+			}
+		);
+
+		$clientService = $this->createMock(originalClassName: IClientService::class);
+		$clientService->method('newClient')->willReturn(value: $client);
+
+		// The request fixture carries 'title' => 'X': named as the task field,
+		// it is forwarded; the undeclared 'claims' still is not.
+		$controller = $this->controller(aggregate: $aggregate, clientService: $clientService);
+		$result = $controller->action(appId: 'portaliq', actionId: 'completeChecklistTask');
+
+		$this->assertSame(expected: 200, actual: $result->getStatus());
+		$this->assertSame(expected: '{"title":"X"}', actual: $captured['body']);
+
+	}//end testActionWithDeclaredFieldsAlsoForwardsItsTaskField()
+
 	public function testActionWithoutDeclaredFieldsForwardsTheRawBodyUnchanged(): void {
 		// Backward compatible: an action with no `fields` declaration (e.g.
 		// the demo's GET-method actions) keeps relaying the raw request body.
@@ -1244,7 +1424,7 @@ class ContributionControllerTest extends TestCase {
 	public function testActionWithTypeCreateAndSuccessfulForwardTriggersReceiptRecord(): void {
 		$aggregate = $this->aggregate(
 			actions: [
-				['id' => 'submitAccreditation', 'type' => 'create', 'endpoint' => '/apps/demo/api/portal/accreditations', 'method' => 'POST', 'fields' => ['title']],
+				['id' => 'submitAccreditation', 'type' => 'create', 'endpoint' => '/apps/demo/api/portal/accreditations', 'method' => 'POST', 'label' => 'Grof afval laten ophalen', 'fields' => ['title']],
 			]
 		);
 
@@ -1261,8 +1441,8 @@ class ContributionControllerTest extends TestCase {
 		$received = [];
 		$receiptService = $this->createMock(SubmissionReceiptService::class);
 		$receiptService->expects($this->once())->method('record')->willReturnCallback(
-			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData) use (&$received) {
-				$received = compact('subjectRef', 'organisation', 'appId', 'actionId', 'whitelistedData');
+			function (string $subjectRef, string $organisation, string $appId, string $actionId, array $whitelistedData, string $audience = '', mixed $actionTitle = '') use (&$received) {
+				$received = compact('subjectRef', 'organisation', 'appId', 'actionId', 'whitelistedData', 'actionTitle');
 			}
 		);
 
@@ -1275,6 +1455,7 @@ class ContributionControllerTest extends TestCase {
 		$this->assertSame('portaliq', $received['appId']);
 		$this->assertSame('submitAccreditation', $received['actionId']);
 		$this->assertSame(['title' => 'X'], $received['whitelistedData']);
+		$this->assertSame('Grof afval laten ophalen', $received['actionTitle']);
 
 	}//end testActionWithTypeCreateAndSuccessfulForwardTriggersReceiptRecord()
 
@@ -1367,7 +1548,7 @@ class ContributionControllerTest extends TestCase {
 	 *
 	 * @return void
 	 *
-	 * @spec openspec/changes/action-forward-survives-a-slow-answer/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
+	 * @spec openspec/specs/portal-contribution-contract/spec.md#requirement-a-forward-that-times-out-says-the-request-may-still-be-processing-req-afs-002
 	 */
 	public function testActionThatTimesOutIs504ForwardTimeout(): void {
 		$aggregate = $this->aggregate(
@@ -1857,6 +2038,129 @@ class ContributionControllerTest extends TestCase {
 
 	}//end testInboxReturnsTheAggregatedMessages()
 
+	/**
+	 * GET one message without a portal session: 401.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	public function testMessageAnswers401WithoutSession(): void {
+		$controller = $this->controller(aggregate: $this->aggregate(), subject: null);
+		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->message('portaliq', 'portalMessage', 'm-1')->getStatus());
+	}//end testMessageAnswers401WithoutSession()
+
+	/**
+	 * Another resident's message is never returned: the scoped read answers
+	 * null, and the controller the same 404 as for an id that does not exist.
+	 * The read carries the subject's own scope and organisation.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	public function testMessageOfAnotherResidentIs404(): void {
+		$aggregate = $this->aggregate(collections: [['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage', 'scopeField' => 'subjectRef']]);
+
+		$received = [];
+		$reader   = $this->createMock(PortalObjectReader::class);
+		$reader->method('resolveScopeValue')->willReturn('s1');
+		$reader->expects($this->once())->method('readObject')->willReturnCallback(
+			function (...$args) use (&$received) {
+				$received = $args;
+				return null;
+			}
+		);
+		$inboxReader = $this->createMock(PortalInboxReader::class);
+		$inboxReader->expects($this->never())->method('oneMessage');
+
+		$response = $this->controller(aggregate: $aggregate, reader: $reader, inboxReader: $inboxReader)->message('portaliq', 'portalMessage', 'henks-message');
+
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'not_found'], $response->getData());
+		$this->assertSame(['portaliq', 'portalMessage', 'subjectRef', 's1', 'henks-message', 'org-1'], array_slice($received, 0, 6));
+	}//end testMessageOfAnotherResidentIs404()
+
+	/**
+	 * A register and schema that are no inbox collection of the subject: 404,
+	 * the same answer as a missing message, and nothing is read.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	public function testMessageOutsideOwnContributionsIs404(): void {
+		$aggregate = $this->aggregate(collections: [['id' => 'docs', 'register' => 'portaliq', 'schema' => 'exampleDocument', 'scopeField' => 'subjectRef']]);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->expects($this->never())->method('readObject');
+		$reader->expects($this->never())->method('resolveScopeValue');
+
+		$controller = $this->controller(aggregate: $aggregate, reader: $reader);
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->message('portaliq', 'exampleDocument', 'd-1')->getStatus());
+		$this->assertSame(Http::STATUS_NOT_FOUND, $controller->message('other', 'message', 'x-1')->getStatus());
+	}//end testMessageOutsideOwnContributionsIs404()
+
+	/**
+	 * An inbox collection above the session's trust level: 403, nothing read.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	public function testMessageBelowMinTrustIs403(): void {
+		$aggregate = $this->aggregate(collections: [['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage', 'minTrust' => 'substantial']]);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->expects($this->never())->method('readObject');
+
+		$response = $this->controller(aggregate: $aggregate, reader: $reader)->message('portaliq', 'portalMessage', 'm-1');
+		$this->assertSame(Http::STATUS_FORBIDDEN, $response->getStatus());
+	}//end testMessageBelowMinTrustIs403()
+
+	/**
+	 * An inbox collection that declares no scopeField, scopeClaim or via is
+	 * refused with the same 404 before any read, as the inbox list refuses it.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	public function testMessageOfAnUnscopedInboxIs404(): void {
+		$aggregate = $this->aggregate(collections: [['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage', 'scopeField' => '']]);
+
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('resolveScopeValue')->willReturn('s1');
+		$reader->expects($this->never())->method('readObject');
+
+		$response = $this->controller(aggregate: $aggregate, reader: $reader)->message('portaliq', 'portalMessage', 'm-1');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $response->getStatus());
+		$this->assertSame(['error' => 'not_found'], $response->getData());
+	}//end testMessageOfAnUnscopedInboxIs404()
+
+	/**
+	 * A scope claim that does not resolve answers 404 before any read, and a
+	 * passing request reads once and answers the projected message, writing
+	 * nothing.
+	 *
+	 * @spec openspec/changes/a-resident-opens-one-message/tasks.md#T02
+	 */
+	public function testMessageReadsNothingBeforeTheChecks(): void {
+		$collection = ['id' => 'inbox', 'kind' => 'inbox', 'register' => 'portaliq', 'schema' => 'portalMessage', 'scopeField' => 'ownerRef', 'scopeClaim' => 'ownerRef'];
+		$aggregate  = $this->aggregate(collections: [$collection]);
+
+		$unresolved = $this->createMock(PortalObjectReader::class);
+		$unresolved->method('resolveScopeValue')->willReturn(null);
+		$unresolved->expects($this->never())->method('readObject');
+		$this->assertSame(Http::STATUS_NOT_FOUND, $this->controller(aggregate: $aggregate, reader: $unresolved)->message('portaliq', 'portalMessage', 'm-1')->getStatus());
+
+		$row    = ['id' => 'm-1', 'subject' => 'Besluit', 'ownerRef' => 'c-9'];
+		$reader = $this->createMock(PortalObjectReader::class);
+		$reader->method('resolveScopeValue')->willReturn('c-9');
+		$reader->expects($this->once())->method('readObject')->willReturn($row);
+		$writer = $this->createMock(PortalObjectWriter::class);
+		$writer->expects($this->never())->method('updateObject');
+		$inboxReader = $this->createMock(PortalInboxReader::class);
+		$inboxReader->expects($this->once())->method('oneMessage')
+			->with(self::SUBJECT, $row, $collection, $aggregate['contributions'][0])
+			->willReturn($row + ['_source' => ['appId' => 'portaliq']]);
+
+		$response = $this->controller(aggregate: $aggregate, reader: $reader, writer: $writer, inboxReader: $inboxReader)->message('portaliq', 'portalMessage', 'm-1');
+
+		$this->assertSame(Http::STATUS_OK, $response->getStatus());
+		$this->assertSame(['message' => $row + ['_source' => ['appId' => 'portaliq']]], $response->getData());
+	}//end testMessageReadsNothingBeforeTheChecks()
+
 	public function testMarkReadUnauthenticatedIs401(): void {
 		$controller = $this->controller(aggregate: $this->aggregate(), subject: null);
 		$this->assertSame(Http::STATUS_UNAUTHORIZED, $controller->markRead('r1', 'a', 'id-1')->getStatus());
@@ -2307,11 +2611,22 @@ class ContributionControllerTest extends TestCase {
 			$this->createMock(PortalSchemaReader::class),
 			$this->createMock(PortalInboxReader::class),
 			$this->createMock(PortalAuditHook::class),
-			$this->forwarder(request: $request, session: $session),
+			$this->forwarder(request: $request),
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			new CaseRowMarker(),
+			new CreateActionMatcher(),
+			new CreateBody(),
+			new InboxMessageFields(),
+			new PageChoice(),
+			new RequestedPortal(),
+			new RequiredFieldsGuard(),
+			new RowIdentifier(),
+			new ThemeChoice(),
+			new VisibleFromGate(),
+			new WriteRefusal()
 		);
 
 		$response = $controller->uploadFile('portaliq', 'exampleDocument', 'd-1');
@@ -2585,11 +2900,22 @@ class ContributionControllerTest extends TestCase {
 			$this->createMock(PortalSchemaReader::class),
 			$this->createMock(PortalInboxReader::class),
 			$this->createMock(PortalAuditHook::class),
-			$this->forwarder(request: $request, session: $session),
+			$this->forwarder(request: $request),
 			$this->createMock(AuditTrailService::class),
 			$this->createMock(SubmissionReceiptService::class),
 			$this->createMock(NotificationDispatchService::class),
-			$this->createMock(LoggerInterface::class)
+			$this->createMock(LoggerInterface::class),
+			new CaseRowMarker(),
+			new CreateActionMatcher(),
+			new CreateBody(),
+			new InboxMessageFields(),
+			new PageChoice(),
+			new RequestedPortal(),
+			new RequiredFieldsGuard(),
+			new RowIdentifier(),
+			new ThemeChoice(),
+			new VisibleFromGate(),
+			new WriteRefusal()
 		);
 
 	}//end controllerWithCollectionParam()
@@ -2656,9 +2982,10 @@ class ContributionControllerTest extends TestCase {
 		array $params = [],
 		?PortalResolver $portals = null,
 		?\OCA\Portaliq\Service\Identity\ContactConfirmationMailer $confirmation = null,
+		string $portalHeader = '',
 	): ContributionController {
 		$request = $this->createMock(IRequest::class);
-		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', ''], ['Idempotency-Key', '']]);
+		$request->method('getHeader')->willReturnMap([['Authorization', 'Bearer client-session-token'], ['X-Portaliq-Portal', $portalHeader], ['Idempotency-Key', '']]);
 		$request->method('getParam')->willReturnCallback(
 			function (string $key, $default = null) use ($params) {
 				$params = $params + [
@@ -2678,7 +3005,8 @@ class ContributionControllerTest extends TestCase {
 
 		$session = $this->createMock(PortalSessionService::class);
 		$session->method('resolveFromBearer')->willReturn($subject);
-		$session->method('issueAssertion')->willReturn('assertion-jwt');
+		$assertions = $this->createMock(SubjectAssertionIssuer::class);
+		$assertions->method('issueAssertion')->willReturn('assertion-jwt');
 
 		$urlGenerator = $this->createMock(IURLGenerator::class);
 		$urlGenerator->method('getAbsoluteURL')->willReturnCallback(
@@ -2703,7 +3031,7 @@ class ContributionControllerTest extends TestCase {
 			($auditHook ?? $this->createMock(PortalAuditHook::class)),
 			$this->forwarder(
 				request: $request,
-				session: $session,
+				assertions: $assertions,
 				clientService: $clientService,
 				urlGenerator: $urlGenerator
 			),
@@ -2711,6 +3039,17 @@ class ContributionControllerTest extends TestCase {
 			($receiptService ?? $this->createMock(SubmissionReceiptService::class)),
 			($notificationDispatch ?? $this->createMock(NotificationDispatchService::class)),
 			$this->createMock(LoggerInterface::class),
+			new CaseRowMarker(),
+			new CreateActionMatcher(),
+			new CreateBody(),
+			new InboxMessageFields(),
+			new PageChoice(),
+			new RequestedPortal(),
+			new RequiredFieldsGuard(),
+			new RowIdentifier(),
+			new ThemeChoice(),
+			new VisibleFromGate(),
+			new WriteRefusal(),
 			null,
 			null,
 			$caseTypes,
@@ -2831,14 +3170,14 @@ class ContributionControllerTest extends TestCase {
 	}//end testSchemaReturnsNotFoundWhenTheReaderResolvesNothing()
 
 	/**
-	 * The real PortalActionForwarder wired to the SAME request/session/client
-	 * mocks the controller under test uses — the forward's transport behaviour
+	 * The real PortalActionForwarder wired to the SAME request/client
+	 * mocks the controller under test uses, plus an assertion stub — the forward's transport behaviour
 	 * (signed assertion header, instance-local URL, method dispatch, 502 on a
 	 * transport throw) is still exercised end-to-end through action().
 	 */
 	private function forwarder(
 		IRequest $request,
-		PortalSessionService $session,
+		?SubjectAssertionIssuer $assertions = null,
 		?IClientService $clientService = null,
 		?IURLGenerator $urlGenerator = null,
 	): PortalActionForwarder {
@@ -2857,7 +3196,7 @@ class ContributionControllerTest extends TestCase {
 				$this->createMock(InternalBaseUrl::class),
 				$this->createMock(LoggerInterface::class)
 			),
-			$session
+			($assertions ?? $this->createMock(SubjectAssertionIssuer::class))
 		);
 
 	}//end forwarder()

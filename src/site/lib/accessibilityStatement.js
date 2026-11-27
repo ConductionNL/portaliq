@@ -14,7 +14,7 @@
 // It is in the site entry, so it holds only the route and the footer link; the
 // lines of the page itself live in statementLines.js, loaded with the page.
 //
-// @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+// @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
 
 /** The in-site route of the statement, the same on every portal. */
 export const STATEMENT_ROUTE = '/toegankelijkheid'
@@ -24,27 +24,64 @@ export const STATEMENT_ROUTE = '/toegankelijkheid'
  *
  * @param {string} route The in-site route.
  * @return {boolean}
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
  */
 export function isStatementRoute(route) {
 	return String(route || '').replace(/\/+$/, '') === STATEMENT_ROUTE
 }
 
 /**
- * The legal strip's links with the statement's link last, unless the portal
- * already links to it.
+ * The legal strip's links with the statement's link last, unless the footer
+ * already links to it: in the strip, or in one of its link columns.
  *
  * @param {Array<{label: string, href: string}>} links The portal's legal links.
  * @param {string} label The link's text in the visitor's language.
+ * @param {Array<{items?: Array<{link?: string}>}>} [columns] The footer's link columns.
  * @return {Array<{label: string, href: string}>}
- * @spec openspec/changes/site-accessibility-statement/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
  */
-export function withStatementLink(links, label) {
+export function withStatementLink(links, label, columns = []) {
 	const list = Array.isArray(links) ? links : []
-	const present = list.some((item) =>
-		String(item?.href || '')
+	const hrefs = [
+		...list.map((item) => item?.href),
+		...(Array.isArray(columns) ? columns : []).flatMap((menu) =>
+			(Array.isArray(menu?.items) ? menu.items : []).map((item) => item?.link),
+		),
+	]
+	const present = hrefs.some((href) =>
+		String(href || '')
 			.replace(/\/+$/, '')
 			.endsWith(STATEMENT_ROUTE),
 	)
 	return present ? list : [...list, { label, href: STATEMENT_ROUTE }]
+}
+
+/**
+ * The portal's own page at the statement's route, or null when it has none
+ * and the generated statement shows. Any failed read counts as none, so the
+ * statement never disappears behind an error.
+ *
+ * @param {() => Promise<object|null>} read Reads the CMS page at the route.
+ * @return {Promise<object|null>}
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ */
+export async function authoredStatement(read) {
+	try {
+		return (await read()) || null
+	} catch {
+		return null
+	}
+}
+
+/**
+ * Whether the generated statement shows: on its route, once the read is
+ * done, and only when the portal has no authored page there.
+ *
+ * @param {string} route The in-site route.
+ * @param {{loading: boolean, authored: boolean}} state The read's state.
+ * @return {boolean}
+ * @spec openspec/specs/portaliq-cms/spec.md#requirement-each-portal-publishes-a-statement-in-the-national-model-req-sas-002
+ */
+export function showsGeneratedStatement(route, { loading, authored }) {
+	return isStatementRoute(route) && !loading && !authored
 }

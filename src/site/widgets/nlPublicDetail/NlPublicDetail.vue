@@ -89,7 +89,7 @@
 				<h2 class="utrecht-heading-2">{{ say('documents') }}</h2>
 				<ul>
 					<li v-for="document in detail.documents" :key="document.href">
-						<a class="utrecht-link" :href="document.href">{{
+						<a class="utrecht-link" :href="linkOf(document.href)">{{
 							document.label
 						}}</a>
 					</li>
@@ -125,7 +125,7 @@
 			<p v-if="detail.secondaryLink" class="utrecht-paragraph">
 				<a
 					class="utrecht-button utrecht-button--secondary-action"
-					:href="detail.secondaryLink.href"
+					:href="linkOf(detail.secondaryLink.href)"
 					data-testid="nl-public-detail-secondary"
 					>{{ detail.secondaryLink.label }}</a
 				>
@@ -179,6 +179,30 @@ function pagePath() {
 	return typeof window !== 'undefined' && window.location
 		? window.location.pathname
 		: ''
+}
+
+/**
+ * What to ask the index for: the route's item, or null when a part is missing.
+ *
+ * @param {object} block The block's props.
+ * @return {{app: string, kind: string, slug: string}|null} The query.
+ */
+function detailQuery(block) {
+	if (!block.routeParam || !block.app || !block.kind) {
+		return null
+	}
+	return { app: block.app, kind: block.kind, slug: block.routeParam }
+}
+
+/**
+ * The choice the visitor kept before signing in, taken once.
+ *
+ * @param {object} detail The item's detail.
+ * @return {{chosenDate: string, count: number}|object} The fields to restore, or none.
+ */
+function keptChoice(detail) {
+	const kept = takeChoice(sessionStore(), pagePath(), detail.dates, detail.action?.countMax)
+	return kept ? { chosenDate: kept.date, count: kept.count } : {}
 }
 
 /**
@@ -304,6 +328,15 @@ export default {
 
 	methods: {
 		/**
+		 * @param {string} href A document's or the secondary link's address.
+		 * @return {string} A site path in the site's own addressing, else as it is.
+		 * @spec openspec/specs/site-navigation/spec.md#requirement-a-block-link-to-a-site-page-carries-the-sites-own-address
+		 */
+		linkOf(href) {
+			return authoredLink(href)?.href || href
+		},
+
+		/**
 		 * Read the item the route names, then take back what the visitor
 		 * had chosen before signing in.
 		 *
@@ -311,34 +344,20 @@ export default {
 		 * @spec openspec/changes/public-detail-page-for-a-provider-item/tasks.md#task-3
 		 */
 		async load() {
-			if (!this.routeParam || !this.app || !this.kind) {
+			const query = detailQuery(this)
+			if (query === null) {
 				this.state = 'missing'
 				return
 			}
 			this.state = 'loading'
 			try {
-				const found = await fetchCatalogueDetail(this.portal, {
-					app: this.app,
-					kind: this.kind,
-					slug: this.routeParam,
-				})
+				const found = await fetchCatalogueDetail(this.portal, query)
 				if (!found) {
 					this.state = 'missing'
 					return
 				}
-				this.item = found.item
-				this.detail = found.detail
-				this.state = 'ready'
-				const kept = takeChoice(
-					sessionStore(),
-					pagePath(),
-					found.detail.dates,
-					found.detail.action?.countMax,
-				)
-				if (kept) {
-					this.chosenDate = kept.date
-					this.count = kept.count
-				}
+				Object.assign(this, { item: found.item, detail: found.detail, state: 'ready' })
+				Object.assign(this, keptChoice(found.detail))
 			} catch {
 				this.state = 'failed'
 			}
