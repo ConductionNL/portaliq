@@ -2560,6 +2560,8 @@
           },
           "receivedAt"
         ],
+        "showTitle": true,
+        "showTitleIcon": false,
         "countTextFiltered": "{read} of {total} read",
         "countValues": {
           "read": {
@@ -2698,6 +2700,9 @@
             "title": "Historie",
             "icon": "History",
             "content": {
+              "excludeActions": [
+                "read"
+              ],
               "changeLabels": [
                 {
                   "field": "readAt",

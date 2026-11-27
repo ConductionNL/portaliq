@@ -101,6 +101,9 @@ test('the message page shows the read moment, the receipt request and the link t
 
 	const history = page.config.widgets.find((widget) => widget.id === 'message-history')
 	assert.deepEqual(history.content.changeLabels, [{ field: 'readAt', label: 'Read by {object.subjectRef}' }])
+	// OpenRegister logs every view as a "read" entry; beside "Read by {recipient}" that reads as a second,
+	// false receipt, so the history leaves views out (inbox-read-receipt-on-request T08).
+	assert.deepEqual(history.content.excludeActions, ['read'])
 
 	const nl = JSON.parse(readFileSync('l10n/nl.json', 'utf8')).translations
 	assert.equal(nl['not yet'], 'nog niet')
@@ -120,6 +123,10 @@ test('the Portal Messages index counts the read messages of a sending it is filt
 	assert.equal(page.config.countTextFiltered, '{read} of {total} read')
 	assert.equal(page.config.countText, undefined, 'the unfiltered list keeps its own count line')
 	assert.deepEqual(page.config.countValues, { read: { metric: 'count', filter: { read: true } } })
+
+	// The count line is the header's description, and the library hides the header (visually) unless
+	// the page shows its title: without `showTitle` the line is rendered but never seen (T08).
+	assert.equal(page.config.showTitle, true, 'the header that carries the count line is visible')
 
 	// The address filter is the only way to one sending: nothing may pin or hide it.
 	assert.equal(page.config.fixedFilters, undefined)
