@@ -114,5 +114,39 @@ export async function submitLandingPageForm(values, tracking = {}, formId = '') 
 	}
 
 	const parsed = await response.json()
-	return parsed.object || parsed
+	const created = parsed.object || parsed
+	if (typeof parsed.uploadToken === 'string' && parsed.uploadToken !== '') {
+		// The one-time token the form's files are sent with afterwards
+		// (anonymous-form-file-upload); only a form with file fields gets one.
+		return { ...created, uploadToken: parsed.uploadToken }
+	}
+	return created
+}
+
+/** The header the one-time upload token travels in. */
+export const UPLOAD_TOKEN_HEADER = 'X-Portaliq-Upload-Token'
+
+/**
+ * Send a submitted form's files, one request per file, with the one-time
+ * token its create answer carried. A file the server refuses does not stop
+ * the others.
+ *
+ * @param {string} token The upload token.
+ * @param {Array<{field: string, file: File}>} uploads The files, per field.
+ * @param {(url: string, init: object) => Promise<{ok: boolean}>} [send] The fetch to use.
+ * @return {Promise<{sent: Array<string>, failed: Array<string>}>} The names sent and not sent.
+ * @spec openspec/changes/anonymous-form-file-upload/specs/landing-page-provisioning/spec.md
+ */
+export async function uploadFormFiles(token, uploads, send = fetch) {
+	const outcome = { sent: [], failed: [] }
+	for (const upload of uploads) {
+		const body = new FormData()
+		body.append('file', upload.file, upload.file.name)
+		const ok = await send(
+			new URL(`${resolvePortalApiRoot()}/portal/api/form-upload/${encodeURIComponent(upload.field)}`, window.location.origin).toString(),
+			{ method: 'POST', headers: { [UPLOAD_TOKEN_HEADER]: token, Accept: 'application/json' }, body },
+		).then((response) => response.ok, () => false)
+		outcome[ok ? 'sent' : 'failed'].push(upload.file.name)
+	}
+	return outcome
 }

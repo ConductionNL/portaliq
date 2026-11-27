@@ -24,6 +24,8 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Kernel\Contracts;
 
+use OCP\AppFramework\Http;
+
 use OCP\IRequest;
 
 /**
@@ -48,6 +50,14 @@ interface PortalFileFieldPolicyInterface {
 	 * Refusal: the file matches none of the field's `accept` entries (HTTP 415).
 	 */
 	public const ERROR_TYPE_REFUSED = 'file_type_refused';
+
+	/**
+	 * HTTP status per refusal, for every route that uploads into a file field.
+	 */
+	public const REFUSAL_STATUS = [
+		self::ERROR_TOO_LARGE => Http::STATUS_REQUEST_ENTITY_TOO_LARGE,
+		self::ERROR_TYPE_REFUSED => Http::STATUS_UNSUPPORTED_MEDIA_TYPE,
+	];
 
 	/**
 	 * The normalised config of a declared file field on an action, or null.

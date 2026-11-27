@@ -412,6 +412,9 @@ return \OCA\Portaliq\Middleware\Support\ApiPathAliases::withVersionedAliases([
         // intake path with the origin recorded on the submission.
         ['name' => 'portalEmbed#frame', 'url' => '/portal/embed', 'verb' => 'GET'],
         ['name' => 'portalEmbed#submit', 'url' => '/portal/api/embed/submit', 'verb' => 'POST'],
+        // The file of a landing-page form's file field, after the submit, with
+        // the one-time token its create answer carried (anonymous-form-file-upload).
+        ['name' => 'formUpload#upload', 'url' => '/portal/api/form-upload/{field}', 'verb' => 'POST'],
 
         // The intake form as an object (portal-intake-form-as-an-object): the
         // entry point over opencatalogi's published catalogue, the form a

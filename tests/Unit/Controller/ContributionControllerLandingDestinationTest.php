@@ -19,6 +19,7 @@ namespace OCA\Portaliq\Tests\Unit\Controller;
 use OCA\Portaliq\Contribution\PortalContributionRegistry;
 use OCA\Portaliq\Contribution\PortalManifestNormaliser;
 use OCA\Portaliq\Controller\ContributionController;
+use OCA\Portaliq\Kernel\Contracts\FormUploadGrantsInterface;
 use OCA\Portaliq\Service\AuditTrailService;
 use OCA\Portaliq\Service\Intake\DestinationIntake;
 use OCA\Portaliq\Service\Intake\DestinationMapping;
@@ -70,6 +71,7 @@ use OCA\Portaliq\Service\WriteRefusal;
  * @uses \OCA\Portaliq\Contribution\CreateBody
  * @uses \OCA\Portaliq\Contribution\CrossRefConfigNormaliser
  * @uses \OCA\Portaliq\Contribution\FieldWidgetNormaliser
+ * @uses \OCA\Portaliq\Contribution\FileFieldConfigNormaliser
  * @uses \OCA\Portaliq\Contribution\FormStepsNormaliser
  * @uses \OCA\Portaliq\Contribution\GuestActionConfigNormaliser
  * @uses \OCA\Portaliq\Contribution\InboxReplyConfigNormaliser
@@ -147,19 +149,87 @@ class ContributionControllerLandingDestinationTest extends TestCase {
 	}//end testWithoutTheIntakeTheFormSaysTryAgainLater()
 
 	/**
+	 * A form with a file field: the file field's typed value never reaches the
+	 * destination, and the answer carries the one-time token minted for the
+	 * object the submission became and the field's normalised config.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/anonymous-form-file-upload/specs/landing-page-provisioning/spec.md
+	 */
+	public function testAFormWithAFileFieldAnswersAnUploadToken(): void {
+		$action = self::ACTION;
+		$action['fields'][] = 'photo';
+		$action['fieldConfigs'] = ['photo' => ['type' => 'file', 'accept' => ['.pdf'], 'maxSizeMb' => 5]];
+
+		$grants = $this->createMock(originalClassName: FormUploadGrantsInterface::class);
+		$grants->expects($this->once())->method('mint')
+			->with(
+				['register' => 'pipelinq', 'schema' => 'lead', 'id' => 'l-1'],
+				$this->callback(
+					callback: static fn (array $uploads): bool => array_keys($uploads) === ['photo']
+						&& $uploads['photo']['type'] === 'file'
+						&& $uploads['photo']['accept'] === ['.pdf']
+						&& $uploads['photo']['maxSizeMb'] === 5
+				)
+			)
+			->willReturn('tok-abc');
+
+		$writer   = $this->createMock(originalClassName: PortalObjectWriter::class);
+		$response = $this->controller(writer: $writer, outcome: ['reference' => 'LEAD-8', 'id' => 'l-1'], action: $action, grants: $grants)
+			->create('portaliq', 'landingPageSubmission');
+
+		$this->assertSame(expected: 200, actual: $response->getStatus());
+		$this->assertSame(expected: 'tok-abc', actual: $response->getData()['uploadToken']);
+		$this->assertSame(expected: 'LEAD-8', actual: $response->getData()['object']['reference']);
+		$this->assertArrayNotHasKey(key: 'photo', array: $this->fake->calls[0]['payload'], message: 'a typed file reference never reaches the destination');
+	}//end testAFormWithAFileFieldAnswersAnUploadToken()
+
+	/**
+	 * A form without a file field mints no token.
+	 *
+	 * @return void
+	 *
+	 * @spec openspec/changes/anonymous-form-file-upload/specs/landing-page-provisioning/spec.md
+	 */
+	public function testAFormWithoutAFileFieldMintsNoToken(): void {
+		$grants = $this->createMock(originalClassName: FormUploadGrantsInterface::class);
+		$grants->expects($this->never())->method('mint');
+
+		$writer   = $this->createMock(originalClassName: PortalObjectWriter::class);
+		$response = $this->controller(writer: $writer, outcome: ['reference' => 'LEAD-9', 'id' => 'l-2'], grants: $grants)
+			->create('portaliq', 'landingPageSubmission');
+
+		$this->assertArrayNotHasKey(key: 'uploadToken', array: $response->getData());
+	}//end testAFormWithoutAFileFieldMintsNoToken()
+
+	/**
 	 * The controller for an anonymous visitor, the action passed through the real normaliser.
 	 *
 	 * @param array<string, mixed>|\Throwable $outcome What the submit answers.
 	 */
-	private function controller(PortalObjectWriter $writer, array|\Throwable $outcome, bool $wired = true): ContributionController {
-		$params  = ['actionId' => 'submit-form-a', 'email' => 'ada@example.nl', 'name' => 'Ada', 'isAdmin' => true];
+	private function controller(
+		PortalObjectWriter $writer,
+		array|\Throwable $outcome,
+		bool $wired = true,
+		?array $action = null,
+		?FormUploadGrantsInterface $grants = null
+	): ContributionController {
+		$params  = [
+			'actionId' => 'submit-form-a',
+			'email' => 'ada@example.nl',
+			'name' => 'Ada',
+			'isAdmin' => true,
+			'photo' => 'someone-elses-file',
+		];
 		$request = $this->createMock(IRequest::class);
 		$request->method('getHeader')->willReturnCallback(static fn (string $name): string => ($name === 'Idempotency-Key' ? 'key-1' : ''));
 		$request->method('getParam')->willReturnCallback(static fn (string $key, mixed $default = null) => ($params[$key] ?? $default));
 
 		$schemas = $this->createMock(PortalSchemaReader::class);
 		$schemas->method('readSchema')->willReturn(['required' => [], 'properties' => ['email' => ['type' => 'string'], 'name' => ['type' => 'string'], 'formId' => ['type' => 'string'], 'pageRoute' => ['type' => 'string'], 'source' => ['type' => 'string']]]);
-		$normalised = (new PortalManifestNormaliser($schemas))->normalise(['collections' => [], 'actions' => [self::ACTION]]);
+		$manifest   = ['collections' => [], 'actions' => [($action ?? self::ACTION)]];
+		$normalised = (new PortalManifestNormaliser(schemaReader: $schemas))->normalise(contribution: $manifest);
 		$aggregate  = ['contributions' => [['app' => 'portaliq', 'collections' => [], 'actions' => $normalised['actions']]]];
 
 		$registry = $this->createMock(PortalContributionRegistry::class);
@@ -195,7 +265,19 @@ class ContributionControllerLandingDestinationTest extends TestCase {
 			receiptService: $this->createMock(SubmissionReceiptService::class),
 			notificationDispatch: $this->createMock(NotificationDispatchService::class),
 			logger: $this->createMock(LoggerInterface::class),
-			intake: $intake, caseRowMarker: new CaseRowMarker(), createActionMatcher: new CreateActionMatcher(), createBody: new CreateBody(), inboxMessageFields: new InboxMessageFields(), pageChoice: new PageChoice(), requestedPortal: new RequestedPortal(), requiredFieldsGuard: new RequiredFieldsGuard(), rowIdentifier: new RowIdentifier(), themeChoice: new ThemeChoice(), visibleFromGate: new VisibleFromGate(), writeRefusal: new WriteRefusal()
+			intake: $intake,
+			caseRowMarker: new CaseRowMarker(),
+			createActionMatcher: new CreateActionMatcher(),
+			createBody: new CreateBody(),
+			inboxMessageFields: new InboxMessageFields(),
+			pageChoice: new PageChoice(),
+			requestedPortal: new RequestedPortal(),
+			requiredFieldsGuard: new RequiredFieldsGuard(),
+			rowIdentifier: new RowIdentifier(),
+			themeChoice: new ThemeChoice(),
+			visibleFromGate: new VisibleFromGate(),
+			writeRefusal: new WriteRefusal(),
+			uploadGrants: $grants
 		);
 	}//end controller()
 }//end class
