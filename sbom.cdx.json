@@ -4626,8 +4626,8 @@
       "type": "library",
       "name": "action",
       "group": "@gemeente-denhaag",
-      "version": "4.4.2",
-      "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/action@4.4.2",
+      "version": "4.4.4",
+      "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/action@4.4.4",
       "licenses": [
         {
           "license": {
@@ -4635,15 +4635,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40gemeente-denhaag/action@4.4.2",
+      "purl": "pkg:npm/%40gemeente-denhaag/action@4.4.4",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@gemeente-denhaag/action/-/action-4.4.2.tgz",
+          "url": "https://registry.npmjs.org/@gemeente-denhaag/action/-/action-4.4.4.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "a14a46441fdccbe066b88f081aac3c58b440578845a6c8ccf8bb5777fe4bf3989d40637d5a470265263693ede3d21b6ac6d4bc4d8d2450ae99fc24626fa402d3"
+              "content": "214f596933b07f3f236017b1a1eab77d8b71ba40faeb78af29fe656f47575a1875192b6765ea25d426b9421e21560518dcd976c36d07bd91c234585500a8f981"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -4653,6 +4653,76 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@gemeente-denhaag/action"
+        }
+      ],
+      "components": [
+        {
+          "type": "library",
+          "name": "button",
+          "group": "@gemeente-denhaag",
+          "version": "3.2.0",
+          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/action@4.4.4|@gemeente-denhaag/button@3.2.0",
+          "licenses": [
+            {
+              "license": {
+                "id": "EUPL-1.2"
+              }
+            }
+          ],
+          "purl": "pkg:npm/%40gemeente-denhaag/button@3.2.0",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/@gemeente-denhaag/button/-/button-3.2.0.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "c25eb85cff4447ddaac10114499d5f595f7c7270a075d322cd1d3a888a848f2a5cc7f8ffd3fb83cf33b115e7ae3474572c2ae8cb3d9372220ced38b5a3e3b5bf"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/@gemeente-denhaag/action/node_modules/@gemeente-denhaag/button"
+            }
+          ]
+        },
+        {
+          "type": "library",
+          "name": "link",
+          "group": "@gemeente-denhaag",
+          "version": "4.2.3",
+          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/action@4.4.4|@gemeente-denhaag/link@4.2.3",
+          "licenses": [
+            {
+              "license": {
+                "id": "EUPL-1.2"
+              }
+            }
+          ],
+          "purl": "pkg:npm/%40gemeente-denhaag/link@4.2.3",
+          "externalReferences": [
+            {
+              "url": "https://registry.npmjs.org/@gemeente-denhaag/link/-/link-4.2.3.tgz",
+              "type": "distribution",
+              "hashes": [
+                {
+                  "alg": "SHA-512",
+                  "content": "e80146f59a51f190668d2dc95618512e8808ce55961ed4868dab641c24ab35470a81ef522e513a0026f534b15220e5f644bebefca85a2a48a4a1c99416ea09dc"
+                }
+              ],
+              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
+            }
+          ],
+          "properties": [
+            {
+              "name": "cdx:npm:package:path",
+              "value": "node_modules/@gemeente-denhaag/action/node_modules/@gemeente-denhaag/link"
+            }
+          ]
         }
       ]
     },
