@@ -51,4 +51,16 @@ interface PortalPartyTreeResolverInterface {
 	 * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
 	 */
 	public function entitiesFor(string $root, bool $reachesDown, array $bounds = []): array;
+	/**
+	 * A held mandate with the organisations it reaches, when it reaches down:
+	 * `reachesTo` lists `{identifier, name, level}` and `reachRefused` is true
+	 * when the group is past a bound or could not be read.
+	 *
+	 * @param array<string, mixed> $mandate The mandate as the held listing shows it.
+	 *
+	 * @return array<string, mixed> The mandate.
+	 *
+	 * @spec openspec/changes/site-mandates-the-represented-manage/specs/portal-mandates/spec.md#requirement-the-holder-must-see-how-far-a-mandate-reaches-req-smr-008
+	 */
+	public function withReach(array $mandate): array;
 }//end interface

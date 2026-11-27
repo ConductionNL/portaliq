@@ -32,6 +32,7 @@ use OCA\Portaliq\Kernel\Contracts\PortalAccountLookupInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalCaseTypeChoicesInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalIdentityMailerInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalMandateAdminServiceInterface;
+use OCA\Portaliq\Kernel\Contracts\PortalPartyTreeResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalResolverInterface;
 use OCA\Portaliq\Kernel\Contracts\PortalSessionServiceInterface;
 use OCP\AppFramework\Controller;
@@ -63,6 +64,7 @@ class MandateController extends Controller implements PortalProtected {
 	 * @param PortalCaseTypeChoicesInterface       $choices  The case types a mandate may be narrowed to.
 	 * @param PortalResolverInterface              $portals  The portal being visited.
 	 * @param MandatePartiesInterface $mandateParties The MandateParties helper.
+	 * @param PortalPartyTreeResolverInterface     $tree     The organisations a mandate reaching down covers.
 	 *
 	 * @SuppressWarnings(PHPMD.ExcessiveParameterList) -- each collaborator is one screen element of the Machtigingen board.
 	 */
@@ -75,6 +77,7 @@ class MandateController extends Controller implements PortalProtected {
 		private readonly PortalCaseTypeChoicesInterface $choices,
 		private readonly PortalResolverInterface $portals,
 		private readonly MandatePartiesInterface $mandateParties,
+		private readonly PortalPartyTreeResolverInterface $tree,
 	) {
 		parent::__construct(appName: AppIdentity::APP_ID, request: $request);
 	}//end __construct()
@@ -299,8 +302,9 @@ class MandateController extends Controller implements PortalProtected {
 		}
 
 		$holders = $this->mandateParties->holdersOf(subject: $subject);
+		$items = $this->mandates->held(holders: $holders, organisation: (string)($subject['organisation'] ?? ''));
 
-		return new JSONResponse(['items' => $this->mandates->held(holders: $holders, organisation: (string)($subject['organisation'] ?? ''))]);
+		return new JSONResponse(['items' => array_map(fn (array $item): array => $this->tree->withReach(mandate: $item), $items)]);
 	}//end held()
 
 	/**

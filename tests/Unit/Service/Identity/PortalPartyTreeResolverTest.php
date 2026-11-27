@@ -4,169 +4,206 @@ declare(strict_types=1);
 
 namespace OCA\Portaliq\Tests\Unit\Service\Identity;
 
+use OCA\Portaliq\Service\Identity\PartyTreeSource;
 use OCA\Portaliq\Service\Identity\PortalPartyTreeResolver;
-use OCA\Portaliq\Service\PortalObjectReader;
+use OCP\IAppConfig;
 use PHPUnit\Framework\TestCase;
 
 /**
  * portal-visibility-follows-the-party-tree REQ-PTV-001, REQ-PTV-003 and
  * REQ-PTV-004: a flat mandate stays flat, the group is read at the moment of
- * the request rather than remembered, every read carries a limit, and a group
- * past the bound is refused rather than truncated.
+ * the request rather than remembered, and a group past the bound is refused
+ * rather than truncated. The group comes from OpenRegister's tree read, so the
+ * source answers here in that read's shape.
  *
- * @spec openspec/changes/portal-visibility-follows-the-party-tree/specs/portal-visibility-and-the-party-tree/spec.md
+ * @covers \OCA\Portaliq\Service\Identity\PortalPartyTreeResolver
+ *
+ * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
  */
 class PortalPartyTreeResolverTest extends TestCase {
 
 	/**
-	 * The recorded parent-child relations, keyed by parent.
+	 * The answer the source gives, or null for "no party object".
 	 *
-	 * @var array<string, array<int, string>>
+	 * @var array<string, mixed>|null
 	 */
-	private array $tree = [];
+	private ?array $answer = null;
 
 	/**
-	 * Every limit the reader was called with.
+	 * Every call made to the source.
 	 *
-	 * @var array<int, int>
+	 * @var array<int, array<string, mixed>>
 	 */
-	private array $limits = [];
+	private array $calls = [];
+
+	/**
+	 * App config values.
+	 *
+	 * @var array<string, string>
+	 */
+	private array $config = [];
 
 	protected function setUp(): void {
-		$this->tree = [];
-		$this->limits = [];
-
+		$this->answer = null;
+		$this->calls = [];
+		$this->config = [];
 	}//end setUp()
 
+	/**
+	 * One node of OpenRegister's tree answer.
+	 *
+	 * @param string $kvk   The node's KvK number.
+	 * @param int    $level OpenRegister's level, 0 for the root.
+	 *
+	 * @return array<string, mixed> The node.
+	 */
+	private static function node(string $kvk, int $level): array {
+		return ['uuid' => 'uuid-'.$kvk, 'name' => 'Company '.$kvk, 'level' => $level, 'parent' => null, 'properties' => ['kvkNumber' => $kvk]];
+	}//end node()
+
+	/**
+	 * A holding with two subsidiaries and one below the first.
+	 *
+	 * @return array<string, mixed> The answer.
+	 */
+	private static function group(): array {
+		return [
+			'nodes' => [self::node('10000000', 0), self::node('20000000', 1), self::node('30000000', 1), self::node('40000000', 2)],
+			'truncated' => false,
+			'truncatedBy' => null,
+		];
+	}//end group()
+
 	public function testAFlatMandateReachesOnlyTheEntityItNames(): void {
-		$this->tree = ['parent' => ['sub-1', 'sub-2']];
-		$resolver = $this->resolver();
+		$this->answer = self::group();
 
-		$scope = $resolver->entitiesFor(root: 'parent', reachesDown: false);
+		$scope = $this->resolver()->entitiesFor(root: '10000000', reachesDown: false);
 
-		$this->assertSame(['parent'], $scope['entities']);
-		// A flat mandate reads no relation at all.
-		$this->assertSame([], $this->limits);
-
+		$this->assertSame(['10000000'], $scope['entities']);
+		$this->assertSame([], $this->calls, 'a flat mandate reads no relation at all');
 	}//end testAFlatMandateReachesOnlyTheEntityItNames()
 
 	public function testOneMandateReachesTheWholeGroup(): void {
-		$this->tree = ['parent' => ['sub-1', 'sub-2'], 'sub-1' => ['sub-1-a']];
-		$resolver = $this->resolver();
+		$this->answer = self::group();
 
-		$scope = $resolver->entitiesFor(root: 'parent', reachesDown: true);
+		$scope = $this->resolver()->entitiesFor(root: '10000000', reachesDown: true);
 
-		$this->assertSame(['parent', 'sub-1', 'sub-2', 'sub-1-a'], $scope['entities']);
+		$this->assertSame(['10000000', '20000000', '30000000', '40000000'], $scope['entities']);
 		$this->assertFalse($scope['refused']);
-
 	}//end testOneMandateReachesTheWholeGroup()
 
-	public function testASiblingIsNotBelow(): void {
-		$this->tree = ['holding' => ['first', 'second'], 'first' => ['first-sub']];
-		$resolver = $this->resolver();
+	public function testTheTreeCarriesNamesAndLevelsFromOne(): void {
+		$this->answer = self::group();
 
-		$scope = $resolver->entitiesFor(root: 'first', reachesDown: true);
+		$tree = $this->resolver()->treeFor(root: '10000000');
 
-		$this->assertSame(['first', 'first-sub'], $scope['entities']);
-		$this->assertNotContains('second', $scope['entities']);
+		$this->assertSame(
+			[
+				['identifier' => '10000000', 'name' => 'Company 10000000', 'level' => 1],
+				['identifier' => '20000000', 'name' => 'Company 20000000', 'level' => 2],
+				['identifier' => '30000000', 'name' => 'Company 30000000', 'level' => 2],
+				['identifier' => '40000000', 'name' => 'Company 40000000', 'level' => 3],
+			],
+			$tree['nodes']
+		);
+	}//end testTheTreeCarriesNamesAndLevelsFromOne()
 
-	}//end testASiblingIsNotBelow()
+	public function testNoTreeRecordedReachesTheCompanyAlone(): void {
+		$this->answer = null;
 
-	public function testASubsidiarySoldTodayIsGoneToday(): void {
-		$this->tree = ['parent' => ['sub-1', 'sub-2']];
-		$resolver = $this->resolver();
-		$this->assertContains('sub-2', $resolver->entitiesFor(root: 'parent', reachesDown: true)['entities']);
+		$scope = $this->resolver()->entitiesFor(root: '10000000', reachesDown: true);
 
-		// The group is re-read on the next request; nothing was cached and no
-		// grant is revoked.
-		$this->tree = ['parent' => ['sub-1']];
-
-		$this->assertNotContains('sub-2', $resolver->entitiesFor(root: 'parent', reachesDown: true)['entities']);
-
-	}//end testASubsidiarySoldTodayIsGoneToday()
-
-	public function testASubsidiaryAcquiredTodayIsVisibleToday(): void {
-		$this->tree = ['parent' => ['sub-1']];
-		$resolver = $this->resolver();
-		$resolver->entitiesFor(root: 'parent', reachesDown: true);
-
-		$this->tree = ['parent' => ['sub-1', 'sub-new']];
-
-		$this->assertContains('sub-new', $resolver->entitiesFor(root: 'parent', reachesDown: true)['entities']);
-
-	}//end testASubsidiaryAcquiredTodayIsVisibleToday()
-
-	public function testAGroupDeeperThanTheBoundIsRefusedNotTruncated(): void {
-		$this->tree = ['l0' => ['l1'], 'l1' => ['l2'], 'l2' => ['l3'], 'l3' => ['l4']];
-		$resolver = $this->resolver();
-
-		$scope = $resolver->entitiesFor(root: 'l0', reachesDown: true, bounds: ['maxDepth' => 2]);
-
-		$this->assertTrue($scope['refused']);
-		$this->assertSame([], $scope['entities']);
-		$this->assertSame(2, $scope['bound']['maxDepth']);
-
-	}//end testAGroupDeeperThanTheBoundIsRefusedNotTruncated()
-
-	public function testALevelWiderThanThePageSizeIsRefusedNotTruncated(): void {
-		$this->tree = ['parent' => ['a', 'b', 'c']];
-		$resolver = $this->resolver();
-
-		$scope = $resolver->entitiesFor(root: 'parent', reachesDown: true, bounds: ['pageSize' => 2]);
-
-		$this->assertTrue($scope['refused']);
-		$this->assertSame([], $scope['entities']);
-
-	}//end testALevelWiderThanThePageSizeIsRefusedNotTruncated()
-
-	public function testEveryReadCarriesALimit(): void {
-		$this->tree = ['parent' => ['sub-1'], 'sub-1' => ['sub-1-a']];
-		$resolver = $this->resolver();
-
-		$resolver->entitiesFor(root: 'parent', reachesDown: true);
-
-		$this->assertNotSame([], $this->limits);
-		foreach ($this->limits as $limit) {
-			$this->assertGreaterThan(0, $limit);
-			$this->assertLessThanOrEqual(PortalPartyTreeResolver::DEFAULT_PAGE_SIZE, $limit);
-		}
-
-	}//end testEveryReadCarriesALimit()
-
-	public function testACycleInTheRecordedRelationsDoesNotWalkForever(): void {
-		$this->tree = ['a' => ['b'], 'b' => ['a']];
-		$resolver = $this->resolver();
-
-		$scope = $resolver->entitiesFor(root: 'a', reachesDown: true);
-
-		$this->assertSame(['a', 'b'], $scope['entities']);
+		$this->assertSame(['10000000'], $scope['entities']);
 		$this->assertFalse($scope['refused']);
+	}//end testNoTreeRecordedReachesTheCompanyAlone()
 
-	}//end testACycleInTheRecordedRelationsDoesNotWalkForever()
+	public function testTheSourceIsNamedByRegisterSchemaAndField(): void {
+		$this->answer = self::group();
+		$this->resolver()->treeFor(root: '10000000');
+		$this->assertSame(['dossiq', 'kvkCompany', 'kvkNumber', '10000000', 4], array_values($this->calls[0]));
+
+		$this->config = ['party_tree_register' => 'crm', 'party_tree_schema' => 'organisation', 'party_tree_identity' => 'kvk'];
+		$this->resolver()->treeFor(root: '10000000', bounds: ['maxDepth' => 2]);
+		$this->assertSame(['crm', 'organisation', 'kvk', '10000000', 2], array_values($this->calls[1]));
+	}//end testTheSourceIsNamedByRegisterSchemaAndField()
+
+	public function testAGroupPastADepthBoundIsRefusedNotTruncated(): void {
+		$this->answer = ['nodes' => [self::node('10000000', 0), self::node('20000000', 1)], 'truncated' => true, 'truncatedBy' => 'depth'];
+
+		$scope = $this->resolver()->entitiesFor(root: '10000000', reachesDown: true, bounds: ['maxDepth' => 1]);
+
+		$this->assertTrue($scope['refused']);
+		$this->assertSame([], $scope['entities']);
+		$this->assertSame(1, $scope['bound']['maxDepth']);
+	}//end testAGroupPastADepthBoundIsRefusedNotTruncated()
+
+	public function testAGroupLargerThanThePageSizeIsRefusedNotTruncated(): void {
+		$this->answer = self::group();
+
+		$scope = $this->resolver()->entitiesFor(root: '10000000', reachesDown: true, bounds: ['pageSize' => 3]);
+
+		$this->assertTrue($scope['refused']);
+		$this->assertSame([], $scope['entities']);
+	}//end testAGroupLargerThanThePageSizeIsRefusedNotTruncated()
+
+	public function testTheGroupIsReadOnEveryRequest(): void {
+		$this->answer = self::group();
+		$resolver = $this->resolver();
+		$this->assertContains('30000000', $resolver->entitiesFor(root: '10000000', reachesDown: true)['entities']);
+
+		// Sold this morning: nothing was cached, nothing is revoked.
+		$this->answer = ['nodes' => [self::node('10000000', 0), self::node('20000000', 1)], 'truncated' => false, 'truncatedBy' => null];
+
+		$this->assertNotContains('30000000', $resolver->entitiesFor(root: '10000000', reachesDown: true)['entities']);
+		$this->assertCount(2, $this->calls);
+	}//end testTheGroupIsReadOnEveryRequest()
+
+	public function testANodeWithoutAnIdentityIsLeftOut(): void {
+		$nameless = self::node('50000000', 1);
+		$nameless['properties'] = [];
+		$this->answer = ['nodes' => [self::node('10000000', 0), $nameless], 'truncated' => false, 'truncatedBy' => null];
+
+		$this->assertSame(['10000000'], $this->resolver()->entitiesFor(root: '10000000', reachesDown: true)['entities']);
+	}//end testANodeWithoutAnIdentityIsLeftOut()
+
+	public function testAHeldMandateCarriesWhatItReaches(): void {
+		$this->answer = self::group();
+		$resolver = $this->resolver();
+
+		$flat = $resolver->withReach(mandate: ['id' => 'a', 'onBehalfOf' => 'kvk:10000000', 'reach' => 'organisation']);
+		$this->assertSame([], $flat['reachesTo']);
+		$this->assertSame([], $this->calls, 'a flat mandate reads no tree');
+
+		$group = $resolver->withReach(mandate: ['id' => 'b', 'onBehalfOf' => 'kvk:10000000', 'reach' => 'tree']);
+		$this->assertSame('10000000', $this->calls[0]['identity'], 'read for the untyped number');
+		$this->assertCount(4, $group['reachesTo']);
+		$this->assertFalse($group['reachRefused']);
+
+		$this->answer = ['nodes' => [], 'truncated' => true, 'truncatedBy' => 'cap'];
+		$refused = $resolver->withReach(mandate: ['id' => 'c', 'onBehalfOf' => 'kvk:10000000', 'reach' => 'tree']);
+		$this->assertTrue($refused['reachRefused']);
+		$this->assertSame([], $refused['reachesTo']);
+	}//end testAHeldMandateCarriesWhatItReaches()
 
 	/**
-	 * The resolver over a reader answering the recorded relations.
+	 * The resolver over a source double answering `$this->answer`.
 	 *
 	 * @return PortalPartyTreeResolver
 	 */
 	private function resolver(): PortalPartyTreeResolver {
-		$reader = $this->getMockBuilder(PortalObjectReader::class)
-			->disableOriginalConstructor()
-			->onlyMethods(['readCollection'])
-			->getMock();
-		$reader->method('readCollection')->willReturnCallback(
-			function (string $register, string $schema, string $scopeField, string $subjectRef, string $organisation = '', int $limit = 200, string $scopeClaim = '', string $contributingApp = '', mixed $via = null, string $audience = '', mixed $fields = null, array $filter = []): array {
-				$this->limits[] = $limit;
-				$rows = [];
-				foreach (($this->tree[$subjectRef] ?? []) as $child) {
-					$rows[] = ['slug' => $child, 'parent' => $subjectRef];
-				}
-
-				return array_slice($rows, 0, $limit);
+		$source = $this->createMock(PartyTreeSource::class);
+		$source->method('below')->willReturnCallback(
+			function (string $register, string $schema, string $identityField, string $identity, int $maxDepth): ?array {
+				$this->calls[] = ['register' => $register, 'schema' => $schema, 'identityField' => $identityField, 'identity' => $identity, 'maxDepth' => $maxDepth];
+				return $this->answer;
 			}
 		);
 
-		return new PortalPartyTreeResolver($reader);
-	}//end resolver()
+		$appConfig = $this->createMock(IAppConfig::class);
+		$appConfig->method('getValueString')->willReturnCallback(
+			fn (string $app, string $key, string $default = ''): string => ($this->config[$key] ?? $default)
+		);
 
+		return new PortalPartyTreeResolver($source, $appConfig);
+	}//end resolver()
 }//end class
