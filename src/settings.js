@@ -27,7 +27,8 @@ import pinia from './pinia.js'
 // Library CSS, as in main.js: webpack tree-shakes the library's own style
 // side effect from the aliased package, so without this import the admin
 // page drew the board shell with none of its grid, cards or tokens.
-import '@conduction/nextcloud-vue/css/index.css'
+// The library stylesheet is linked by templates/settings/admin.php
+// (css/nextcloud-vue.css, copied by LibraryStylesheetCopy).
 
 // The library's own catalogue (shell chrome). main.js registers it for the
 // app pages; this entry is a separate bundle.
