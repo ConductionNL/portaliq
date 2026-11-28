@@ -4626,8 +4626,8 @@
       "type": "library",
       "name": "action",
       "group": "@gemeente-denhaag",
-      "version": "4.4.4",
-      "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/action@4.4.4",
+      "version": "4.4.2",
+      "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/action@4.4.2",
       "licenses": [
         {
           "license": {
@@ -4635,15 +4635,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40gemeente-denhaag/action@4.4.4",
+      "purl": "pkg:npm/%40gemeente-denhaag/action@4.4.2",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@gemeente-denhaag/action/-/action-4.4.4.tgz",
+          "url": "https://registry.npmjs.org/@gemeente-denhaag/action/-/action-4.4.2.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "214f596933b07f3f236017b1a1eab77d8b71ba40faeb78af29fe656f47575a1875192b6765ea25d426b9421e21560518dcd976c36d07bd91c234585500a8f981"
+              "content": "a14a46441fdccbe066b88f081aac3c58b440578845a6c8ccf8bb5777fe4bf3989d40637d5a470265263693ede3d21b6ac6d4bc4d8d2450ae99fc24626fa402d3"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -4653,76 +4653,6 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@gemeente-denhaag/action"
-        }
-      ],
-      "components": [
-        {
-          "type": "library",
-          "name": "button",
-          "group": "@gemeente-denhaag",
-          "version": "3.2.0",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/action@4.4.4|@gemeente-denhaag/button@3.2.0",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40gemeente-denhaag/button@3.2.0",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@gemeente-denhaag/button/-/button-3.2.0.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "c25eb85cff4447ddaac10114499d5f595f7c7270a075d322cd1d3a888a848f2a5cc7f8ffd3fb83cf33b115e7ae3474572c2ae8cb3d9372220ced38b5a3e3b5bf"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/action/node_modules/@gemeente-denhaag/button"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "link",
-          "group": "@gemeente-denhaag",
-          "version": "4.2.3",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/action@4.4.4|@gemeente-denhaag/link@4.2.3",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40gemeente-denhaag/link@4.2.3",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@gemeente-denhaag/link/-/link-4.2.3.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "e80146f59a51f190668d2dc95618512e8808ce55961ed4868dab641c24ab35470a81ef522e513a0026f534b15220e5f644bebefca85a2a48a4a1c99416ea09dc"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/action/node_modules/@gemeente-denhaag/link"
-            }
-          ]
         }
       ]
     },
@@ -4826,348 +4756,6 @@
           "name": "cdx:npm:package:path",
           "value": "node_modules/@gemeente-denhaag/contact-timeline"
         }
-      ],
-      "components": [
-        {
-          "type": "library",
-          "name": "file",
-          "group": "@gemeente-denhaag",
-          "version": "2.5.3",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/contact-timeline@4.1.3|@gemeente-denhaag/file@2.5.3",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40gemeente-denhaag/file@2.5.3",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@gemeente-denhaag/file/-/file-2.5.3.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "829956a109642e1ec10b84f704bde017e785a91618129517d120c4e2e5c32c565649344cb21b4e82e0d7b1e2de9d6b075d936a6ca174ca1389d3e05abc33e4af"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/contact-timeline/node_modules/@gemeente-denhaag/file"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "process-steps",
-          "group": "@gemeente-denhaag",
-          "version": "4.3.3",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/contact-timeline@4.1.3|@gemeente-denhaag/process-steps@4.3.3",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40gemeente-denhaag/process-steps@4.3.3",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@gemeente-denhaag/process-steps/-/process-steps-4.3.3.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "9a9f48c768a83f68d06975ebe976646597036e90de42a0c18d4d21ef6c4a4a7ad61a0682a81c30d90ee7c166e6025287e33f10395656bffd066523232abb0f9f"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/contact-timeline/node_modules/@gemeente-denhaag/process-steps"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "component-library-react",
-          "group": "@utrecht",
-          "version": "14.0.1",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/contact-timeline@4.1.3|@utrecht/component-library-react@14.0.1",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40utrecht/component-library-react@14.0.1",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@utrecht/component-library-react/-/component-library-react-14.0.1.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "f6e1ae184b01a10b481338d30eccc7bc8144832b1052f7a240135b8771abac3eb633eef40818487231562300edbabb058c4e11d5284f44cd866494961b301050"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/contact-timeline/node_modules/@utrecht/component-library-react"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "runtime",
-          "group": "@babel",
-          "version": "7.29.15",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/contact-timeline@4.1.3|@babel/runtime@7.29.15",
-          "licenses": [
-            {
-              "license": {
-                "id": "MIT"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40babel/runtime@7.29.15",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@babel/runtime/-/runtime-7.29.15.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "df4e20b1b6c656641cf9c3461f3c07065a9ea587562ca8f7557090046b7f106715ecf50f7ca23b90050d5b515910e0b095088bbd08e0d4911a025450eb5ea1f9"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/contact-timeline/node_modules/@babel/runtime"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "accordion-css",
-          "group": "@utrecht",
-          "version": "4.0.1",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/contact-timeline@4.1.3|@utrecht/accordion-css@4.0.1",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40utrecht/accordion-css@4.0.1",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@utrecht/accordion-css/-/accordion-css-4.0.1.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "4aacb2ff14f79a0bad1d50e8968d706b876e96ae69b943ab38b028a150959fb52d50534b5c6e4e9a3798868e2c3d7222905f2f414e57ace69bad1f25d2116d9f"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/contact-timeline/node_modules/@utrecht/accordion-css"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "combobox-react",
-          "group": "@utrecht",
-          "version": "0.0.13",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/contact-timeline@4.1.3|@utrecht/combobox-react@0.0.13",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40utrecht/combobox-react@0.0.13",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@utrecht/combobox-react/-/combobox-react-0.0.13.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "1ceb6bee4694ff333edfa2618460aa2b17a6c02a9375b008e1e0dda38b458d10d9b6a341a9413382b2719d68da0dbdd71867ea043b74db19cb983463faf6af36"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/contact-timeline/node_modules/@utrecht/combobox-react"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "drawer-css",
-          "group": "@utrecht",
-          "version": "3.0.1",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/contact-timeline@4.1.3|@utrecht/drawer-css@3.0.1",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40utrecht/drawer-css@3.0.1",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@utrecht/drawer-css/-/drawer-css-3.0.1.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "bbcc7f2278e4cb5318015fed47c61cd631e5f6c6a23c6ee39b99a03772f66a02a486dfb535452f8bbf820793bfabb3993a75e5b674324a2d8d18bcf3dc1df6eb"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/contact-timeline/node_modules/@utrecht/drawer-css"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "textarea-css",
-          "group": "@utrecht",
-          "version": "4.0.1",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/contact-timeline@4.1.3|@utrecht/textarea-css@4.0.1",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40utrecht/textarea-css@4.0.1",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@utrecht/textarea-css/-/textarea-css-4.0.1.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "cc1a65307a8a9d9e1056aef262ff4b5ebfa646293a58795d7bafd02d082824ec621335b4d3ca4029aa473dfdc52bfad2fd6aae49fef89ee12f5c56d39aa8fec7"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/contact-timeline/node_modules/@utrecht/textarea-css"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "textbox-react",
-          "group": "@utrecht",
-          "version": "1.0.16",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/contact-timeline@4.1.3|@utrecht/textbox-react@1.0.16",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40utrecht/textbox-react@1.0.16",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@utrecht/textbox-react/-/textbox-react-1.0.16.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "5017d0b7d67432c867223664a284e58ad622078c272d158ec69d7b79b7298b21b1477d10943e9f8a7f5901cff547c4b332588f7f72e565b95b1e5e8f6f788efe"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/contact-timeline/node_modules/@utrecht/textbox-react"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "textbox-css",
-          "group": "@utrecht",
-          "version": "4.0.1",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/contact-timeline@4.1.3|@utrecht/textbox-css@4.0.1",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40utrecht/textbox-css@4.0.1",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@utrecht/textbox-css/-/textbox-css-4.0.1.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "966672315d915bf6f79ceb7550ef65b05ebc00a5581bd605c0ec48ae465c3001dfa4bfc8c8ec509218499b3ae9f6e195e0a55d5b400637f95d023b416057c3d0"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/contact-timeline/node_modules/@utrecht/textbox-css"
-            }
-          ]
-        }
       ]
     },
     {
@@ -5208,8 +4796,8 @@
       "type": "library",
       "name": "file",
       "group": "@gemeente-denhaag",
-      "version": "2.7.0",
-      "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.7.0",
+      "version": "2.5.3",
+      "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.5.3",
       "licenses": [
         {
           "license": {
@@ -5217,15 +4805,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40gemeente-denhaag/file@2.7.0",
+      "purl": "pkg:npm/%40gemeente-denhaag/file@2.5.3",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@gemeente-denhaag/file/-/file-2.7.0.tgz",
+          "url": "https://registry.npmjs.org/@gemeente-denhaag/file/-/file-2.5.3.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "c2cc5495d48fa76522d6c3609ab3d273963b969aaebbfe8467358e9f365f0901a8e0021751c9d44519c7548ad8fce58c0feeb209a2f941f14dc6167c0ab3bb57"
+              "content": "829956a109642e1ec10b84f704bde017e785a91618129517d120c4e2e5c32c565649344cb21b4e82e0d7b1e2de9d6b075d936a6ca174ca1389d3e05abc33e4af"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -5242,8 +4830,8 @@
           "type": "library",
           "name": "component-library-react",
           "group": "@utrecht",
-          "version": "15.0.0",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.7.0|@utrecht/component-library-react@15.0.0",
+          "version": "14.0.1",
+          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.5.3|@utrecht/component-library-react@14.0.1",
           "licenses": [
             {
               "license": {
@@ -5251,15 +4839,15 @@
               }
             }
           ],
-          "purl": "pkg:npm/%40utrecht/component-library-react@15.0.0",
+          "purl": "pkg:npm/%40utrecht/component-library-react@14.0.1",
           "externalReferences": [
             {
-              "url": "https://registry.npmjs.org/@utrecht/component-library-react/-/component-library-react-15.0.0.tgz",
+              "url": "https://registry.npmjs.org/@utrecht/component-library-react/-/component-library-react-14.0.1.tgz",
               "type": "distribution",
               "hashes": [
                 {
                   "alg": "SHA-512",
-                  "content": "9551b9a50e8203ad47ff29509d83ad6abef325f0a10d7fd2feb63424df233ea334f2b96fa569055c3977d484318eac47bbc7866510095da92eef15ec0254451d"
+                  "content": "f6e1ae184b01a10b481338d30eccc7bc8144832b1052f7a240135b8771abac3eb633eef40818487231562300edbabb058c4e11d5284f44cd866494961b301050"
                 }
               ],
               "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -5276,8 +4864,8 @@
           "type": "library",
           "name": "runtime",
           "group": "@babel",
-          "version": "7.29.15",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.7.0|@babel/runtime@7.29.15",
+          "version": "7.29.16",
+          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.5.3|@babel/runtime@7.29.16",
           "licenses": [
             {
               "license": {
@@ -5285,15 +4873,15 @@
               }
             }
           ],
-          "purl": "pkg:npm/%40babel/runtime@7.29.15",
+          "purl": "pkg:npm/%40babel/runtime@7.29.16",
           "externalReferences": [
             {
-              "url": "https://registry.npmjs.org/@babel/runtime/-/runtime-7.29.15.tgz",
+              "url": "https://registry.npmjs.org/@babel/runtime/-/runtime-7.29.16.tgz",
               "type": "distribution",
               "hashes": [
                 {
                   "alg": "SHA-512",
-                  "content": "df4e20b1b6c656641cf9c3461f3c07065a9ea587562ca8f7557090046b7f106715ecf50f7ca23b90050d5b515910e0b095088bbd08e0d4911a025450eb5ea1f9"
+                  "content": "2ca0631a8a71ad0134685b9c34bebd3b2cb2175e3730e59450b10e7ed537a028320f7e52cbce14529567b7fb0dbd36fb6660b200b4adee89be7e88e55b7e7361"
                 }
               ],
               "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -5308,10 +4896,10 @@
         },
         {
           "type": "library",
-          "name": "calendar-react",
+          "name": "accordion-css",
           "group": "@utrecht",
-          "version": "1.1.5",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.7.0|@utrecht/calendar-react@1.1.5",
+          "version": "4.0.1",
+          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.5.3|@utrecht/accordion-css@4.0.1",
           "licenses": [
             {
               "license": {
@@ -5319,15 +4907,15 @@
               }
             }
           ],
-          "purl": "pkg:npm/%40utrecht/calendar-react@1.1.5",
+          "purl": "pkg:npm/%40utrecht/accordion-css@4.0.1",
           "externalReferences": [
             {
-              "url": "https://registry.npmjs.org/@utrecht/calendar-react/-/calendar-react-1.1.5.tgz",
+              "url": "https://registry.npmjs.org/@utrecht/accordion-css/-/accordion-css-4.0.1.tgz",
               "type": "distribution",
               "hashes": [
                 {
                   "alg": "SHA-512",
-                  "content": "8cf25f5b6f7d588cc491ae1f1bfed815fb6984643a01c06a10427d30a1220e2ae18262647de1c990f257aa9f8441518f144ce9f2b6f809fe5625ca911c4bab0c"
+                  "content": "4aacb2ff14f79a0bad1d50e8968d706b876e96ae69b943ab38b028a150959fb52d50534b5c6e4e9a3798868e2c3d7222905f2f414e57ace69bad1f25d2116d9f"
                 }
               ],
               "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -5336,41 +4924,7 @@
           "properties": [
             {
               "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/file/node_modules/@utrecht/calendar-react"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "checkbox-react",
-          "group": "@utrecht",
-          "version": "1.0.15",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.7.0|@utrecht/checkbox-react@1.0.15",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40utrecht/checkbox-react@1.0.15",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@utrecht/checkbox-react/-/checkbox-react-1.0.15.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "6d7fbb68ea0a9288a008a4f57899f6d486e592aafd3f739d8c74b2dbe8aba906255475f368d95f80fadd97793d6c0f51a5d346130c3ed0b48faab422bf36fd58"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/file/node_modules/@utrecht/checkbox-react"
+              "value": "node_modules/@gemeente-denhaag/file/node_modules/@utrecht/accordion-css"
             }
           ]
         },
@@ -5379,7 +4933,7 @@
           "name": "combobox-react",
           "group": "@utrecht",
           "version": "0.0.13",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.7.0|@utrecht/combobox-react@0.0.13",
+          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.5.3|@utrecht/combobox-react@0.0.13",
           "licenses": [
             {
               "license": {
@@ -5410,10 +4964,10 @@
         },
         {
           "type": "library",
-          "name": "custom-checkbox-css",
+          "name": "drawer-css",
           "group": "@utrecht",
-          "version": "3.1.0",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.7.0|@utrecht/custom-checkbox-css@3.1.0",
+          "version": "3.0.1",
+          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.5.3|@utrecht/drawer-css@3.0.1",
           "licenses": [
             {
               "license": {
@@ -5421,15 +4975,15 @@
               }
             }
           ],
-          "purl": "pkg:npm/%40utrecht/custom-checkbox-css@3.1.0",
+          "purl": "pkg:npm/%40utrecht/drawer-css@3.0.1",
           "externalReferences": [
             {
-              "url": "https://registry.npmjs.org/@utrecht/custom-checkbox-css/-/custom-checkbox-css-3.1.0.tgz",
+              "url": "https://registry.npmjs.org/@utrecht/drawer-css/-/drawer-css-3.0.1.tgz",
               "type": "distribution",
               "hashes": [
                 {
                   "alg": "SHA-512",
-                  "content": "1e5bb1014d59c94f4c5650d48c536dfba19a32c87e03b57d274ab86e9ad0de63f5dd391fa89e0f21628259beedb97a8f7591b12a4fd1b0a0ea470b99adc0c601"
+                  "content": "bbcc7f2278e4cb5318015fed47c61cd631e5f6c6a23c6ee39b99a03772f66a02a486dfb535452f8bbf820793bfabb3993a75e5b674324a2d8d18bcf3dc1df6eb"
                 }
               ],
               "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -5438,16 +4992,16 @@
           "properties": [
             {
               "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/file/node_modules/@utrecht/custom-checkbox-css"
+              "value": "node_modules/@gemeente-denhaag/file/node_modules/@utrecht/drawer-css"
             }
           ]
         },
         {
           "type": "library",
-          "name": "form-field-checkbox-react",
+          "name": "textarea-css",
           "group": "@utrecht",
-          "version": "1.1.7",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.7.0|@utrecht/form-field-checkbox-react@1.1.7",
+          "version": "4.0.1",
+          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.5.3|@utrecht/textarea-css@4.0.1",
           "licenses": [
             {
               "license": {
@@ -5455,15 +5009,15 @@
               }
             }
           ],
-          "purl": "pkg:npm/%40utrecht/form-field-checkbox-react@1.1.7",
+          "purl": "pkg:npm/%40utrecht/textarea-css@4.0.1",
           "externalReferences": [
             {
-              "url": "https://registry.npmjs.org/@utrecht/form-field-checkbox-react/-/form-field-checkbox-react-1.1.7.tgz",
+              "url": "https://registry.npmjs.org/@utrecht/textarea-css/-/textarea-css-4.0.1.tgz",
               "type": "distribution",
               "hashes": [
                 {
                   "alg": "SHA-512",
-                  "content": "74d5e4bb891c7e0004a51e099928c367507c65fe5760338942ae1833e116e1dbb7e64cc0fd8696d01104f42603479c58530cd88e03ccb652ffca2b56e331263b"
+                  "content": "cc1a65307a8a9d9e1056aef262ff4b5ebfa646293a58795d7bafd02d082824ec621335b4d3ca4029aa473dfdc52bfad2fd6aae49fef89ee12f5c56d39aa8fec7"
                 }
               ],
               "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -5472,177 +5026,7 @@
           "properties": [
             {
               "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/file/node_modules/@utrecht/form-field-checkbox-react"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "form-field-react",
-          "group": "@utrecht",
-          "version": "2.0.0",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.7.0|@utrecht/form-field-react@2.0.0",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40utrecht/form-field-react@2.0.0",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@utrecht/form-field-react/-/form-field-react-2.0.0.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "0975345d7da4f63e40cf543b1ba43c01bbeb68d58c2c4ffaf25f2816c7d746f3a47d1c87ecd7e71078a5efda3db8fe1387855c4d4ba40efda34fcc14270a0b40"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/file/node_modules/@utrecht/form-field-react"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "link-button-css",
-          "group": "@utrecht",
-          "version": "3.1.0",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.7.0|@utrecht/link-button-css@3.1.0",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40utrecht/link-button-css@3.1.0",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@utrecht/link-button-css/-/link-button-css-3.1.0.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "e2bd7dc9456203cb9a97f02356f61d1844e852ca5e50e60f91e4831d42f78a7c87de37b10f47fe7a4a7975e31dab25479fa13c91aa0452470155e4c67bb59e8b"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/file/node_modules/@utrecht/link-button-css"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "open-forms-container-css",
-          "group": "@utrecht",
-          "version": "3.0.2",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.7.0|@utrecht/open-forms-container-css@3.0.2",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40utrecht/open-forms-container-css@3.0.2",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@utrecht/open-forms-container-css/-/open-forms-container-css-3.0.2.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "dd924c6b2e85128b64ab0358c1fa3b454046329ad19a544af909acbb9e9d1f03f6005dd48188f14559009448936462edb4ef04fd31eac7e759f2936ff21f774a"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/file/node_modules/@utrecht/open-forms-container-css"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "open-forms-container-react",
-          "group": "@utrecht",
-          "version": "1.0.11",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.7.0|@utrecht/open-forms-container-react@1.0.11",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40utrecht/open-forms-container-react@1.0.11",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@utrecht/open-forms-container-react/-/open-forms-container-react-1.0.11.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "45c961573caae070761eec958d3de02ffdadf382ca57e2f2fc39c406b64f79b0bc3c8b8c1a9ab7e63de513ea0289e90e183ccb1eb4e8aecd680484512d25194a"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/file/node_modules/@utrecht/open-forms-container-react"
-            }
-          ]
-        },
-        {
-          "type": "library",
-          "name": "spotlight-section-css",
-          "group": "@utrecht",
-          "version": "3.0.3",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.7.0|@utrecht/spotlight-section-css@3.0.3",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40utrecht/spotlight-section-css@3.0.3",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@utrecht/spotlight-section-css/-/spotlight-section-css-3.0.3.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "c60de727ccb8a9e9b7d04c8786eba28a04a3a00429ea68d2193115377f579b863ae4a7719f153dee4fa1e36f5998e8a0a8a3c87c9f8e8215f363b5e3b9d1587e"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/file/node_modules/@utrecht/spotlight-section-css"
+              "value": "node_modules/@gemeente-denhaag/file/node_modules/@utrecht/textarea-css"
             }
           ]
         },
@@ -5650,8 +5034,8 @@
           "type": "library",
           "name": "textbox-react",
           "group": "@utrecht",
-          "version": "1.1.0",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.7.0|@utrecht/textbox-react@1.1.0",
+          "version": "1.0.16",
+          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.5.3|@utrecht/textbox-react@1.0.16",
           "licenses": [
             {
               "license": {
@@ -5659,15 +5043,15 @@
               }
             }
           ],
-          "purl": "pkg:npm/%40utrecht/textbox-react@1.1.0",
+          "purl": "pkg:npm/%40utrecht/textbox-react@1.0.16",
           "externalReferences": [
             {
-              "url": "https://registry.npmjs.org/@utrecht/textbox-react/-/textbox-react-1.1.0.tgz",
+              "url": "https://registry.npmjs.org/@utrecht/textbox-react/-/textbox-react-1.0.16.tgz",
               "type": "distribution",
               "hashes": [
                 {
                   "alg": "SHA-512",
-                  "content": "188c798e2bd250a99b555108901baba3e98bc9df6832b2b0e55f63646a92a95c247f065d9e2e8f35ab553f808fab27ac4f9b4a2944d07280ca43fa1903c5f79e"
+                  "content": "5017d0b7d67432c867223664a284e58ad622078c272d158ec69d7b79b7298b21b1477d10943e9f8a7f5901cff547c4b332588f7f72e565b95b1e5e8f6f788efe"
                 }
               ],
               "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -5682,25 +5066,26 @@
         },
         {
           "type": "library",
-          "name": "date-fns",
-          "version": "4.1.0",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.7.0|date-fns@4.1.0",
+          "name": "textbox-css",
+          "group": "@utrecht",
+          "version": "4.0.1",
+          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/file@2.5.3|@utrecht/textbox-css@4.0.1",
           "licenses": [
             {
               "license": {
-                "id": "MIT"
+                "id": "EUPL-1.2"
               }
             }
           ],
-          "purl": "pkg:npm/date-fns@4.1.0",
+          "purl": "pkg:npm/%40utrecht/textbox-css@4.0.1",
           "externalReferences": [
             {
-              "url": "https://registry.npmjs.org/date-fns/-/date-fns-4.1.0.tgz",
+              "url": "https://registry.npmjs.org/@utrecht/textbox-css/-/textbox-css-4.0.1.tgz",
               "type": "distribution",
               "hashes": [
                 {
                   "alg": "SHA-512",
-                  "content": "524ab4a306d05f16bf537106b6c755064475c3b28e43980806a747da192f927cd93d8bc1c5bfda6ba13c2fbb668c5b64c1906edd45c16e32203e8fc4cf8c5a36"
+                  "content": "966672315d915bf6f79ceb7550ef65b05ebc00a5581bd605c0ec48ae465c3001dfa4bfc8c8ec509218499b3ae9f6e195e0a55d5b400637f95d023b416057c3d0"
                 }
               ],
               "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -5709,7 +5094,7 @@
           "properties": [
             {
               "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/file/node_modules/date-fns"
+              "value": "node_modules/@gemeente-denhaag/file/node_modules/@utrecht/textbox-css"
             }
           ]
         }
@@ -5889,8 +5274,8 @@
       "type": "library",
       "name": "process-steps",
       "group": "@gemeente-denhaag",
-      "version": "4.3.4",
-      "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/process-steps@4.3.4",
+      "version": "4.3.3",
+      "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/process-steps@4.3.3",
       "licenses": [
         {
           "license": {
@@ -5898,15 +5283,15 @@
           }
         }
       ],
-      "purl": "pkg:npm/%40gemeente-denhaag/process-steps@4.3.4",
+      "purl": "pkg:npm/%40gemeente-denhaag/process-steps@4.3.3",
       "externalReferences": [
         {
-          "url": "https://registry.npmjs.org/@gemeente-denhaag/process-steps/-/process-steps-4.3.4.tgz",
+          "url": "https://registry.npmjs.org/@gemeente-denhaag/process-steps/-/process-steps-4.3.3.tgz",
           "type": "distribution",
           "hashes": [
             {
               "alg": "SHA-512",
-              "content": "018ea65309f27b110ed4adf8fdc0bc9ebd0ab97682f167705c37b6f421921e8ceec0e006f6042fd7e5df4581a4b2514183a2f9ade69d4c74a1f1177b9d3065f1"
+              "content": "9a9f48c768a83f68d06975ebe976646597036e90de42a0c18d4d21ef6c4a4a7ad61a0682a81c30d90ee7c166e6025287e33f10395656bffd066523232abb0f9f"
             }
           ],
           "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
@@ -5916,42 +5301,6 @@
         {
           "name": "cdx:npm:package:path",
           "value": "node_modules/@gemeente-denhaag/process-steps"
-        }
-      ],
-      "components": [
-        {
-          "type": "library",
-          "name": "button",
-          "group": "@gemeente-denhaag",
-          "version": "3.2.0",
-          "bom-ref": "portaliq@0.1.0|@gemeente-denhaag/process-steps@4.3.4|@gemeente-denhaag/button@3.2.0",
-          "licenses": [
-            {
-              "license": {
-                "id": "EUPL-1.2"
-              }
-            }
-          ],
-          "purl": "pkg:npm/%40gemeente-denhaag/button@3.2.0",
-          "externalReferences": [
-            {
-              "url": "https://registry.npmjs.org/@gemeente-denhaag/button/-/button-3.2.0.tgz",
-              "type": "distribution",
-              "hashes": [
-                {
-                  "alg": "SHA-512",
-                  "content": "c25eb85cff4447ddaac10114499d5f595f7c7270a075d322cd1d3a888a848f2a5cc7f8ffd3fb83cf33b115e7ae3474572c2ae8cb3d9372220ced38b5a3e3b5bf"
-                }
-              ],
-              "comment": "as detected from npm-ls property \"resolved\" and property \"integrity\""
-            }
-          ],
-          "properties": [
-            {
-              "name": "cdx:npm:package:path",
-              "value": "node_modules/@gemeente-denhaag/process-steps/node_modules/@gemeente-denhaag/button"
-            }
-          ]
         }
       ]
     },

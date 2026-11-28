@@ -3822,7 +3822,10 @@ OC.L10N.register(
         "A condition over the answers, in the grammar of a field's visibleWhen: {field, op, value}, or all / any of them.": "Een voorwaarde op de antwoorden, in de vorm van de visibleWhen van een veld: {field, op, value}, of all / any daarvan.",
         "The register and schema the submit goes to when the condition holds, with the same keys as the form's own destination.": "Het register en schema waar de inzending heen gaat als de voorwaarde klopt, met dezelfde sleutels als de eigen bestemming van het formulier.",
         "The register of the object the submit creates when the condition holds.": "Het register van het object dat de inzending maakt als de voorwaarde klopt.",
-        "The schema of the object the submit creates when the condition holds.": "Het schema van het object dat de inzending maakt als de voorwaarde klopt."
+        "The schema of the object the submit creates when the condition holds.": "Het schema van het object dat de inzending maakt als de voorwaarde klopt.",
+        "create/update write through OpenRegister via the portal's own writer; endpoint bearer-forwards to a domain app's own route (contract v2 A6); propose-change declares which properties of a record may be proposed for review (`proposable`), and writes nothing itself. Anonymous submission is only meaningful for type=create.": "create/update schrijven via OpenRegister met de eigen schrijver van het portaal; endpoint stuurt de bearer door naar een eigen route van een domein-app (contract v2 A6); propose-change legt vast welke eigenschappen van een record ter beoordeling mogen worden voorgesteld (`proposable`) en schrijft zelf niets. Anonieme inzending is alleen zinvol voor type=create.",
+        "Proposable properties": "Voor te stellen eigenschappen",
+        "For type=propose-change: the properties of the record a resident or colleague may propose a change to. A proposal naming any other property is refused (not_proposable).": "Bij type=propose-change: de eigenschappen van het record waarvoor een inwoner of collega een wijziging mag voorstellen. Een voorstel dat een andere eigenschap noemt, wordt geweigerd (not_proposable)."
     },
     "nplurals=2; plural=(n != 1);"
 )
