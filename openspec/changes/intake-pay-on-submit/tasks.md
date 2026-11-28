@@ -19,6 +19,7 @@
 ## The screen
 
 - [x] **T06**: The fee line, "Pay {amount} now", top-window navigation from the embed (its Vue `EmbeddedForm.vue`, not the React one), the return page states and the sign-in message on the confirmation surfaces (REQ-IPS-002, REQ-IPS-005). Verification: `tests/intake-pay.spec.mjs`. The embed frame is not changed (it renders its own confirmation) and the Playwright run with a stub case app is not run: needs a live instance.
+  - Spec written 28 Nov 2026: `tests/e2e/intake-pay-on-submit.spec.ts` (the four REQ-IPS-001/002/005 scenarios that name it). The anonymous sign-in message and the status route's payment state run on any instance with dev-login; the sent request with its fee and the return page need a `substantial` session (`PORTALIQ_E2E_SUBSTANTIAL_BEARER`, `PORTALIQ_E2E_SUBSTANTIAL_SUBJECT`) and are skipped without one. Not run.
 
 ## Docs, strings and validation
 
