@@ -139,7 +139,10 @@ final class PortalImagesGuardListenerTest extends TestCase {
 	private function listener(PortalImageChoiceInterface $images): PortalImagesGuardListener {
 		$schema = new Schema();
 		$schema->setId(self::PORTAL_SCHEMA);
-		$schemas = $this->getMockBuilder(className: SchemaMapper::class)->disableOriginalConstructor()->onlyMethods(['findByApplicationAndSlug'])->getMock();
+		$schemas = $this->getMockBuilder(className: SchemaMapper::class)
+			->disableOriginalConstructor()
+			->onlyMethods(['findByApplicationAndSlug'])
+			->getMock();
 		$schemas->method('findByApplicationAndSlug')->with('portal', 'portaliq')->willReturn($schema);
 		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturn($schemas);

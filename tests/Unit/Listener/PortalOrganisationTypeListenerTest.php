@@ -55,8 +55,14 @@ final class PortalOrganisationTypeListenerTest extends TestCase {
 		$types->expects($this->once())->method('settle')
 			// OpenRegister's getObject() may add the object's own id beside its fields; only the fields are asserted.
 			->with(
-				$this->callback(callback: static fn (array $portal): bool => $portal['slug'] === 'hhnk' && $portal['organisationType'] === 'https://x/Waterschap'),
-				$this->callback(callback: static fn (array $portal): bool => $portal['slug'] === 'hhnk' && $portal['organisationType'] === 'https://x/Gemeente')
+				$this->callback(
+					callback: static fn (array $portal): bool => $portal['slug'] === 'hhnk'
+						&& $portal['organisationType'] === 'https://x/Waterschap'
+				),
+				$this->callback(
+					callback: static fn (array $portal): bool => $portal['slug'] === 'hhnk'
+						&& $portal['organisationType'] === 'https://x/Gemeente'
+				)
 			)
 			->willReturn(['refusal' => null, 'portal' => ['slug' => 'hhnk', 'organisationType' => 'https://x/Waterschap', 'organisationTypeLabel' => 'waterschap']]);
 
