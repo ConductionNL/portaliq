@@ -14,6 +14,7 @@
 ## Drafts (after openregister `or-form-and-journey-registry` Tasks 2 and 3)
 
 - [ ] **T06**: Routes `POST /portal/api/intake/drafts`, `GET /portal/api/intake/drafts`, `POST /portal/api/intake/drafts/resume` over openregister's run service, owner by `subjectRef` or by resume code, visible answers only (REQ-ICQ-005). Verification: `PortalIntakeDraftControllerTest::testSaveCreatesNoCase`, `::testWrongCodeAndForeignCodeLookIdentical`, `::testOnlyOwnDraftIsReturned`. — not run: needs openregister (`or-form-and-journey-registry` tasks 2 and 3)
+  - 28 Nov 2026: openregister main now has `JourneyRunService` (`start`, `answer`, `save` with a minted resume token for an anonymous run, `resume` with one 404 for every miss) and `JourneyRunController` (tasks 2.1, 2.2, 3.1, 3.2). Still not built here: every call takes a journey id, and `portalFormBinding` (0.8.0) names no journey. Waits on the design's open risk "A single form may not be runnable": either the binding carries a journey reference that buildiq authors per bound form, or portaliq saves a single-form draft straight through `FormSubmitService::saveDraft()` with a token owner, as `DestinationDraft` does for a signed-in subject.
 - [ ] **T07**: "Save and continue later" and the resume prompt on `IntakeFormBlock.vue` and the embed's `EmbeddedForm.vue`, with the retention date from the run (REQ-ICQ-005). Verification: the Playwright spec saves, reopens signed in, and resumes anonymously with the code. — not run: needs openregister, and a live instance
 
 ## Docs, strings and validation
