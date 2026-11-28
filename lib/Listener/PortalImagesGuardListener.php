@@ -81,8 +81,9 @@ class PortalImagesGuardListener implements IEventListener {
 	 * @return void
 	 *
 	 * @spec openspec/specs/portaliq-cms/spec.md
+	 * @spec openspec/changes/search-sort-by-relevance/tasks.md#t12
 	 */
-	private function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
+	protected function check(ObjectCreatingEvent|ObjectUpdatingEvent $event, object $entity): void {
 		if ($this->guardsSchema(schema: (string)$entity->getSchema()) === false) {
 			return;
 		}

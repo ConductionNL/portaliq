@@ -69,6 +69,10 @@ class FormFailureDigestJob extends TimedJob {
 	 * @return void
 	 *
 	 * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-a-failed-submit-is-reported-and-can-be-sent-again-req-fgv-003
+	 * @spec openspec/changes/search-sort-by-relevance/tasks.md#t12
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
+	 * the signature; dropping the parameter breaks the override.
 	 */
 	protected function run($argument): void {
 		$now = $this->time->getTime();

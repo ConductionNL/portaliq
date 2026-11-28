@@ -53,7 +53,11 @@ final class PortalOrganisationTypeListenerTest extends TestCase {
 		$event = new ObjectUpdatingEvent($new, $old);
 		$types = $this->createMock(OrganisationTypeOptions::class);
 		$types->expects($this->once())->method('settle')
-			->with(['slug' => 'hhnk', 'organisationType' => 'https://x/Waterschap'], ['slug' => 'hhnk', 'organisationType' => 'https://x/Gemeente'])
+			// OpenRegister's getObject() may add the object's own id beside its fields; only the fields are asserted.
+			->with(
+				$this->callback(static fn (array $portal): bool => $portal['slug'] === 'hhnk' && $portal['organisationType'] === 'https://x/Waterschap'),
+				$this->callback(static fn (array $portal): bool => $portal['slug'] === 'hhnk' && $portal['organisationType'] === 'https://x/Gemeente')
+			)
 			->willReturn(['refusal' => null, 'portal' => ['slug' => 'hhnk', 'organisationType' => 'https://x/Waterschap', 'organisationTypeLabel' => 'waterschap']]);
 
 		(new PortalOrganisationTypeListener($this->container(), $types, new NullLogger()))->handle($event);
