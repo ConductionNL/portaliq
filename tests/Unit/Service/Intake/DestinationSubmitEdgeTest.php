@@ -198,13 +198,18 @@ class DestinationSubmitEdgeTest extends TestCase {
 	public function testAFailingValidatorIsLoggedAndCouldNotBeChecked(): void {
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with('Portaliq: a form binding could not be checked', ['reason' => 'validator crashed']);
-		$container = self::container([self::VALIDATOR => self::validator(new RuntimeException('validator crashed')), self::MAPPER => self::mapper([self::schemaEntity()])]);
+		$container = self::container(
+			services: [
+				self::VALIDATOR => self::validator(result: new RuntimeException('validator crashed')),
+				self::MAPPER    => self::mapper(result: [self::schemaEntity()]),
+			]
+		);
 
 		$this->assertNull((new DestinationSubmit($container, $logger))->findings(destination: ['register' => 'a', 'schema' => 'case'], mapping: [], audience: 'public'));
 	}//end testAFailingValidatorIsLoggedAndCouldNotBeChecked()
 
 	public function testAValidatorThatAnswersNoListCouldNotCheck(): void {
-		$container = self::container([self::VALIDATOR => self::validator('fine'), self::MAPPER => self::mapper([self::schemaEntity()])]);
+		$container = self::container(services: [self::VALIDATOR => self::validator(result: 'fine'), self::MAPPER => self::mapper(result: [self::schemaEntity()])]);
 
 		$this->assertNull((new DestinationSubmit($container, $this->createMock(LoggerInterface::class)))->findings(destination: ['register' => 'a', 'schema' => 'case'], mapping: [], audience: 'authenticated'));
 	}//end testAValidatorThatAnswersNoListCouldNotCheck()
@@ -228,7 +233,7 @@ class DestinationSubmitEdgeTest extends TestCase {
 	}//end testASchemaReadWithoutAnEntityCouldNotCheck()
 
 	public function testAnEmptySchemaSlugIsNeverLookedUp(): void {
-		$mapper = self::mapper([self::schemaEntity()]);
+		$mapper = self::mapper(result: [self::schemaEntity()]);
 		$container = self::container([self::VALIDATOR => self::validator([]), self::MAPPER => $mapper]);
 
 		$this->assertNull((new DestinationSubmit($container, $this->createMock(LoggerInterface::class)))->findings(destination: ['register' => 'a'], mapping: [], audience: 'public'));
@@ -236,7 +241,7 @@ class DestinationSubmitEdgeTest extends TestCase {
 	}//end testAnEmptySchemaSlugIsNeverLookedUp()
 
 	public function testAValidMappingHasNoFindings(): void {
-		$container = self::container([self::VALIDATOR => self::validator([]), self::MAPPER => self::mapper([self::schemaEntity()])]);
+		$container = self::container(services: [self::VALIDATOR => self::validator(result: []), self::MAPPER => self::mapper(result: [self::schemaEntity()])]);
 
 		$this->assertSame([], (new DestinationSubmit($container, $this->createMock(LoggerInterface::class)))->findings(destination: ['register' => 'a', 'schema' => 'case'], mapping: [], audience: 'public'));
 	}//end testAValidMappingHasNoFindings()
