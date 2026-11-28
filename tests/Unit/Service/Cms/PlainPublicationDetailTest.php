@@ -38,6 +38,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(PlainPublicationDetail::class)]
 #[UsesClass(PlainCategoryNames::class)]
 #[UsesClass(PlainDates::class)]
+#[UsesClass(\OCA\Portaliq\Service\Cms\PlainPublicationReader::class)]
 class PlainPublicationDetailTest extends TestCase {
 
 	/**

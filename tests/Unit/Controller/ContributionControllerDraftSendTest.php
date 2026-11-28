@@ -66,6 +66,8 @@ use OCA\Portaliq\Service\WriteRefusal;
  * @uses \OCA\Portaliq\Service\RequiredFieldsGuard
  * @uses \OCA\Portaliq\Contribution\RowIdentifier
  * @uses \OCA\Portaliq\Kernel\Support\SessionTrust
+ * @uses   \OCA\Portaliq\Contribution\EndpointDraftSchema
+ * @uses   \OCA\Portaliq\Contribution\FieldMap
  */
 class ContributionControllerDraftSendTest extends TestCase {
 	private const SUBJECT = ['subjectRef' => 'sanne', 'audience' => 'resident', 'organisation' => '', 'trust' => 'low', 'jti' => 'jti-1'];

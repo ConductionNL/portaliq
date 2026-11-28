@@ -23,6 +23,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(FormStepsNormaliser::class)]
 #[UsesClass(FormStepsRun::class)]
 #[UsesClass(FormText::class)]
+#[UsesClass(\OCA\Portaliq\Contribution\FormStepDecision::class)]
 class FormStepsFetchTest extends TestCase {
 
 	private const KNOWN = ['postcode', 'huisnummer', 'eigenaar', 'naam'];

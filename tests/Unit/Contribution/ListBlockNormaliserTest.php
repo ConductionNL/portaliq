@@ -31,6 +31,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(ListBlockNormaliser::class)]
 #[UsesClass(BoardKeys::class)]
 #[UsesClass(CollectionProjection::class)]
+#[UsesClass(\OCA\Portaliq\Contribution\DocumentsBlockExtras::class)]
 class ListBlockNormaliserTest extends TestCase {
 
 	/**

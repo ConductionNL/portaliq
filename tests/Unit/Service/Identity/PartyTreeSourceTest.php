@@ -19,6 +19,7 @@ use RuntimeException;
  * walk below it, RBAC off as on every portal read.
  *
  * @covers \OCA\Portaliq\Service\Identity\PartyTreeSource
+ * @uses   \OCA\Portaliq\Service\ContainerService
  *
  * @spec openspec/specs/portal-visibility-and-the-party-tree/spec.md
  */

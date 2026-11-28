@@ -27,6 +27,7 @@ use PHPUnit\Framework\TestCase;
  */
 #[CoversClass(PortalIntakePayments::class)]
 #[UsesClass(PortalFee::class)]
+#[UsesClass(\OCA\Portaliq\Service\Intake\PublishedFormFee::class)]
 class PortalIntakePaymentsTest extends TestCase {
 	private const SUBJECT = ['subjectRef' => 'abc'];
 

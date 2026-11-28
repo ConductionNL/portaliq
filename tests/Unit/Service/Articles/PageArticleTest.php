@@ -21,6 +21,7 @@ use RuntimeException;
  * @spec openspec/changes/archive/2026-11-24-marketing-articles-from-pipelinq/specs/marketing-articles/spec.md#requirement-a-page-can-show-an-article
  */
 #[CoversClass(PageArticle::class)]
+#[\PHPUnit\Framework\Attributes\UsesClass(\OCA\Portaliq\Service\Articles\ArticleStore::class)]
 class PageArticleTest extends TestCase {
 
 	/**

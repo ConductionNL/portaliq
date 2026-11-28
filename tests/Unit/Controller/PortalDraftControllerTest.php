@@ -42,6 +42,8 @@ use OCA\Portaliq\Contribution\CreateBody;
 #[UsesClass(PortalSessionService::class)]
 #[UsesClass(\OCA\Portaliq\Controller\DraftSave::class)]
 #[UsesClass(\OCA\Portaliq\Kernel\Support\SessionTrust::class)]
+#[UsesClass(\OCA\Portaliq\Contribution\EndpointDraftSchema::class)]
+#[UsesClass(\OCA\Portaliq\Contribution\FieldMap::class)]
 class PortalDraftControllerTest extends TestCase {
 
 	private const ACTION = [

@@ -44,6 +44,7 @@ use ReflectionMethod;
  * @covers \OCA\Portaliq\Controller\PublicationReportController
  * @uses   \OCA\Portaliq\Service\Publication\PublicationReportService
  * @uses   \OCA\Portaliq\Service\Publication\PublicPublicationRead
+ * @uses   \OCA\Portaliq\Service\Publication\PublicationReportSwitch
  *
  * @spec openspec/changes/publication-error-reports-and-withheld-notices/specs/portal-federated-search/spec.md#requirement-a-report-reaches-the-named-owner-req-per-002
  */

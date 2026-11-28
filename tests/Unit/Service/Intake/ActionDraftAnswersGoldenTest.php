@@ -34,6 +34,8 @@ use OCA\Portaliq\Contribution\CreateBody;
  * @covers \OCA\Portaliq\Service\Intake\ActionAnswerFields
  * @uses   \OCA\Portaliq\Contribution\ActionScopeResolver
  * @uses   \OCA\Portaliq\Contribution\CreateBody
+ * @uses   \OCA\Portaliq\Contribution\EndpointDraftSchema
+ * @uses   \OCA\Portaliq\Contribution\FieldMap
  */
 class ActionDraftAnswersGoldenTest extends TestCase {
 

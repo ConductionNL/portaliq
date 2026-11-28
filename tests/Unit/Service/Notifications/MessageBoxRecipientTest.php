@@ -22,6 +22,7 @@ use RuntimeException;
  * method, a throw, a blank answer — fails closed to no recipient.
  */
 #[CoversClass(MessageBoxRecipient::class)]
+#[\PHPUnit\Framework\Attributes\UsesClass(\OCA\Portaliq\Contribution\TimelineProviderMethod::class)]
 class MessageBoxRecipientTest extends TestCase {
 	/**
 	 * A provider with the named method answers the recipient, trimmed.
