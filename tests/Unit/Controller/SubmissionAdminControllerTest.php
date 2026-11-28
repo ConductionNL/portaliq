@@ -25,6 +25,8 @@ use PHPUnit\Framework\TestCase;
  * cannot read, 409 for a delivered one, and 502 when the retry fails.
  *
  * @covers \OCA\Portaliq\Controller\SubmissionAdminController
+ * @uses   \OCA\Portaliq\Middleware\Support\ApiPathAliases
+ * @uses   \OCA\Portaliq\Middleware\Support\StandardProtocolPaths
  *
  * @spec openspec/changes/submission-row-actions/specs/supplier-portal/spec.md#requirement-an-employee-can-register-a-failed-receipt-again
  */

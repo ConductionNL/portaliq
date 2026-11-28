@@ -34,6 +34,11 @@ use Psr\Log\LoggerInterface;
  *
  * @covers \OCA\Portaliq\Service\Intake\DestinationRules
  * @covers \OCA\Portaliq\Service\Intake\DestinationIntake
+ * @uses   \OCA\Portaliq\Service\Intake\DestinationMapping
+ * @uses   \OCA\Portaliq\Service\Intake\DestinationSubmit
+ * @uses   \OCA\Portaliq\Service\Intake\JsValue
+ * @uses   \OCA\Portaliq\Service\Intake\VisibleWhenComparison
+ * @uses   \OCA\Portaliq\Service\Intake\VisibleWhenLocal
  *
  * @spec openspec/changes/form-governance-availability-retention-and-routing/specs/portal-form-governance/spec.md#requirement-each-form-names-where-its-submissions-go-req-fgv-002
  */

@@ -35,6 +35,7 @@ use Psr\Log\NullLogger;
  * @uses   \OCA\Portaliq\Service\Tenancy\PortalTenantContext
  * @uses   \OCA\Portaliq\Service\Tenancy\OrganisationScopedObjectService
  * @uses   \OCA\Portaliq\Service\Tenancy\ActsForTheOrganisation
+ * @uses   \OCA\Portaliq\Service\UnownedSaveOptions
  */
 class PortalWritesActForTheOrganisationTest extends TestCase {
 	use TenantHarness;

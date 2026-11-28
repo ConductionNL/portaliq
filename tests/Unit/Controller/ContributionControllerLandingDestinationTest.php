@@ -92,6 +92,15 @@ use OCA\Portaliq\Service\WriteRefusal;
  * @uses \OCA\Portaliq\Service\RequiredFieldsGuard
  * @uses   \OCA\Portaliq\Contribution\ActionGuards
  * @uses   \OCA\Portaliq\Contribution\SchemaFieldProperty
+ * @uses   \OCA\Portaliq\Contribution\EndpointDraftSchema
+ * @uses   \OCA\Portaliq\Contribution\FieldMap
+ * @uses   \OCA\Portaliq\Contribution\OnCaseConfigNormaliser
+ * @uses   \OCA\Portaliq\Kernel\DestinationRefusal
+ * @uses   \OCA\Portaliq\Kernel\ScopeClaims
+ * @uses   \OCA\Portaliq\Service\Intake\DestinationRules
+ * @uses   \OCA\Portaliq\Service\Intake\VisibleWhenComparison
+ * @uses   \OCA\Portaliq\Service\Intake\VisibleWhenLocal
+ * @uses   \OCA\Portaliq\Contribution\ProfilePrefillKey
  */
 class ContributionControllerLandingDestinationTest extends TestCase {
 

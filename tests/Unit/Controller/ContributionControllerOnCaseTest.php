@@ -73,6 +73,46 @@ use OCA\Portaliq\Service\WriteRefusal;
  * @covers \OCA\Portaliq\Controller\ContributionController
  * @covers \OCA\Portaliq\Service\OnCaseCreate
  * @uses   \OCA\Portaliq\Service\CaseActionsResolver
+ * @uses   \OCA\Portaliq\Contribution\ActionConfigNormaliser
+ * @uses   \OCA\Portaliq\Contribution\ActionFormShape
+ * @uses   \OCA\Portaliq\Contribution\ActionGuards
+ * @uses   \OCA\Portaliq\Contribution\ActionOptionsNormaliser
+ * @uses   \OCA\Portaliq\Contribution\ActionScopeResolver
+ * @uses   \OCA\Portaliq\Contribution\ActionSummaryNormaliser
+ * @uses   \OCA\Portaliq\Contribution\CitizenWriteConfigNormaliser
+ * @uses   \OCA\Portaliq\Contribution\CollectionConfigNormaliser
+ * @uses   \OCA\Portaliq\Contribution\CollectionSchemaLabels
+ * @uses   \OCA\Portaliq\Contribution\ConfirmationMailKeys
+ * @uses   \OCA\Portaliq\Contribution\CreateActionMatcher
+ * @uses   \OCA\Portaliq\Contribution\CreateBody
+ * @uses   \OCA\Portaliq\Contribution\CrossRefConfigNormaliser
+ * @uses   \OCA\Portaliq\Contribution\EndpointDraftSchema
+ * @uses   \OCA\Portaliq\Contribution\FieldMap
+ * @uses   \OCA\Portaliq\Contribution\FieldWidgetNormaliser
+ * @uses   \OCA\Portaliq\Contribution\FormStepsNormaliser
+ * @uses   \OCA\Portaliq\Contribution\GuestActionConfigNormaliser
+ * @uses   \OCA\Portaliq\Contribution\InboxReplyConfigNormaliser
+ * @uses   \OCA\Portaliq\Contribution\ItemListConfigNormaliser
+ * @uses   \OCA\Portaliq\Contribution\ManifestValueNormaliser
+ * @uses   \OCA\Portaliq\Contribution\OnCaseConfigNormaliser
+ * @uses   \OCA\Portaliq\Contribution\PortalManifestNormaliser
+ * @uses   \OCA\Portaliq\Contribution\PortalPageResolver
+ * @uses   \OCA\Portaliq\Contribution\RequiredFieldsNormaliser
+ * @uses   \OCA\Portaliq\Contribution\RowActionInputs
+ * @uses   \OCA\Portaliq\Contribution\RowActionResolver
+ * @uses   \OCA\Portaliq\Contribution\RowIdentifier
+ * @uses   \OCA\Portaliq\Contribution\SchemaInputHintNormaliser
+ * @uses   \OCA\Portaliq\Contribution\StartTileNormaliser
+ * @uses   \OCA\Portaliq\Contribution\ThemeTagKeys
+ * @uses   \OCA\Portaliq\Contribution\TimedTaskConfigNormaliser
+ * @uses   \OCA\Portaliq\Kernel\ScopeClaims
+ * @uses   \OCA\Portaliq\Kernel\Support\PortalBranchScope
+ * @uses   \OCA\Portaliq\Kernel\Support\SessionTrust
+ * @uses   \OCA\Portaliq\Service\InstanceLoopback
+ * @uses   \OCA\Portaliq\Service\PortalActionForwarder
+ * @uses   \OCA\Portaliq\Service\PortalCrossRefGuard
+ * @uses   \OCA\Portaliq\Service\PortalUserDisplayNames
+ * @uses   \OCA\Portaliq\Service\RequiredFieldsGuard
  */
 class ContributionControllerOnCaseTest extends TestCase {
 	private const SUBJECT = ['subjectRef' => 'guardian-1', 'audience' => 'citizen', 'organisation' => '', 'trust' => 'substantial', 'jti' => 'jti-1'];

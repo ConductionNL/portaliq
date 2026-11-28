@@ -21,6 +21,7 @@ use Psr\Log\LoggerInterface;
  * field whitelist and server values a submittable form gets.
  */
 #[CoversClass(FormSubmitActions::class)]
+#[\PHPUnit\Framework\Attributes\UsesClass(\OCA\Portaliq\Contribution\FileFieldConfigNormaliser::class)]
 class FormSubmitActionsTest extends TestCase {
 	/**
 	 * A form without an id gets no action and mints no nonce.

@@ -45,6 +45,7 @@ use TypeError;
 #[UsesClass(BearerSessionResolver::class)]
 #[UsesClass(\OCA\Portaliq\Service\CatalogueScope::class)]
 #[UsesClass(\OCA\Portaliq\Service\CatalogueScopeFilter::class)]
+#[UsesClass(\OCA\Portaliq\Auth\PortalAuthConfig::class)]
 class ContentCatalogueIndexGoldenTest extends TestCase {
 
 	private const GOLDEN = __DIR__ . '/../../Fixtures/Golden/content-catalogue-index.json';

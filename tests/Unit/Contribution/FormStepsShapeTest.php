@@ -21,6 +21,8 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(FormStepDecision::class)]
 #[UsesClass(FormStepsRun::class)]
 #[UsesClass(FormText::class)]
+#[UsesClass(\OCA\Portaliq\Contribution\FormStepFetch::class)]
+#[UsesClass(\OCA\Portaliq\Contribution\EndpointDraftSchema::class)]
 class FormStepsShapeTest extends TestCase {
 	/**
 	 * Only reviews is a one-page form; only the first review is kept, last.

@@ -40,6 +40,10 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Portaliq\Service\Proposals\ProposalService
  * @uses \OCA\Portaliq\Service\Proposals\ReviewerObjectWriter
  * @uses \OCA\Portaliq\Service\Tasks\PortalCaseAccessGuard
+ * @uses   \OCA\Portaliq\Service\Intake\DestinationRules
+ * @uses   \OCA\Portaliq\Service\Intake\SubmitFailureLog
+ * @uses   \OCA\Portaliq\Service\Intake\VisibleWhenComparison
+ * @uses   \OCA\Portaliq\Service\Intake\VisibleWhenLocal
  */
 class DestinationIntakeTest extends TestCase {
 

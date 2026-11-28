@@ -39,6 +39,7 @@ use PHPUnit\Framework\TestCase;
 #[CoversClass(PlainPublicationSearch::class)]
 #[UsesClass(PlainAddress::class)]
 #[UsesClass(PlainDates::class)]
+#[UsesClass(\OCA\Portaliq\Service\Cms\PlainPublicationReader::class)]
 class PlainPublicationSearchTest extends TestCase {
 
 	/**

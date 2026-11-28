@@ -41,6 +41,7 @@ use Psr\Log\NullLogger;
  * @uses   \OCA\Portaliq\Service\PortalFieldProjector
  * @uses   \OCA\Portaliq\Service\PortalFilteredRows
  * @uses   \OCA\Portaliq\Event\PortalClaimScopeEvent
+ * @uses   \OCA\Portaliq\Service\PortalRowRefs
  */
 class PortalReadsActForTheOrganisationTest extends TestCase {
 	use TenantHarness;

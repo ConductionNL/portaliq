@@ -26,6 +26,9 @@ use Psr\Log\LoggerInterface;
  * @uses \OCA\Portaliq\Service\Intake\DestinationIntake
  * @uses \OCA\Portaliq\Service\Intake\DestinationMapping
  * @uses \OCA\Portaliq\Service\Intake\DestinationSubmit
+ * @uses   \OCA\Portaliq\Service\Intake\DestinationRules
+ * @uses   \OCA\Portaliq\Service\Intake\VisibleWhenComparison
+ * @uses   \OCA\Portaliq\Service\Intake\VisibleWhenLocal
  */
 class IntakeQueueDrainTest extends TestCase {
 

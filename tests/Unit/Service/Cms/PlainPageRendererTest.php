@@ -63,6 +63,7 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(PlainRecordPager::class)]
 #[UsesClass(PlainQuery::class)]
 #[UsesClass(PlainReadWidgets::class)]
+#[UsesClass(\OCA\Portaliq\Service\Cms\PlainPublicationReader::class)]
 class PlainPageRendererTest extends TestCase {
 
 	/**

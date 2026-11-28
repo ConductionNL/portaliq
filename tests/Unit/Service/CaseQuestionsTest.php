@@ -37,6 +37,7 @@ use Psr\Log\LoggerInterface;
  * @uses   \OCA\Portaliq\Contribution\RowActionResolver
  * @uses   \OCA\Portaliq\Kernel\Support\PortalBranchScope
  * @uses   \OCA\Portaliq\Kernel\Support\SessionTrust
+ * @uses   \OCA\Portaliq\Service\Branch\BranchNumber
  */
 class CaseQuestionsTest extends TestCase {
 

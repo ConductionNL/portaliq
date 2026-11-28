@@ -21,6 +21,8 @@ use PHPUnit\Framework\TestCase;
 #[UsesClass(FormStepDecision::class)]
 #[UsesClass(FormStepsRun::class)]
 #[UsesClass(FormText::class)]
+#[UsesClass(\OCA\Portaliq\Contribution\EndpointDraftSchema::class)]
+#[UsesClass(\OCA\Portaliq\Contribution\FormStepFetch::class)]
 class FormStepsApplyTest extends TestCase {
 	/**
 	 * Actions that do not carry a form lose the form-only keys.
