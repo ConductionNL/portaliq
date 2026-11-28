@@ -1,7 +1,20 @@
 <?php
 
-// SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
-// SPDX-License-Identifier: EUPL-1.2
+/**
+ * PortalImagesGuardListenerTest
+ *
+ * @category Test
+ * @package  OCA\Portaliq\Tests\Unit\Listener
+ *
+ * @author    Conduction Development Team <info@conduction.nl>
+ * @copyright 2026 Conduction B.V.
+ * @license   EUPL-1.2 https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
+ *
+ * SPDX-FileCopyrightText: 2026 Conduction B.V. <info@conduction.nl>
+ * SPDX-License-Identifier: EUPL-1.2
+ *
+ * @link https://conduction.nl
+ */
 
 declare(strict_types=1);
 
@@ -30,56 +43,73 @@ use Psr\Log\NullLogger;
  */
 final class PortalImagesGuardListenerTest extends TestCase {
 
+	/**
+	 * The portal schema's id in these tests.
+	 */
 	private const PORTAL_SCHEMA = 41;
 
+	/**
+	 * A refusal from the image rules stops the save with its words.
+	 *
+	 * @return void
+	 */
 	public function testARefusalStopsTheSave(): void {
-		if (class_exists(ObjectCreatingEvent::class) === false) {
-			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		if (class_exists(class: ObjectCreatingEvent::class) === false) {
+			$this->markTestSkipped(message: 'OpenRegister is not installed in this environment.');
 		}
 
-		$event  = new ObjectCreatingEvent($this->portal(['logo' => 'huge.png']));
-		$images = $this->createMock(PortalImageChoiceInterface::class);
+		$event  = new ObjectCreatingEvent(object: $this->portal(data: ['logo' => 'huge.png']));
+		$images = $this->createMock(originalClassName: PortalImageChoiceInterface::class);
 		$images->expects($this->once())->method('refusal')
-			->with($this->callback(static fn (array $portal): bool => $portal['slug'] === 'hhnk' && $portal['logo'] === 'huge.png'))
+			->with($this->callback(callback: static fn (array $portal): bool => $portal['slug'] === 'hhnk' && $portal['logo'] === 'huge.png'))
 			->willReturn('The logo is too large.');
 
-		(new PortalImagesGuardListener($this->container(), $images, new NullLogger()))->handle($event);
+		$this->listener(images: $images)->handle(event: $event);
 
-		$this->assertTrue($event->isPropagationStopped());
-		$this->assertSame('The logo is too large.', $event->getErrors()['message']);
+		$this->assertTrue(condition: $event->isPropagationStopped());
+		$this->assertSame(expected: 'The logo is too large.', actual: $event->getErrors()['message']);
 	}//end testARefusalStopsTheSave()
 
+	/**
+	 * An update the image rules accept is saved.
+	 *
+	 * @return void
+	 */
 	public function testAnUpdateWithinTheRulesIsSaved(): void {
-		if (class_exists(ObjectUpdatingEvent::class) === false) {
-			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		if (class_exists(class: ObjectUpdatingEvent::class) === false) {
+			$this->markTestSkipped(message: 'OpenRegister is not installed in this environment.');
 		}
 
-		$new    = $this->portal(['logo' => 'small.png']);
-		$event  = new ObjectUpdatingEvent($new, $this->portal([]));
-		$images = $this->createMock(PortalImageChoiceInterface::class);
+		$event  = new ObjectUpdatingEvent(newObject: $this->portal(data: ['logo' => 'small.png']), oldObject: $this->portal(data: []));
+		$images = $this->createMock(originalClassName: PortalImageChoiceInterface::class);
 		$images->expects($this->once())->method('refusal')
-			->with($this->callback(static fn (array $portal): bool => $portal['slug'] === 'hhnk' && $portal['logo'] === 'small.png'))
+			->with($this->callback(callback: static fn (array $portal): bool => $portal['slug'] === 'hhnk' && $portal['logo'] === 'small.png'))
 			->willReturn(null);
 
-		(new PortalImagesGuardListener($this->container(), $images, new NullLogger()))->handle($event);
+		$this->listener(images: $images)->handle(event: $event);
 
-		$this->assertFalse($event->isPropagationStopped());
+		$this->assertFalse(condition: $event->isPropagationStopped());
 	}//end testAnUpdateWithinTheRulesIsSaved()
 
+	/**
+	 * An object of another schema is not checked.
+	 *
+	 * @return void
+	 */
 	public function testAnotherSchemasObjectIsLeftAlone(): void {
-		if (class_exists(ObjectEntity::class) === false) {
-			$this->markTestSkipped('OpenRegister is not installed in this environment.');
+		if (class_exists(class: ObjectEntity::class) === false) {
+			$this->markTestSkipped(message: 'OpenRegister is not installed in this environment.');
 		}
 
-		$entity = $this->portal(['logo' => 'huge.png']);
+		$entity = $this->portal(data: ['logo' => 'huge.png']);
 		$entity->setSchema('12');
-		$images = $this->createMock(PortalImageChoiceInterface::class);
+		$images = $this->createMock(originalClassName: PortalImageChoiceInterface::class);
 		$images->expects($this->never())->method('refusal');
-		$event = new ObjectCreatingEvent($entity);
+		$event = new ObjectCreatingEvent(object: $entity);
 
-		(new PortalImagesGuardListener($this->container(), $images, new NullLogger()))->handle($event);
+		$this->listener(images: $images)->handle(event: $event);
 
-		$this->assertFalse($event->isPropagationStopped());
+		$this->assertFalse(condition: $event->isPropagationStopped());
 	}//end testAnotherSchemasObjectIsLeftAlone()
 
 	/**
@@ -99,18 +129,21 @@ final class PortalImagesGuardListenerTest extends TestCase {
 	}//end portal()
 
 	/**
-	 * A container whose schema mapper knows the portal schema.
+	 * The guard over the given image rules and a container whose schema
+	 * mapper knows the portal schema.
 	 *
-	 * @return ContainerInterface
+	 * @param PortalImageChoiceInterface $images The image rules.
+	 *
+	 * @return PortalImagesGuardListener
 	 */
-	private function container(): ContainerInterface {
+	private function listener(PortalImageChoiceInterface $images): PortalImagesGuardListener {
 		$schema = new Schema();
 		$schema->setId(self::PORTAL_SCHEMA);
-		$schemas = $this->getMockBuilder(SchemaMapper::class)->disableOriginalConstructor()->onlyMethods(['findByApplicationAndSlug'])->getMock();
+		$schemas = $this->getMockBuilder(className: SchemaMapper::class)->disableOriginalConstructor()->onlyMethods(['findByApplicationAndSlug'])->getMock();
 		$schemas->method('findByApplicationAndSlug')->with('portal', 'portaliq')->willReturn($schema);
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturn($schemas);
 
-		return $container;
-	}//end container()
+		return new PortalImagesGuardListener(container: $container, images: $images, logger: new NullLogger());
+	}//end listener()
 }//end class
