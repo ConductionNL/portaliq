@@ -198,13 +198,13 @@ class DestinationSubmitEdgeTest extends TestCase {
 	public function testAFailingValidatorIsLoggedAndCouldNotBeChecked(): void {
 		$logger = $this->createMock(LoggerInterface::class);
 		$logger->expects($this->once())->method('warning')->with('Portaliq: a form binding could not be checked', ['reason' => 'validator crashed']);
-		$container = self::container([self::VALIDATOR => self::validator(new RuntimeException('validator crashed')), self::MAPPER => self::mapper([new \stdClass()])]);
+		$container = self::container([self::VALIDATOR => self::validator(new RuntimeException('validator crashed')), self::MAPPER => self::mapper([self::schemaEntity()])]);
 
 		$this->assertNull((new DestinationSubmit($container, $logger))->findings(destination: ['register' => 'a', 'schema' => 'case'], mapping: [], audience: 'public'));
 	}//end testAFailingValidatorIsLoggedAndCouldNotBeChecked()
 
 	public function testAValidatorThatAnswersNoListCouldNotCheck(): void {
-		$container = self::container([self::VALIDATOR => self::validator('fine'), self::MAPPER => self::mapper([new \stdClass()])]);
+		$container = self::container([self::VALIDATOR => self::validator('fine'), self::MAPPER => self::mapper([self::schemaEntity()])]);
 
 		$this->assertNull((new DestinationSubmit($container, $this->createMock(LoggerInterface::class)))->findings(destination: ['register' => 'a', 'schema' => 'case'], mapping: [], audience: 'authenticated'));
 	}//end testAValidatorThatAnswersNoListCouldNotCheck()
@@ -228,7 +228,7 @@ class DestinationSubmitEdgeTest extends TestCase {
 	}//end testASchemaReadWithoutAnEntityCouldNotCheck()
 
 	public function testAnEmptySchemaSlugIsNeverLookedUp(): void {
-		$mapper = self::mapper([new \stdClass()]);
+		$mapper = self::mapper([self::schemaEntity()]);
 		$container = self::container([self::VALIDATOR => self::validator([]), self::MAPPER => $mapper]);
 
 		$this->assertNull((new DestinationSubmit($container, $this->createMock(LoggerInterface::class)))->findings(destination: ['register' => 'a'], mapping: [], audience: 'public'));
@@ -236,7 +236,7 @@ class DestinationSubmitEdgeTest extends TestCase {
 	}//end testAnEmptySchemaSlugIsNeverLookedUp()
 
 	public function testAValidMappingHasNoFindings(): void {
-		$container = self::container([self::VALIDATOR => self::validator([]), self::MAPPER => self::mapper([new \stdClass()])]);
+		$container = self::container([self::VALIDATOR => self::validator([]), self::MAPPER => self::mapper([self::schemaEntity()])]);
 
 		$this->assertSame([], (new DestinationSubmit($container, $this->createMock(LoggerInterface::class)))->findings(destination: ['register' => 'a', 'schema' => 'case'], mapping: [], audience: 'public'));
 	}//end testAValidMappingHasNoFindings()
@@ -250,7 +250,7 @@ class DestinationSubmitEdgeTest extends TestCase {
 	 * @spec openspec/changes/archive/2026-11-25-form-flow-repeating-groups-calculations-and-decisions/tasks.md
 	 */
 	public function testTheValidatorIsHandedTheSchemaAndTheAudienceAsOneDestination(): void {
-		$schema    = new \stdClass();
+		$schema    = self::schemaEntity();
 		$validator = self::validator(result: []);
 		$container = self::container(services: [self::VALIDATOR => $validator, self::MAPPER => self::mapper(result: [$schema])]);
 		$submit    = new DestinationSubmit(container: $container, logger: $this->createMock(originalClassName: LoggerInterface::class));
@@ -261,4 +261,20 @@ class DestinationSubmitEdgeTest extends TestCase {
 		$this->assertSame(expected: $schema, actual: $validator->destination->schema);
 		$this->assertSame(expected: 'public', actual: $validator->destination->audience);
 	}//end testTheValidatorIsHandedTheSchemaAndTheAudienceAsOneDestination()
+
+	/**
+	 * A schema entity as the mapper returns it: OpenRegister's own Schema
+	 * where OpenRegister is loaded (FormDestination types its schema), a
+	 * plain object otherwise.
+	 *
+	 * @return object
+	 */
+	private static function schemaEntity(): object {
+		$class = 'OCA\\OpenRegister\\Db\\Schema';
+		if (class_exists(class: $class) === true) {
+			return new $class();
+		}
+
+		return new \stdClass();
+	}//end schemaEntity()
 }//end class
