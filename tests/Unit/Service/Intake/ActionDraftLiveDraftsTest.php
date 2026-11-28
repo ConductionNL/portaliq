@@ -30,8 +30,7 @@ use OCA\Portaliq\Contribution\CreateBody;
  * @uses \OCA\Portaliq\Contribution\CreateBody
  * @uses \OCA\Portaliq\Service\PortalSessionService
  * @uses \OCA\Portaliq\Kernel\Support\SessionTrust
- * @uses   \OCA\Portaliq\Contribution\EndpointDraftSchema
- *
+ * @uses \OCA\Portaliq\Contribution\EndpointDraftSchema
  *
  * @spec openspec/changes/archive/2026-11-24-form-save-and-resume-dialogs/specs/site-forms/spec.md#requirement-the-own-area-lists-unfinished-forms-req-fsr-003
  */
