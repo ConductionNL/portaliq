@@ -96,7 +96,10 @@ class EnsurePortalFileTagsTest extends TestCase {
 	 * @spec openspec/specs/citizen-case-documents/spec.md#requirement-the-residents-own-uploads-stay-visible-and-nothing-else-from-the-folder-req-cdc-004
 	 */
 	public function testTheStepRunsOnInstallAndAfterAMigration(): void {
-		$info  = simplexml_load_file(__DIR__.'/../../../appinfo/info.xml');
+		// From a string: inside Nextcloud the libxml entity loader refuses file
+		// loads, so simplexml_load_file() answers false there.
+		$info = simplexml_load_string(data: (string)file_get_contents(filename: __DIR__.'/../../../appinfo/info.xml'));
+		$this->assertNotFalse(condition: $info, message: 'appinfo/info.xml parses');
 		$steps = static fn (string $phase): array => array_map(
 			'strval',
 			$info->xpath('/info/repair-steps/'.$phase.'/step')

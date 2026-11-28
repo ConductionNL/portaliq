@@ -88,7 +88,7 @@ class DestinationSubmitTest extends TestCase {
 	}//end testWithoutOpenRegisterTheSubmitIsTryAgainLater()
 
 	public function testTheCheckAsksTheValidatorWithTheSchemaEntityAndTheAudience(): void {
-		$schema    = new \stdClass();
+		$schema    = self::schemaEntity();
 		$validator = new class {
 			public array $asked = [];
 
@@ -132,4 +132,20 @@ class DestinationSubmitTest extends TestCase {
 
 		$this->assertNull($submit->findings(destination: ['register' => 'dossiq', 'schema' => 'case'], mapping: [], audience: 'public'));
 	}//end testWithoutTheValidatorTheCheckSaysItCouldNotCheck()
+
+	/**
+	 * A schema entity as the mapper returns it: OpenRegister's own Schema
+	 * where OpenRegister is loaded (FormDestination types its schema), a
+	 * plain object otherwise.
+	 *
+	 * @return object
+	 */
+	private static function schemaEntity(): object {
+		$class = 'OCA\\OpenRegister\\Db\\Schema';
+		if (class_exists(class: $class) === true) {
+			return new $class();
+		}
+
+		return new \stdClass();
+	}//end schemaEntity()
 }//end class
