@@ -205,6 +205,8 @@ foreach ([
 	'Event\\RegisterLeafProvidersEvent' => 'Event/RegisterLeafProvidersEvent.php',
 	// The form submit and draft value objects (openregister #7788, #7964):
 	// DraftOwner first, the others name it.
+	// The audit-trail lookup PageHistory reads a page's versions with (openregister main, 28 Nov 2026).
+	'Db\\AuditTrail\\ActionLookupOptions' => 'Db/AuditTrail/ActionLookupOptions.php',
 	'Service\\Object\\DraftOwner' => 'Service/Object/DraftOwner.php',
 	'Service\\Object\\DiscardDraftRequest' => 'Service/Object/DiscardDraftRequest.php',
 	'Service\\Form\\FormSubmitter' => 'Service/Form/FormSubmitter.php',

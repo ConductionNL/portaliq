@@ -9,6 +9,7 @@ namespace OCA\Portaliq\Tests\Unit\Service\Cms;
 
 use DateTime;
 use OCA\OpenRegister\Db\AuditTrail;
+use OCA\OpenRegister\Db\AuditTrail\ActionLookupOptions;
 use OCA\OpenRegister\Db\AuditTrailMapper;
 use OCA\OpenRegister\Db\Schema;
 use OCA\OpenRegister\Db\SchemaMapper;
@@ -103,10 +104,13 @@ class PageHistoryTest extends TestCase {
 			$this->markTestSkipped('OpenRegister is not installed in this environment.');
 		}
 
-		$trail = $this->getMockBuilder(AuditTrailMapper::class)->disableOriginalConstructor()->onlyMethods(['findForObjectByAction'])->getMock();
+		$trail = $this->getMockBuilder(className: AuditTrailMapper::class)->disableOriginalConstructor()->onlyMethods(['findObjectActions'])->getMock();
 		$trail->expects($this->once())
-			->method('findForObjectByAction')
-			->with($this->equalTo(self::PAGE), $this->equalTo(['create', 'update']), $this->greaterThan(0))
+			->method('findObjectActions')
+			->with(
+				$this->equalTo(value: self::PAGE),
+				$this->callback(callback: static fn (ActionLookupOptions $options): bool => $options->actions === ['create', 'update'] && $options->limit > 0)
+			)
 			->willReturn([]);
 
 		$this->build(trail: $trail)->versions(pageId: self::PAGE);
@@ -120,8 +124,8 @@ class PageHistoryTest extends TestCase {
 	 * @return PageHistory
 	 */
 	private function history(array $rows): PageHistory {
-		$trail = $this->getMockBuilder(AuditTrailMapper::class)->disableOriginalConstructor()->onlyMethods(['findForObjectByAction'])->getMock();
-		$trail->method('findForObjectByAction')->willReturn($rows);
+		$trail = $this->getMockBuilder(className: AuditTrailMapper::class)->disableOriginalConstructor()->onlyMethods(['findObjectActions'])->getMock();
+		$trail->method('findObjectActions')->willReturn($rows);
 
 		return $this->build(trail: $trail);
 	}//end history()

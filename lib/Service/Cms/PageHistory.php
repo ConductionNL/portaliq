@@ -57,6 +57,11 @@ class PageHistory implements PageHistoryInterface {
 	private const SCHEMA_MAPPER = 'OCA\\OpenRegister\\Db\\SchemaMapper';
 
 	/**
+	 * The options OpenRegister's per-object action lookup takes.
+	 */
+	private const LOOKUP_OPTIONS = 'OCA\\OpenRegister\\Db\\AuditTrail\\ActionLookupOptions';
+
+	/**
 	 * The most versions listed.
 	 */
 	private const LIMIT = 50;
@@ -98,6 +103,8 @@ class PageHistory implements PageHistoryInterface {
 	 * @param string $pageId The page object's uuid.
 	 *
 	 * @return array{0: object, 1: iterable<object>}|null
+	 *
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
 	 */
 	private function pageTrail(string $pageId): array|null {
 		try {
@@ -108,7 +115,7 @@ class PageHistory implements PageHistoryInterface {
 				return null;
 			}
 
-			$rows = $trail->findForObjectByAction($pageId, ['create', 'update'], self::LIMIT);
+			$rows = $this->writesOf(trail: $trail, pageId: $pageId);
 		} catch (Throwable $e) {
 			$this->logger->warning('Portaliq: page history unavailable', ['reason' => $e->getMessage()]);
 			return null;
@@ -116,6 +123,28 @@ class PageHistory implements PageHistoryInterface {
 
 		return [$schema, $rows];
 	}//end pageTrail()
+
+	/**
+	 * The create and update audit rows of a page, newest first, through
+	 * OpenRegister's per-object action lookup; an OpenRegister from before
+	 * that lookup is read through the method it had then.
+	 *
+	 * @param object $trail  OpenRegister's audit trail mapper.
+	 * @param string $pageId The page object's uuid.
+	 *
+	 * @return iterable<object>
+	 *
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
+	 */
+	private function writesOf(object $trail, string $pageId): iterable {
+		$actions = ['create', 'update'];
+		if (method_exists($trail, 'findObjectActions') === true && class_exists(self::LOOKUP_OPTIONS) === true) {
+			$options = self::LOOKUP_OPTIONS;
+			return $trail->findObjectActions($pageId, new $options(actions: $actions, limit: self::LIMIT));
+		}
+
+		return $trail->findForObjectByAction($pageId, $actions, self::LIMIT);
+	}//end writesOf()
 
 	/**
 	 * The versions among the audit rows of the page schema.
