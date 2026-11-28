@@ -188,39 +188,74 @@ class PageHistoryVersionsTest extends TestCase {
 	public function testTheCurrentLookupIsAskedForThePagesCreatesAndUpdates(): void {
 		$asked = [];
 		$trail = new class ($asked) {
+			/**
+			 * A trail that records what it was asked.
+			 *
+			 * @param list<array<mixed>> $asked What the lookup was asked.
+			 */
 			public function __construct(private array &$asked) {
 			}
 
+			/**
+			 * The current per-object action lookup.
+			 *
+			 * @param string                                                $id      The object's uuid.
+			 * @param \OCA\OpenRegister\Db\AuditTrail\ActionLookupOptions $options The actions and the cap.
+			 *
+			 * @return array<object>
+			 */
 			public function findObjectActions(string $id, \OCA\OpenRegister\Db\AuditTrail\ActionLookupOptions $options): array {
 				$this->asked[] = [$id, $options->actions, $options->limit];
 				return [];
 			}
 
+			/**
+			 * The lookup an older OpenRegister had; it must not be used here.
+			 *
+			 * @param string        $id      The object's uuid.
+			 * @param array<string> $actions The actions.
+			 * @param int           $limit   The cap.
+			 *
+			 * @return array<object>
+			 */
 			public function findForObjectByAction(string $id, array $actions, int $limit): array {
-				throw new RuntimeException('the old lookup was used');
+				throw new RuntimeException(message: 'the old lookup was used');
 			}
 		};
 		$schemas = new class {
+			/**
+			 * The page schema, at id 12.
+			 *
+			 * @param string $slug        The schema slug.
+			 * @param string $application The owning app.
+			 *
+			 * @return object
+			 */
 			public function findByApplicationAndSlug(string $slug, string $application): object {
 				return new class {
+					/**
+					 * The schema id.
+					 *
+					 * @return int
+					 */
 					public function getId(): int {
 						return 12;
 					}
 				};
 			}
 		};
-		$container = $this->createMock(ContainerInterface::class);
+		$container = $this->createMock(originalClassName: ContainerInterface::class);
 		$container->method('get')->willReturnCallback(
 			static fn (string $id): object => match ($id) {
 				'OCA\OpenRegister\Db\AuditTrailMapper' => $trail,
 				'OCA\OpenRegister\Db\SchemaMapper' => $schemas,
 			}
 		);
-		$logger = $this->createMock(LoggerInterface::class);
+		$logger = $this->createMock(originalClassName: LoggerInterface::class);
 		$logger->expects($this->never())->method('warning');
 
-		$this->assertSame([], (new PageHistory($container, $logger))->versions(self::PAGE));
-		$this->assertSame([[self::PAGE, ['create', 'update'], 50]], $asked);
+		$this->assertSame(expected: [], actual: (new PageHistory(container: $container, logger: $logger))->versions(pageId: self::PAGE));
+		$this->assertSame(expected: [[self::PAGE, ['create', 'update'], 50]], actual: $asked);
 	}//end testTheCurrentLookupIsAskedForThePagesCreatesAndUpdates()
 
 	public function testAnUnreadableTrailIsLoggedAndHasNoHistory(): void {

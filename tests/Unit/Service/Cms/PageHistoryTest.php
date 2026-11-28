@@ -104,12 +104,12 @@ class PageHistoryTest extends TestCase {
 			$this->markTestSkipped('OpenRegister is not installed in this environment.');
 		}
 
-		$trail = $this->getMockBuilder(AuditTrailMapper::class)->disableOriginalConstructor()->onlyMethods(['findObjectActions'])->getMock();
+		$trail = $this->getMockBuilder(className: AuditTrailMapper::class)->disableOriginalConstructor()->onlyMethods(['findObjectActions'])->getMock();
 		$trail->expects($this->once())
 			->method('findObjectActions')
 			->with(
-				$this->equalTo(self::PAGE),
-				$this->callback(static fn (ActionLookupOptions $options): bool => $options->actions === ['create', 'update'] && $options->limit > 0)
+				$this->equalTo(value: self::PAGE),
+				$this->callback(callback: static fn (ActionLookupOptions $options): bool => $options->actions === ['create', 'update'] && $options->limit > 0)
 			)
 			->willReturn([]);
 
@@ -124,7 +124,7 @@ class PageHistoryTest extends TestCase {
 	 * @return PageHistory
 	 */
 	private function history(array $rows): PageHistory {
-		$trail = $this->getMockBuilder(AuditTrailMapper::class)->disableOriginalConstructor()->onlyMethods(['findObjectActions'])->getMock();
+		$trail = $this->getMockBuilder(className: AuditTrailMapper::class)->disableOriginalConstructor()->onlyMethods(['findObjectActions'])->getMock();
 		$trail->method('findObjectActions')->willReturn($rows);
 
 		return $this->build(trail: $trail);
