@@ -3683,7 +3683,10 @@
         "A condition over the answers, in the grammar of a field's visibleWhen: {field, op, value}, or all / any of them.": "A condition over the answers, in the grammar of a field's visibleWhen: {field, op, value}, or all / any of them.",
         "The register and schema the submit goes to when the condition holds, with the same keys as the form's own destination.": "The register and schema the submit goes to when the condition holds, with the same keys as the form's own destination.",
         "The register of the object the submit creates when the condition holds.": "The register of the object the submit creates when the condition holds.",
-        "The schema of the object the submit creates when the condition holds.": "The schema of the object the submit creates when the condition holds."
+        "The schema of the object the submit creates when the condition holds.": "The schema of the object the submit creates when the condition holds.",
+        "create/update write through OpenRegister via the portal's own writer; endpoint bearer-forwards to a domain app's own route (contract v2 A6); propose-change declares which properties of a record may be proposed for review (`proposable`), and writes nothing itself. Anonymous submission is only meaningful for type=create.": "create/update write through OpenRegister via the portal's own writer; endpoint bearer-forwards to a domain app's own route (contract v2 A6); propose-change declares which properties of a record may be proposed for review (`proposable`), and writes nothing itself. Anonymous submission is only meaningful for type=create.",
+        "Proposable properties": "Proposable properties",
+        "For type=propose-change: the properties of the record a resident or colleague may propose a change to. A proposal naming any other property is refused (not_proposable).": "For type=propose-change: the properties of the record a resident or colleague may propose a change to. A proposal naming any other property is refused (not_proposable)."
     },
     "plurals": "",
     "pluralForm": "nplurals=2; plural=(n != 1);"

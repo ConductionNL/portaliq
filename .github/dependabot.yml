@@ -42,6 +42,18 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "@babel/preset-env"
         update-types: ["version-update:semver-major"]
+      # The Den Haag component CSS follows thematiq, not npm: the site-mijn-omgeving
+      # spec requires these versions to equal the ones thematiq's Den Haag token
+      # mapping pins (scripts/mapping/denhaag-component-tokens.json there), and
+      # tests/mijn-components.spec.mjs asserts it. Move them together with that
+      # mapping, never on their own.
+      - dependency-name: "@gemeente-denhaag/action"
+      - dependency-name: "@gemeente-denhaag/card"
+      - dependency-name: "@gemeente-denhaag/contact-timeline"
+      - dependency-name: "@gemeente-denhaag/data-badge"
+      - dependency-name: "@gemeente-denhaag/file"
+      - dependency-name: "@gemeente-denhaag/process-steps"
+      - dependency-name: "@gemeente-denhaag/step-marker"
     cooldown:
       default-days: 1
       include:
