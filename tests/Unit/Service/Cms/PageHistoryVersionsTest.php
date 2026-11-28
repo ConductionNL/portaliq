@@ -177,6 +177,52 @@ class PageHistoryVersionsTest extends TestCase {
 		$this->assertSame([['schema' => ['page', 'portaliq']]], $this->asked);
 	}//end testWithoutThePageSchemaTheTrailIsNotRead()
 
+	/**
+	 * An OpenRegister with the per-object action lookup is asked through it,
+	 * for the page's creates and updates, capped at the history's limit.
+	 *
+	 * @spec openspec/specs/site-page-seo-history-and-media/spec.md
+	 *
+	 * @return void
+	 */
+	public function testTheCurrentLookupIsAskedForThePagesCreatesAndUpdates(): void {
+		$asked = [];
+		$trail = new class ($asked) {
+			public function __construct(private array &$asked) {
+			}
+
+			public function findObjectActions(string $id, \OCA\OpenRegister\Db\AuditTrail\ActionLookupOptions $options): array {
+				$this->asked[] = [$id, $options->actions, $options->limit];
+				return [];
+			}
+
+			public function findForObjectByAction(string $id, array $actions, int $limit): array {
+				throw new RuntimeException('the old lookup was used');
+			}
+		};
+		$schemas = new class {
+			public function findByApplicationAndSlug(string $slug, string $application): object {
+				return new class {
+					public function getId(): int {
+						return 12;
+					}
+				};
+			}
+		};
+		$container = $this->createMock(ContainerInterface::class);
+		$container->method('get')->willReturnCallback(
+			static fn (string $id): object => match ($id) {
+				'OCA\OpenRegister\Db\AuditTrailMapper' => $trail,
+				'OCA\OpenRegister\Db\SchemaMapper' => $schemas,
+			}
+		);
+		$logger = $this->createMock(LoggerInterface::class);
+		$logger->expects($this->never())->method('warning');
+
+		$this->assertSame([], (new PageHistory($container, $logger))->versions(self::PAGE));
+		$this->assertSame([[self::PAGE, ['create', 'update'], 50]], $asked);
+	}//end testTheCurrentLookupIsAskedForThePagesCreatesAndUpdates()
+
 	public function testAnUnreadableTrailIsLoggedAndHasNoHistory(): void {
 		$container = $this->createMock(ContainerInterface::class);
 		$container->method('get')->willThrowException(new RuntimeException('no openregister'));
