@@ -73,6 +73,10 @@ class DomainReverificationJob extends TimedJob {
 	 * @return void
 	 *
 	 * @spec openspec/specs/portal-scoping-and-auth/spec.md#requirement-a-custom-domain-must-be-verified-before-it-serves
+	 * @spec openspec/changes/search-sort-by-relevance/tasks.md#t12
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
+	 * the signature; dropping the parameter breaks the override.
 	 */
 	protected function run($argument): void {
 		foreach ($this->portals->allPublishedPortals() as $portal) {

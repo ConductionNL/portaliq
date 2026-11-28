@@ -67,6 +67,10 @@ class SuggestionWordListJob extends TimedJob {
 	 * @return void
 	 *
 	 * @spec openspec/changes/search-sort-by-relevance/specs/portal-federated-search/spec.md#requirement-a-search-that-finds-little-offers-a-checked-correction-req-ssr-005
+	 * @spec openspec/changes/search-sort-by-relevance/tasks.md#t12
+	 *
+	 * @SuppressWarnings(PHPMD.UnusedFormalParameter) -- the base class dictates
+	 * the signature; dropping the parameter breaks the override.
 	 */
 	protected function run($argument): void {
 		$this->rebuildAll();
