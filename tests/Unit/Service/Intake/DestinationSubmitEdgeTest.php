@@ -209,7 +209,12 @@ class DestinationSubmitEdgeTest extends TestCase {
 	}//end testAFailingValidatorIsLoggedAndCouldNotBeChecked()
 
 	public function testAValidatorThatAnswersNoListCouldNotCheck(): void {
-		$container = self::container(services: [self::VALIDATOR => self::validator(result: 'fine'), self::MAPPER => self::mapper(result: [self::schemaEntity()])]);
+		$container = self::container(
+			services: [
+				self::VALIDATOR => self::validator(result: 'fine'),
+				self::MAPPER    => self::mapper(result: [self::schemaEntity()]),
+			]
+		);
 
 		$this->assertNull((new DestinationSubmit($container, $this->createMock(LoggerInterface::class)))->findings(destination: ['register' => 'a', 'schema' => 'case'], mapping: [], audience: 'authenticated'));
 	}//end testAValidatorThatAnswersNoListCouldNotCheck()
@@ -241,7 +246,12 @@ class DestinationSubmitEdgeTest extends TestCase {
 	}//end testAnEmptySchemaSlugIsNeverLookedUp()
 
 	public function testAValidMappingHasNoFindings(): void {
-		$container = self::container(services: [self::VALIDATOR => self::validator(result: []), self::MAPPER => self::mapper(result: [self::schemaEntity()])]);
+		$container = self::container(
+			services: [
+				self::VALIDATOR => self::validator(result: []),
+				self::MAPPER    => self::mapper(result: [self::schemaEntity()]),
+			]
+		);
 
 		$this->assertSame([], (new DestinationSubmit($container, $this->createMock(LoggerInterface::class)))->findings(destination: ['register' => 'a', 'schema' => 'case'], mapping: [], audience: 'public'));
 	}//end testAValidMappingHasNoFindings()
